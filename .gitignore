@@ -1,8 +1,6 @@
 venv/
 .env
 models/
-results/
-notebooks/
 *.db
 *.pdf
 .vscode/
