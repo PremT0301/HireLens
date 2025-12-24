@@ -1,6 +1,5 @@
 venv/
 .env
-datasets/
 models/
 results/
 notebooks/
