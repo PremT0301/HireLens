@@ -1,0 +1,11 @@
+venv/
+.env
+data/
+datasets/
+models/
+results/
+notebooks/
+*.db
+*.pdf
+.vscode/
+__pycache__/
