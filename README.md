@@ -32,29 +32,6 @@ This document serves as the **complete manual** for the project, covering its ar
 ## 🏗️ System Architecture
 
 The application operates as a cohesive trio of services:
-
-```mermaid
-graph TD
-    User((User))
-    User -->|Interacts| Frontend[React 18 Frontend]
-    
-    Frontend -->|API Calls| Backend[.NET 10 Web API]
-    
-    Backend -->|Forwards Analysis| AI_Service[Python AI Microservice]
-    
-    subgraph Intelligence_Layer
-        AI_Service
-        NER[Spacy NER Model]
-        BERT[BERT Classifier]
-    end
-    
-    subgraph Data_Layer
-        Backend -->|Persists Data| SQL[SQL Server (Entity Framework)]
-    end
-```
-
----
-
 ## 🌟 User Functionalities (The Product)
 
 This section details every feature available in the application.
