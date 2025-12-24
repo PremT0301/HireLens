@@ -5,3 +5,6 @@ models/
 *.pdf
 .vscode/
 __pycache__/
+PROJECT_STATUS.md
+PROJECT_TIMELINE.md
+QUICKSTART.md
