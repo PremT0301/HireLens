@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import HireLensLoader from '../components/ui/HireLensLoader';
 import { useNavigate, Link } from 'react-router-dom';
 import { User, Briefcase, ChevronRight, Upload } from 'lucide-react';
 import AuthService from '../api/authService';
@@ -321,6 +322,7 @@ const Signup = () => {
                     Already have an account? <Link to="/login" style={{ color: 'var(--primary)', textDecoration: 'none', fontWeight: '500' }}>Login</Link>
                 </p>
             </div>
+            {loading && <HireLensLoader text="Creating Account..." subtext={role === 'recruiter' ? "Setting up your recruiter workspace..." : "Preparing your applicant profile..."} />}
         </div>
     );
 };

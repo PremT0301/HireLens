@@ -11,6 +11,7 @@ import JobMatcher from '../../components/applicant/JobMatcher';
 import NewsSection from '../../components/NewsSection';
 import ThreeDTiltCard from '../../components/ui/ThreeDTiltCard';
 import ATSScoreDisplay from '../../components/applicant/ATSScoreDisplay';
+import HireLensLoader from '../../components/ui/HireLensLoader';
 
 const ApplicantDashboard = () => {
     const navigate = useNavigate();
@@ -154,6 +155,8 @@ const ApplicantDashboard = () => {
                 ))}
             </div>
 
+
+
             {/* Upload Zone */}
             <h3 style={{ marginBottom: '1rem', fontSize: '1.5rem' }}>Resume Analysis</h3>
             <ThreeDTiltCard>
@@ -171,16 +174,24 @@ const ApplicantDashboard = () => {
                 >
                     <input {...getInputProps()} />
                     <div style={{ color: isDragActive ? 'var(--primary)' : 'var(--text-secondary)', marginBottom: '1rem', display: 'flex', justifyContent: 'center' }}>
-                        {analyzing ? <Loader2 size={64} className="spin" /> : <UploadCloud size={64} />}
+                        <UploadCloud size={64} />
                     </div>
                     <h4 style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>
-                        {analyzing ? 'Analyzing Resume...' : (isDragActive ? 'Drop your resume here' : 'Upload your latest resume')}
+                        {isDragActive ? 'Drop your resume here' : 'Upload your latest resume'}
                     </h4>
                     <p style={{ color: 'var(--text-secondary)' }}>
                         {result ? `Analysis Complete: ${result.analysis.classification.predictedRole} (${(result.analysis.classification.confidence * 100).toFixed(1)}%)` : 'Drag & drop PDF or DOCX (Text only for now)'}
                     </p>
                 </div>
             </ThreeDTiltCard>
+
+            {/* Full Screen Loader */}
+            {analyzing && (
+                <HireLensLoader
+                    text="Analyzing Resume..."
+                    subtext="Extracting skills, experience, and calculating fit score."
+                />
+            )}
 
             {/* Analysis Results */}
             {result && (

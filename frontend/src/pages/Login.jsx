@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import HireLensLoader from '../components/ui/HireLensLoader';
 import { useNavigate, Link } from 'react-router-dom';
 import { ChevronRight, AlertCircle, Loader } from 'lucide-react';
 import AuthService from '../api/authService';
@@ -132,6 +133,7 @@ const Login = () => {
                     Don't have an account? <Link to="/signup" style={{ color: 'var(--accent-secondary)', textDecoration: 'none' }}>Sign up</Link>
                 </p>
             </div>
+            {loading && <HireLensLoader text="Signing In..." subtext="Verifying your credentials..." />}
         </div>
     );
 };
