@@ -17,6 +17,7 @@ from datetime import datetime
 from openai import OpenAI
 from dotenv import load_dotenv
 import os
+import re
 
 
 # Load environment variables
@@ -158,6 +159,91 @@ async def health():
 
 # -------------------- ANALYSIS --------------------
 
+def calculate_ats_score(text: str, skills: list, role: str) -> dict:
+    score = 0
+    feedback = []
+    
+    # 1. Length Check (20 pts)
+    word_count = len(text.split())
+    if word_count < 200:
+        score += 5
+        feedback.append("Resume is too short. Aim for 400-1000 words.")
+    elif word_count > 1500:
+        score += 10
+        feedback.append("Resume is quite long. Ensure it is concise.")
+    else:
+        score += 20
+        feedback.append("Optimal resume length.")
+        
+    # 2. Structure Check (30 pts)
+    sections = {
+        "Experience": ["experience", "employment", "work history"],
+        "Education": ["education", "academic", "qualification"],
+        "Skills": ["skills", "technologies", "competencies"],
+        "Projects": ["projects", "personal projects"],
+        "Contact": ["email", "phone", "contact"] # Heuristic check via regex later for actual content
+    }
+    
+    text_lower = text.lower()
+    sections_found = 0
+    for section, keywords in sections.items():
+        if any(k in text_lower for k in keywords):
+            sections_found += 1
+        else:
+            feedback.append(f"Missing '{section}' section or header.")
+            
+    # Max 30 points for sections (6 pts each for 5 sections)
+    structure_score = min(30, sections_found * 6)
+    score += structure_score
+    
+    if sections_found == 5:
+        feedback.append("Good structure with all key sections.")
+    
+    # 3. Skill Density & Relevance (30 pts)
+    unique_skills = len(set(skills))
+    if unique_skills < 5:
+        score += 5
+        feedback.append("Low skill count. Add more relevant technical skills.")
+    elif unique_skills < 10:
+        score += 15
+        feedback.append("Moderate skill representation.")
+    else:
+        score += 30
+        feedback.append(f"Strong skill profile with {unique_skills} skills detected.")
+        
+    # 4. Keyword/Role Formatting (20 pts)
+    # Simple check: if predicted role matches keywords or simple formatting checks
+    email_pattern = r"[\w\.-]+@[\w\.-]+"
+    phone_pattern = r"\b\d{10,}\b|\(\d{3}\)"
+    
+    contact_score = 0
+    if re.search(email_pattern, text):
+        contact_score += 10
+    else:
+        feedback.append("Email address not detected.")
+        
+    if re.search(phone_pattern, text):
+        contact_score += 10
+    else:
+        feedback.append("Phone number not detected.")
+        
+    score += contact_score
+
+    # Final Adjustment
+    final_score = min(100, max(0, score))
+    
+    level = "Low"
+    if final_score >= 80:
+        level = "High"
+    elif final_score >= 51:
+        level = "Medium"
+        
+    return {
+        "score": final_score,
+        "level": level,
+        "feedback": feedback
+    }
+
 @app.post("/analyze-resume", response_model=AnalyzeResumeOutput)
 async def analyze_resume(resume: ResumeInput):
 
@@ -210,10 +296,16 @@ async def analyze_resume(resume: ResumeInput):
             confidence=round(top_prob.item(), 4),
             top_predictions=[]
         )
+        
+        # Calculate ATS Score
+        ats_result = calculate_ats_score(resume.text, skills, role)
 
         return AnalyzeResumeOutput(
             ner_results=ner_output,
-            classification=classification
+            classification=classification,
+            ats_score=ats_result["score"],
+            ats_level=ats_result["level"],
+            feedback=ats_result["feedback"]
         )
 
     except Exception as e:

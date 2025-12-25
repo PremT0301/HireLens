@@ -91,7 +91,8 @@ public class ResumesController : ControllerBase
 
             _logger.LogInformation($"AI Result: Role={analysisResult.Classification?.PredictedRole}, " +
                                    $"SkillsCount={analysisResult.NerResults?.Skills?.Count ?? 0}, " +
-                                   $"DesignationsCount={analysisResult.NerResults?.Designations?.Count ?? 0}");
+                                   $"DesignationsCount={analysisResult.NerResults?.Designations?.Count ?? 0}, " +
+                                   $"AtsScore={analysisResult.AtsScore}");
 
             // 3. Save to Database
             _logger.LogInformation($"Saving resume for ApplicantId: {applicant.ApplicantId}");
@@ -102,7 +103,7 @@ public class ResumesController : ControllerBase
                 ApplicantId = applicant.ApplicantId,
                 ParsedAt = DateTime.UtcNow,
                 ResumeText = text,
-                ResumeHealthScore = (int)((analysisResult.Classification?.Confidence ?? 0) * 100),
+                ResumeHealthScore = analysisResult.AtsScore,
                 Entities = new List<ResumeEntity>()
             };
 

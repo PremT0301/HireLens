@@ -135,6 +135,9 @@ class AnalyzeResumeOutput(BaseModel):
     """Combined output for resume analysis"""
     ner_results: NEROutput = Field(..., description="NER extraction results")
     classification: ClassificationOutput = Field(..., description="Role classification results")
+    ats_score: int = Field(default=0, description="Calculated ATS compatibility score (0-100)")
+    ats_level: str = Field(default="Low", description="ATS Score Classification (Low/Medium/High)")
+    feedback: List[str] = Field(default=[], description="Actionable feedback for improvement")
     
     class Config:
         json_schema_extra = {
@@ -149,7 +152,10 @@ class AnalyzeResumeOutput(BaseModel):
                     "predicted_role": "Data Scientist",
                     "confidence": 0.92,
                     "top_predictions": []
-                }
+                },
+                "ats_score": 78,
+                "ats_level": "Medium",
+                "feedback": ["Good keyword match", "Add more details"]
             }
         }
 

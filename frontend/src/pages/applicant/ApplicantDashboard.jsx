@@ -10,6 +10,7 @@ import ResumeService from '../../api/resumeService';
 import JobMatcher from '../../components/applicant/JobMatcher';
 import NewsSection from '../../components/NewsSection';
 import ThreeDTiltCard from '../../components/ui/ThreeDTiltCard';
+import ATSScoreDisplay from '../../components/applicant/ATSScoreDisplay';
 
 const ApplicantDashboard = () => {
     const navigate = useNavigate();
@@ -177,7 +178,13 @@ const ApplicantDashboard = () => {
                         </div>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '2rem' }}>
+                    <ATSScoreDisplay
+                        score={result.analysis.ats_score || 0}
+                        level={result.analysis.ats_level || 'Low'}
+                        feedback={result.analysis.feedback || []}
+                    />
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '2rem', marginTop: '2rem' }}>
                         <div>
                             <h4 style={{ color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>Predicted Role</h4>
                             <div className="badge-primary" style={{ fontSize: '1.2rem', display: 'inline-block' }}>
@@ -210,42 +217,45 @@ const ApplicantDashboard = () => {
                         </div>
                     </div>
                 </motion.div>
-            )}
+            )
+            }
 
             {/* Action Buttons */}
-            {result && (
-                <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem', justifyContent: 'center' }}>
-                    <motion.button
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        className="btn-primary"
-                        onClick={() => navigate('/applicant/gap-analysis', { state: { resumeId: result.resumeId } })}
-                        style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.8rem 2rem', fontSize: '1.1rem' }}
-                    >
-                        <TrendingUp size={20} />
-                        Go to Gap Analysis & Prediction
-                    </motion.button>
+            {
+                result && (
+                    <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem', justifyContent: 'center' }}>
+                        <motion.button
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            className="btn-primary"
+                            onClick={() => navigate('/applicant/gap-analysis', { state: { resumeId: result.resumeId } })}
+                            style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.8rem 2rem', fontSize: '1.1rem' }}
+                        >
+                            <TrendingUp size={20} />
+                            Go to Gap Analysis & Prediction
+                        </motion.button>
 
-                    <motion.button
-                        whileHover={{ scale: 1.05, backgroundColor: 'rgba(239, 68, 68, 0.1)' }}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={handleRemoveResume}
-                        className="btn-ghost"
-                        style={{
-                            color: 'var(--error)',
-                            border: '1px solid var(--error)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.5rem',
-                            padding: '0.8rem 1.5rem',
-                            fontSize: '1rem'
-                        }}
-                    >
-                        <Trash2 size={18} />
-                        Remove Resume
-                    </motion.button>
-                </div>
-            )}
+                        <motion.button
+                            whileHover={{ scale: 1.05, backgroundColor: 'rgba(239, 68, 68, 0.1)' }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={handleRemoveResume}
+                            className="btn-ghost"
+                            style={{
+                                color: 'var(--error)',
+                                border: '1px solid var(--error)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.5rem',
+                                padding: '0.8rem 1.5rem',
+                                fontSize: '1rem'
+                            }}
+                        >
+                            <Trash2 size={18} />
+                            Remove Resume
+                        </motion.button>
+                    </div>
+                )
+            }
 
             {/* Recently Applied Jobs Mock */}
             <div style={{ marginBottom: '3rem' }}>
@@ -307,7 +317,7 @@ const ApplicantDashboard = () => {
                     font-weight: 500;
                 }
             `}</style>
-        </div>
+        </div >
     );
 };
 

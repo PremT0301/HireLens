@@ -36,7 +36,9 @@ public class AIService : IAIService
 
             if (response.IsSuccessStatusCode)
             {
-                return await response.Content.ReadFromJsonAsync<AnalyzeResumeOutput>(_jsonOptions);
+                var json = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"[DEBUG] Python Response: {json}");
+                return JsonSerializer.Deserialize<AnalyzeResumeOutput>(json, _jsonOptions);
             }
 
             var error = await response.Content.ReadAsStringAsync();
