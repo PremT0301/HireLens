@@ -19,6 +19,10 @@ const InterviewCopilot = () => {
     const [sessions, setSessions] = useState([]);
     const [currentSessionId, setCurrentSessionId] = useState(null);
 
+    // Create Modal State
+    const [createModal, setCreateModal] = useState({ show: false });
+    const [newSessionTitle, setNewSessionTitle] = useState('');
+
     // Delete Modal State
     const [deleteModal, setDeleteModal] = useState({ show: false, sessionId: null });
 
@@ -42,14 +46,22 @@ const InterviewCopilot = () => {
         }
     };
 
-    const createNewSession = async () => {
+    const openCreateModal = () => {
+        setNewSessionTitle(`Interview Practice - ${new Date().toLocaleDateString()}`); // Default suggestion
+        setCreateModal({ show: true });
+    };
+
+    const confirmCreateSession = async () => {
+        if (!newSessionTitle.trim()) return;
+
         try {
             const res = await axios.post('http://localhost:8000/chat/sessions', null, {
-                params: { title: `Interview Practice ${new Date().toLocaleDateString()}` }
+                params: { title: newSessionTitle }
             });
             setSessions(prev => [res.data, ...prev]);
             setCurrentSessionId(res.data.id);
             setMessages([{ id: Date.now(), sender: 'ai', text: "Ready for a new session! What topic shall we cover?" }]);
+            setCreateModal({ show: false });
         } catch (err) {
             console.error("Failed to create session", err);
         }
@@ -113,7 +125,7 @@ const InterviewCopilot = () => {
             // Create session implicitly if none exists
             try {
                 const res = await axios.post('http://localhost:8000/chat/sessions', null, {
-                    params: { title: `Session created ${new Date().toLocaleTimeString()}` }
+                    params: { title: `${input.substring(0, 30)}${input.length > 30 ? '...' : ''}` }
                 });
                 setSessions(prev => [res.data, ...prev]);
                 activeSessionId = res.data.id;
@@ -231,7 +243,7 @@ const InterviewCopilot = () => {
                 </div>
                 <div style={{ padding: '15px', borderTop: '1px solid var(--glass-border)' }}>
                     <button
-                        onClick={createNewSession}
+                        onClick={openCreateModal}
                         className="btn-primary"
                         style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
                     >
@@ -365,6 +377,75 @@ const InterviewCopilot = () => {
                     </div>
                 </div>
             </div>
+
+            {/* CREATE MODAL */}
+            {createModal.show && createPortal(
+                <AnimatePresence>
+                    <div style={{
+                        position: 'fixed', inset: 0, zIndex: 9999,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)'
+                    }}>
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            className="glass-panel"
+                            style={{ width: '400px', padding: '24px', position: 'relative', border: '1px solid var(--glass-border)', boxShadow: '0 10px 25px rgba(0,0,0,0.2)' }}
+                        >
+                            <button
+                                onClick={() => setCreateModal({ show: false })}
+                                style={{ position: 'absolute', top: '16px', right: '16px', background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}
+                            >
+                                <X size={20} />
+                            </button>
+
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                                <h3 style={{ fontSize: '1.25rem', fontWeight: '600' }}>New Interview</h3>
+
+                                <div>
+                                    <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Session Name</label>
+                                    <input
+                                        type="text"
+                                        value={newSessionTitle}
+                                        onChange={(e) => setNewSessionTitle(e.target.value)}
+                                        placeholder="e.g. React Senior Developer Interview"
+                                        style={{
+                                            width: '100%',
+                                            padding: '12px',
+                                            borderRadius: '8px',
+                                            background: 'var(--bg-secondary)',
+                                            border: '1px solid var(--glass-border)',
+                                            color: 'var(--text-primary)',
+                                            fontSize: '1rem',
+                                            outline: 'none'
+                                        }}
+                                        autoFocus
+                                    />
+                                </div>
+
+                                <div style={{ display: 'flex', gap: '12px', width: '100%', marginTop: '8px' }}>
+                                    <button
+                                        onClick={() => setCreateModal({ show: false })}
+                                        className="btn-ghost"
+                                        style={{ flex: 1, justifyContent: 'center' }}
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={confirmCreateSession}
+                                        className="btn-primary"
+                                        style={{ flex: 1, justifyContent: 'center' }}
+                                    >
+                                        Create Session
+                                    </button>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </div>
+                </AnimatePresence>,
+                document.body
+            )}
 
             {/* DELETE MODAL */}
             {deleteModal.show && createPortal(
