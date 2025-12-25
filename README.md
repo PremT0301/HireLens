@@ -156,8 +156,8 @@ Follow these distinct steps to launch the entire ecosystem.
 The brain must come alive first.
 
 ```bash
-cd d:/Project
-# Create virtual environment
+cd D:/HireLens
+# Create virtual environment (if not exists)
 python -m venv venv
 # Activate it (Windows)
 .\venv\Scripts\activate
@@ -176,19 +176,19 @@ The gateway needs to be ready.
 
 ```bash
 # New Terminal
-cd d:/Project/backend/SmartHireAI.Backend
+cd D:/HireLens/backend/SmartHireAI.Backend
 dotnet restore
 dotnet ef database update
 dotnet run
 ```
-*Verify at: Check console for port (usually 5000-5200)*
+*Verify at: http://localhost:5033/swagger*
 
 ### Step 3: Start the Frontend 🎨
 The interface for the user.
 
 ```bash
 # New Terminal
-cd d:/Project/frontend
+cd D:/HireLens/frontend
 npm install
 npm run dev
 ```
@@ -199,7 +199,7 @@ npm run dev
 ## 📂 Project Directory Structure
 
 ```plaintext
-d:/Project/
+D:/HireLens/
 ├── api/                        # [Python] The AI Brain
 │   ├── main.py                 # API Endpoints
 │   ├── models.py               # Data definitions

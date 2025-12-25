@@ -223,3 +223,30 @@ class CreateSessionResponse(BaseModel):
     id: int
     title: str
     created_at: datetime
+
+
+class RankingInput(BaseModel):
+    """Input for calculating candidate ranking"""
+    candidate_id: str = Field(..., description="Candidate Identifier")
+    job_id: str = Field(..., description="Job Identifier")
+    skill_match: float = Field(..., description="Skill match percentage (0-100)")
+    experience_years: float = Field(..., description="Candidate's experience in years")
+    required_experience: float = Field(..., description="Job's required experience in years")
+    role_confidence: float = Field(..., description="Role classification confidence (0-1)")
+    ats_score: float = Field(..., description="ATS Score (0-100)")
+    missing_skills: List[str] = Field(default=[], description="List of missing skills")
+
+
+class RankingOutput(BaseModel):
+    """Output with detailed ranking score"""
+    candidate_id: str
+    job_id: str
+    total_score: float
+    suitability_label: str
+    details: Dict[str, float]
+    missing_skills: List[str] = []
+    created_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+

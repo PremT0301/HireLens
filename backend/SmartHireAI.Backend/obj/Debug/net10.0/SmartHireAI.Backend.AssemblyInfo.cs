@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("SmartHireAI.Backend")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+40d77a6b1a136a1007282523ed25186b3cbfc086")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+5dce773f37e8301eaa1ad49171ef1563cf8d65fe")]
 [assembly: System.Reflection.AssemblyProductAttribute("SmartHireAI.Backend")]
 [assembly: System.Reflection.AssemblyTitleAttribute("SmartHireAI.Backend")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

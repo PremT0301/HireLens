@@ -74,7 +74,9 @@ const ATSScoreDisplay = ({ score, level, feedback }) => {
                                         fontSize: '0.95rem',
                                         color: 'var(--text-secondary)',
                                         background: 'var(--glass-bg)',
-                                        border: '1px solid var(--glass-border)',
+                                        borderTop: '1px solid var(--glass-border)',
+                                        borderRight: '1px solid var(--glass-border)',
+                                        borderBottom: '1px solid var(--glass-border)',
                                         padding: '0.8rem',
                                         borderRadius: '8px',
                                         borderLeft: `3px solid ${item.includes("Missing") || item.includes("Low") || item.includes("short") ? 'var(--error)' : 'var(--success)'}`

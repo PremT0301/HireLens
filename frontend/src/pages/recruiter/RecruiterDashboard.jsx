@@ -59,14 +59,26 @@ const RecruiterDashboard = () => {
                 <div className="glass-panel" style={{ padding: '2rem', minHeight: '500px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
                         <h3 style={{ fontSize: '1.25rem', fontWeight: 600 }}>Recent Applications</h3>
-                        <Link to="/recruiter/talent-pool" className="btn-ghost" style={{ fontSize: '0.9rem' }}>
-                            View All <ArrowUpRight size={16} />
-                        </Link>
+                        <div style={{ display: 'flex', gap: '1rem' }}>
+                            <select className="btn-ghost" style={{ border: '1px solid var(--border-color)', fontSize: '0.9rem' }}>
+                                <option value="score_desc">Sort by Score (High to Low)</option>
+                                <option value="score_asc">Sort by Score (Low to High)</option>
+                                <option value="date_desc">Sort by Date</option>
+                            </select>
+                            <Link to="/recruiter/talent-pool" className="btn-ghost" style={{ fontSize: '0.9rem' }}>
+                                View All <ArrowUpRight size={16} />
+                            </Link>
+                        </div>
                     </div>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                        {[1, 2, 3, 4, 5].map((i) => (
-                            <CandidateRow key={i} index={i} />
+                        {[
+                            { name: "John Doe", role: "Senior Python Developer", score: 92, label: "Highly Suitable", time: "2h ago" },
+                            { name: "Jane Smith", role: "Data Scientist", score: 88, label: "Highly Suitable", time: "5h ago" },
+                            { name: "Mike Johnson", role: "ML Engineer", score: 75, label: "Suitable", time: "1d ago" },
+                            { name: "Sarah Williams", role: "Frontend Dev", score: 55, label: "Needs Improvement", time: "2d ago" },
+                        ].map((candidate, i) => (
+                            <CandidateRow key={i} candidate={candidate} />
                         ))}
                     </div>
                 </div>
@@ -150,9 +162,21 @@ const StatCard = ({ icon, title, subtitle, value, trend, color }) => (
     </div>
 );
 
-const CandidateRow = ({ index }) => {
-    const isHighMatch = index % 2 !== 0; // Alternating for demo
-    const matchScore = isHighMatch ? 92 : 78;
+const CandidateRow = ({ candidate }) => {
+    const getBadgeColor = (label) => {
+        if (label === 'Highly Suitable') return 'badge-success';
+        if (label === 'Suitable') return 'badge-primary'; // Adjust if badge-primary is not defined as blue/yellow equivalent, assuming badge-warning or similar
+        return 'badge-warning'; // Fallback
+    };
+
+    // Custom style for badges if class not available
+    const getBadgeStyle = (label) => {
+        if (label === 'Highly Suitable') return { bg: 'rgba(34, 197, 94, 0.1)', color: 'var(--success)', border: 'var(--success)' };
+        if (label === 'Suitable') return { bg: 'rgba(59, 130, 246, 0.1)', color: 'var(--primary)', border: 'var(--primary)' };
+        return { bg: 'rgba(251, 191, 36, 0.1)', color: 'var(--warning)', border: 'var(--warning)' };
+    };
+
+    const badgeStyle = getBadgeStyle(candidate.label);
 
     return (
         <div className="glass-panel" style={{
@@ -175,18 +199,31 @@ const CandidateRow = ({ index }) => {
                     justifyContent: 'center',
                     fontSize: '0.85rem',
                     color: 'var(--text-secondary)'
-                }}>Img</div>
+                }}>
+                    {candidate.name.charAt(0)}
+                </div>
                 <div>
-                    <h4 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '2px' }}>Candidate Name</h4>
-                    <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Senior Python Developer</span>
+                    <h4 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '2px' }}>{candidate.name}</h4>
+                    <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{candidate.role}</span>
                 </div>
             </div>
 
             <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px' }}>
-                <div className={isHighMatch ? "badge badge-success" : "badge badge-warning"}>
-                    {matchScore}% Match
+                <div style={{
+                    padding: '4px 10px',
+                    borderRadius: '12px',
+                    background: badgeStyle.bg,
+                    color: badgeStyle.color,
+                    border: `1px solid ${badgeStyle.border}`,
+                    fontSize: '0.8rem',
+                    fontWeight: '600'
+                }}>
+                    {candidate.score}% Match
                 </div>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Applied 2h ago</div>
+                <div style={{ fontSize: '0.75rem', color: badgeStyle.color, fontWeight: 500 }}>
+                    {candidate.label}
+                </div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Applied {candidate.time}</div>
             </div>
         </div>
     );

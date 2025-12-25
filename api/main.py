@@ -13,11 +13,11 @@ from pathlib import Path
 import sys
 import os
 from datetime import datetime
-from datetime import datetime
 from openai import OpenAI
 from dotenv import load_dotenv
 import os
 import re
+from typing import List, Optional
 
 
 # Load environment variables
@@ -40,15 +40,18 @@ from api.models import (
     AnalyzeResumeOutput,
     HealthResponse,
     ChatInput,
-    ChatInput,
+
     ChatResponse,
     SessionSchema,
-    CreateSessionResponse
+    CreateSessionResponse,
+    RankingInput,
+    RankingOutput
 )
 from api import db_models
 from api.database import engine, get_db
 from sqlalchemy.orm import Session
-from fastapi import Depends
+from fastapi import Depends, Query
+from api.ranking import calculate_ranking_score, SuitabilityLabels
 
 
 # Initialize FastAPI app
@@ -95,7 +98,8 @@ async def load_models():
     print(f"🔹 Device: {device}")
 
     # NER
-    ner_path = Path("d:/Project/models/ner_model_best")
+    base_dir = Path(__file__).parent.parent
+    ner_path = base_dir / "models/ner_model_best"
     if ner_path.exists():
         ner_model = spacy.load(ner_path)
         print("✅ NER loaded")
@@ -103,7 +107,7 @@ async def load_models():
         print("⚠️ NER model not found")
 
     # BERT
-    bert_path = Path("d:/Project/models/bert_classifier_best")
+    bert_path = base_dir / "models/bert_classifier_best"
     if bert_path.exists():
         bert_tokenizer = BertTokenizer.from_pretrained(bert_path)
         bert_model = BertForSequenceClassification.from_pretrained(bert_path)
@@ -113,7 +117,7 @@ async def load_models():
         print("⚠️ BERT model not found")
 
     # Labels
-    label_path = Path("d:/Project/data/label_mapping.pkl")
+    label_path = base_dir / "data/label_mapping.pkl"
     if label_path.exists():
         label_mapping = load_pickle(label_path)
         print(f"✅ Label mapping loaded ({len(label_mapping)})")
@@ -420,6 +424,122 @@ async def interview_chat(chat_input: ChatInput, session_id: int = None, db: Sess
     except Exception as e:
         print(f"OpenRouter Error: {e}")
         raise HTTPException(status_code=500, detail=f"Chat failed: {str(e)}")
+
+
+# -------------------- RANKING & TRANSPARENCY --------------------
+
+@app.post("/rankings/calculate", response_model=RankingOutput)
+def calculate_ranking(input_data: RankingInput, db: Session = Depends(get_db)):
+    """
+    Calculate and persist candidate ranking score
+    """
+    try:
+        # Calculate scores
+        ranking_result = calculate_ranking_score(
+            skill_match_percentage=input_data.skill_match,
+            experience_years=input_data.experience_years,
+            required_experience=input_data.required_experience,
+            role_confidence=input_data.role_confidence,
+            ats_score=input_data.ats_score
+        )
+        
+        # Check if ranking exists
+        existing_ranking = db.query(db_models.CandidateRanking).filter(
+            db_models.CandidateRanking.candidate_id == input_data.candidate_id,
+            db_models.CandidateRanking.job_id == input_data.job_id
+        ).first()
+        
+        if existing_ranking:
+            # Update existing
+            existing_ranking.total_score = ranking_result["score"]
+            existing_ranking.suitability_label = ranking_result["label"]
+            existing_ranking.skill_score = ranking_result["details"]["skill_score"]
+            existing_ranking.experience_score = ranking_result["details"]["experience_score"]
+            existing_ranking.role_confidence_score = ranking_result["details"]["role_confidence_score"]
+            existing_ranking.ats_score = ranking_result["details"]["ats_score"]
+            existing_ranking.missing_skills = ",".join(input_data.missing_skills)
+            existing_ranking.created_at = datetime.utcnow()
+            
+            db.commit()
+            db.refresh(existing_ranking)
+            db_obj = existing_ranking
+        else:
+            # Create new
+            db_obj = db_models.CandidateRanking(
+                candidate_id=input_data.candidate_id,
+                job_id=input_data.job_id,
+                total_score=ranking_result["score"],
+                suitability_label=ranking_result["label"],
+                skill_score=ranking_result["details"]["skill_score"],
+                experience_score=ranking_result["details"]["experience_score"],
+                role_confidence_score=ranking_result["details"]["role_confidence_score"],
+                ats_score=ranking_result["details"]["ats_score"],
+                missing_skills=",".join(input_data.missing_skills)
+            )
+            db.add(db_obj)
+            db.commit()
+            db.refresh(db_obj)
+            
+        return RankingOutput(
+            candidate_id=db_obj.candidate_id,
+            job_id=db_obj.job_id,
+            total_score=db_obj.total_score,
+            suitability_label=db_obj.suitability_label,
+            details={
+                "skill_score": db_obj.skill_score,
+                "experience_score": db_obj.experience_score,
+                "role_confidence_score": db_obj.role_confidence_score,
+                "ats_score": db_obj.ats_score
+            },
+            missing_skills=db_obj.missing_skills.split(",") if db_obj.missing_skills else [],
+            created_at=db_obj.created_at
+        )
+        
+    except Exception as e:
+        print(f"Ranking Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/rankings", response_model=List[RankingOutput])
+def get_rankings(
+    job_id: Optional[str] = None, 
+    min_score: Optional[float] = None,
+    sort_by: str = Query("score_desc", regex="^(score_asc|score_desc|date_desc)$"),
+    db: Session = Depends(get_db)
+):
+    query = db.query(db_models.CandidateRanking)
+    
+    if job_id:
+        query = query.filter(db_models.CandidateRanking.job_id == job_id)
+        
+    if min_score is not None:
+        query = query.filter(db_models.CandidateRanking.total_score >= min_score)
+        
+    if sort_by == "score_desc":
+        query = query.order_by(db_models.CandidateRanking.total_score.desc())
+    elif sort_by == "score_asc":
+        query = query.order_by(db_models.CandidateRanking.total_score.asc())
+    else:
+        query = query.order_by(db_models.CandidateRanking.created_at.desc())
+        
+    results = query.all()
+    
+    return [
+        RankingOutput(
+            candidate_id=r.candidate_id,
+            job_id=r.job_id,
+            total_score=r.total_score,
+            suitability_label=r.suitability_label,
+            details={
+                "skill_score": r.skill_score,
+                "experience_score": r.experience_score,
+                "role_confidence_score": r.role_confidence_score,
+                "ats_score": r.ats_score
+            },
+            missing_skills=r.missing_skills.split(",") if r.missing_skills else [],
+            created_at=r.created_at
+        )
+        for r in results
+    ]
 
 
 # -------------------- ENTRY --------------------

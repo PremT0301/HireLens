@@ -82,10 +82,30 @@ const ApplicantDashboard = () => {
 
     const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop });
 
+    // Derive stats from analysis result
+    const profileStrength = result ? result.analysis.ats_score : 0;
+    const interviewReadiness = result ? (result.analysis.classification.confidence * 100).toFixed(0) : 0;
+    const readinessLabel = interviewReadiness >= 80 ? 'High' : interviewReadiness >= 50 ? 'Medium' : 'Low';
+
     const stats = [
-        { label: 'Profile Strength', value: '82%', icon: <TrendingUp size={24} />, color: 'var(--primary)' },
-        { label: 'Jobs Applied', value: '14', icon: <FileText size={24} />, color: 'var(--success)' },
-        { label: 'Interview Readiness', value: 'High', icon: <CheckCircle size={24} />, color: 'var(--warning)' },
+        {
+            label: 'Profile Strength (ATS)',
+            value: result ? `${profileStrength}%` : '-',
+            icon: <TrendingUp size={24} />,
+            color: profileStrength >= 70 ? 'var(--success)' : 'var(--primary)'
+        },
+        {
+            label: 'Role Fit Confidence',
+            value: result ? `${interviewReadiness}%` : '-',
+            icon: <CheckCircle size={24} />,
+            color: interviewReadiness >= 80 ? 'var(--success)' : 'var(--warning)'
+        },
+        {
+            label: 'Jobs Applied',
+            value: '14',
+            icon: <FileText size={24} />,
+            color: 'var(--text-secondary)'
+        },
     ];
 
     return (
@@ -198,8 +218,8 @@ const ApplicantDashboard = () => {
                         <div>
                             <h4 style={{ color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>Top Skills Detected</h4>
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-                                {result?.analysis?.nerResults?.skills && result.analysis.nerResults.skills.length > 0 ? (
-                                    result.analysis.nerResults.skills.slice(0, 15).map((skill, i) => (
+                                {result?.analysis?.ner_results?.skills && result.analysis.ner_results.skills.length > 0 ? (
+                                    result.analysis.ner_results.skills.slice(0, 15).map((skill, i) => (
                                         <span key={i} style={{
                                             background: 'rgba(255,255,255,0.05)',
                                             border: '1px solid var(--glass-border)',
