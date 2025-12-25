@@ -1,6 +1,8 @@
 import React from 'react';
 import { MapPin, DollarSign, Building } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import JobService from '../../api/jobService';
+import HireLensLoader from '../../components/ui/HireLensLoader';
 
 const Jobs = () => {
     const navigate = useNavigate();
@@ -24,11 +26,25 @@ const Jobs = () => {
         return { label: 'Needs Improvement', color: 'var(--warning)', bg: 'rgba(251, 191, 36, 0.1)' };
     };
 
-    const jobs = [
-        { id: 1, title: "Senior Python Developer", company: "TechFlow AI", location: "Remote", salary: "$120k - $160k", match: 92 },
-        { id: 2, title: "Data Scientist", company: "DataCorp", location: "New York, NY", salary: "$130k - $170k", match: 88 },
-        { id: 3, title: "Machine Learning Engineer", company: "InnovateX", location: "San Francisco, CA", salary: "$150k - $200k", match: 75 },
-    ];
+    const [jobs, setJobs] = React.useState([]);
+    const [loading, setLoading] = React.useState(true);
+
+    React.useEffect(() => {
+        const fetchJobs = async () => {
+            try {
+                const data = await JobService.getAllJobs();
+                setJobs(data);
+            } catch (error) {
+                console.error("Failed to load jobs", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchJobs();
+    }, []);
+
+    if (loading) return <HireLensLoader text="Loading Jobs..." />;
 
     return (
         <div>
@@ -36,10 +52,10 @@ const Jobs = () => {
 
             <div style={{ display: 'grid', gap: '1.5rem' }}>
                 {jobs.map((job) => {
-                    const suitability = getSuitability(job.match);
+                    const suitability = getSuitability(job.match || 0); // Default 0 if not calculated yet
 
                     return (
-                        <div key={job.id} className="glass-panel" style={{ padding: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+                        <div key={job.jobId} className="glass-panel" style={{ padding: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
                             <div style={{ flex: 1, minWidth: '250px' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '0.5rem' }}>
                                     <h3 style={{ fontSize: '1.3rem' }}>{job.title}</h3>
@@ -51,15 +67,17 @@ const Jobs = () => {
                                         color: suitability.color,
                                         fontSize: '0.85rem',
                                         fontWeight: '600',
-                                        border: `1px solid ${suitability.color}`
+                                        border: `1px solid ${suitability.color}`,
+                                        display: job.match ? 'inline-block' : 'none'
                                     }}>
                                         {suitability.label}
                                     </span>
                                 </div>
                                 <div style={{ display: 'flex', gap: '1.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Building size={16} /> {job.company}</span>
-                                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><MapPin size={16} /> {job.location}</span>
-                                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><DollarSign size={16} /> {job.salary}</span>
+                                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Building size={16} /> {job.companyName}</span>
+                                    {/* Location is not in JobDto yet, hardcode or remove */}
+                                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><MapPin size={16} /> Remote</span>
+                                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><DollarSign size={16} /> ${job.salaryMin.toLocaleString()} - ${job.salaryMax.toLocaleString()}</span>
                                 </div>
                             </div>
 

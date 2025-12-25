@@ -5,29 +5,31 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Modal from '../../components/ui/Modal';
 import ScheduleForm from '../../components/forms/ScheduleForm';
 import MessageForm from '../../components/forms/MessageForm';
+import ApplicationService from '../../api/applicationService';
+import HireLensLoader from '../../components/ui/HireLensLoader';
 
 const TalentPool = () => {
     const [activeCandidate, setActiveCandidate] = useState(null); // For Chart Overlay
     const [selectedCandidate, setSelectedCandidate] = useState(null); // For Action Modal
     const [modalView, setModalView] = useState('profile'); // 'profile', 'schedule', 'message'
 
-    const candidates = [
-        {
-            id: 1, name: 'Alex Johnson', role: 'Senior Python Developer', score: 94,
-            skills: { Python: 90, AWS: 85, React: 60, SQL: 80, Docker: 75 },
-            status: 'Pending Review'
-        },
-        {
-            id: 2, name: 'Sarah Chen', role: 'Data Scientist', score: 88,
-            skills: { Python: 95, AWS: 70, React: 40, SQL: 90, Docker: 60 },
-            status: 'Interviewing'
-        },
-        {
-            id: 3, name: 'Mike Smith', role: 'Full Stack Engineer', score: 82,
-            skills: { Python: 70, AWS: 60, React: 90, SQL: 75, Docker: 80 },
-            status: 'Rejected'
-        },
-    ];
+    const [candidates, setCandidates] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    React.useEffect(() => {
+        const fetchTalentPool = async () => {
+            try {
+                // Import Service inside effect or at top. Assuming imported at top.
+                const data = await ApplicationService.getTalentPool();
+                setCandidates(data);
+            } catch (error) {
+                console.error("Failed to load talent pool", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchTalentPool();
+    }, []);
 
     const getData = (candidate) => {
         if (!candidate) return [];
@@ -63,6 +65,8 @@ const TalentPool = () => {
     return (
         <div style={{ position: 'relative', minHeight: '100vh', paddingBottom: '300px' }}>
             <h1 className="title-lg" style={{ marginBottom: '2rem' }}>Talent Pool</h1>
+
+            {loading && <HireLensLoader text="Loading Candidates..." />}
 
             {/* Filters */}
             <div className="glass-panel" style={{ padding: '1.5rem', marginBottom: '2rem', display: 'flex', gap: '1rem' }}>
@@ -237,19 +241,19 @@ const TalentPool = () => {
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
                                     <div className="glass-panel" style={{ padding: '1rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
                                         <Mail size={18} className="text-gray-400" />
-                                        <span>{selectedCandidate.name.toLowerCase().replace(' ', '.')}@example.com</span>
+                                        <span>{selectedCandidate.email}</span>
                                     </div>
                                     <div className="glass-panel" style={{ padding: '1rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
                                         <Phone size={18} className="text-gray-400" />
-                                        <span>+1 (555) 000-0000</span>
+                                        <span>{selectedCandidate.phone || 'N/A'}</span>
                                     </div>
                                     <div className="glass-panel" style={{ padding: '1rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
                                         <Briefcase size={18} className="text-gray-400" />
-                                        <span>5 Years Experience</span>
+                                        <span>{selectedCandidate.experience} Years Experience</span>
                                     </div>
                                     <div className="glass-panel" style={{ padding: '1rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
                                         <Calendar size={18} className="text-gray-400" />
-                                        <span>Available Immediately</span>
+                                        <span>Applied Recently</span>
                                     </div>
                                 </div>
 

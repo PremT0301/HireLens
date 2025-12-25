@@ -14,6 +14,7 @@ namespace SmartHireAI.Backend.Data
         public DbSet<Recruiter> Recruiters { get; set; }
         public DbSet<Resume> Resumes { get; set; }
         public DbSet<JobDescription> JobDescriptions { get; set; }
+        public DbSet<JobApplication> JobApplications { get; set; }
         public DbSet<ResumeEmbedding> ResumeEmbeddings { get; set; }
         public DbSet<JobEmbedding> JobEmbeddings { get; set; }
         public DbSet<ResumeEntity> ResumeEntities { get; set; }

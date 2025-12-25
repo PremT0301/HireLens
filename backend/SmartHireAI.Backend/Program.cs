@@ -66,7 +66,15 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+
+// Seed Database
+using (var scope = app.Services.CreateScope())
+{
+    await DbSeeder.Seed(scope.ServiceProvider);
+}
+
 app.UseCors();
+
 
 app.UseStaticFiles();
 

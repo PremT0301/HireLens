@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Briefcase, MapPin, DollarSign, FileText, CheckCircle, Plus, X, ChevronLeft } from 'lucide-react';
 import { useToast } from '../../context/ToastContext';
 import JobService from '../../api/jobService';
@@ -8,6 +8,8 @@ const CreateJob = () => {
     const { addToast } = useToast();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const navigate = useNavigate();
+    const { jobId } = useParams();
+    const isEditMode = !!jobId;
 
     const [formData, setFormData] = useState({
         title: '',
@@ -22,7 +24,39 @@ const CreateJob = () => {
         requirements: []
     });
 
+
+
     const [newRequirement, setNewRequirement] = useState('');
+    const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        if (isEditMode) {
+            const fetchJob = async () => {
+                setLoading(true);
+                try {
+                    const job = await JobService.getJobById(jobId);
+                    setFormData({
+                        title: job.title,
+                        department: job.department || '',
+                        type: job.employmentType || 'Full-time',
+                        locationType: job.locationType || 'Remote',
+                        location: job.location || '',
+                        salaryMin: job.salaryMin || '',
+                        salaryMax: job.salaryMax || '',
+                        experienceRequired: job.experienceRequired,
+                        description: job.description || '',
+                        requirements: job.requiredSkills ? job.requiredSkills.split(',').map(s => s.trim()) : []
+                    });
+                } catch (error) {
+                    console.error("Failed to load job", error);
+                    addToast("Failed to load job details", 'error');
+                } finally {
+                    setLoading(false);
+                }
+            };
+            fetchJob();
+        }
+    }, [isEditMode, jobId]);
 
     const handleAddRequirement = (e) => {
         e.preventDefault();
@@ -50,12 +84,24 @@ const CreateJob = () => {
                 requiredSkills: formData.requirements.join(", "),
                 experienceRequired: Number(formData.experienceRequired),
                 salaryMin: Number(formData.salaryMin),
-                salaryMax: Number(formData.salaryMax)
+                salaryMax: Number(formData.salaryMax),
+                description: formData.description,
+                department: formData.department,
+                employmentType: formData.type,
+                location: formData.location,
+                locationType: formData.locationType
             };
 
-            await JobService.createJob(jobDto);
 
-            addToast('Job posting created successfully!', 'success');
+
+            if (isEditMode) {
+                await JobService.updateJob(jobId, jobDto);
+                addToast('Job posting updated successfully!', 'success');
+            } else {
+                await JobService.createJob(jobDto);
+                addToast('Job posting created successfully!', 'success');
+            }
+
             navigate('/recruiter/dashboard');
 
         } catch (error) {
@@ -78,8 +124,8 @@ const CreateJob = () => {
             </button>
 
             <div style={{ marginBottom: '3rem' }}>
-                <h1 className="title-lg" style={{ marginBottom: '0.5rem' }}>Post a New Job</h1>
-                <p className="text-subtle">Create a detailed job listing to attract the best talent.</p>
+                <h1 className="title-lg" style={{ marginBottom: '0.5rem' }}>{isEditMode ? 'Edit Job Posting' : 'Post a New Job'}</h1>
+                <p className="text-subtle">{isEditMode ? 'Update the details of your job listing.' : 'Create a detailed job listing to attract the best talent.'}</p>
             </div>
 
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
@@ -307,7 +353,7 @@ const CreateJob = () => {
                         style={{ padding: '1rem 3rem', opacity: isSubmitting ? 0.7 : 1 }}
                         disabled={isSubmitting}
                     >
-                        {isSubmitting ? 'Publishing...' : 'Publish Job'}
+                        {isSubmitting ? 'Saving...' : (isEditMode ? 'Update Job' : 'Publish Job')}
                     </button>
                 </div>
 

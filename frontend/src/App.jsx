@@ -18,6 +18,7 @@ import JobPostings from './pages/recruiter/JobPostings';
 import TalentPool from './pages/recruiter/TalentPool';
 import Analytics from './pages/recruiter/Analytics';
 import CreateJob from './pages/recruiter/CreateJob';
+import JobDetails from './pages/JobDetails';
 import ProtectedRoute from './components/ProtectedRoute';
 import PublicOnlyRoute from './components/PublicOnlyRoute';
 
@@ -58,7 +59,9 @@ const AnimatedRoutes = () => {
           <Route index element={<Navigate to="/recruiter/dashboard" replace />} />
           <Route path="dashboard" element={<RecruiterDashboard />} />
           <Route path="jobs" element={<JobPostings />} />
+          <Route path="jobs/:jobId" element={<JobDetails />} />
           <Route path="create-job" element={<CreateJob />} />
+          <Route path="edit-job/:jobId" element={<CreateJob />} />
           <Route path="talent-pool" element={<TalentPool />} />
           <Route path="analytics" element={<Analytics />} />
         </Route>

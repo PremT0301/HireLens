@@ -1,9 +1,36 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Users, FileText, TrendingUp, Search, PlusCircle, ArrowUpRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import ThreeDTiltCard from '../../components/ui/ThreeDTiltCard';
+import ApplicationService from '../../api/applicationService';
 
 const RecruiterDashboard = () => {
+    const [stats, setStats] = useState({
+        TotalCandidates: 0,
+        ActiveJobs: 0,
+        PlacementRate: '0%',
+        Trend: '+0%'
+    });
+    const [recentApplications, setRecentApplications] = useState([]);
+    const [pipeline, setPipeline] = useState({ Screening: 0, Interview: 0, Offer: 0 });
+
+    useEffect(() => {
+        const loadDashboardData = async () => {
+            try {
+                const statsData = await ApplicationService.getRecruiterStats();
+                setStats(statsData);
+
+                const recentData = await ApplicationService.getRecentApplications();
+                setRecentApplications(recentData);
+
+                const pipelineData = await ApplicationService.getPipelineHealth();
+                setPipeline(pipelineData);
+            } catch (error) {
+                console.error("Failed to load dashboard data", error);
+            }
+        };
+        loadDashboardData();
+    }, []);
     return (
         <div className="container page-transition" style={{ paddingTop: '50px', paddingBottom: '4rem' }}>
 
@@ -25,7 +52,7 @@ const RecruiterDashboard = () => {
                         icon={<Users size={24} />}
                         title="Total Candidates"
                         subtitle="Total received candidates"
-                        value="1,248"
+                        value={stats.TotalCandidates}
                         trend="+12%"
                         color="var(--primary)"
                     />
@@ -35,7 +62,7 @@ const RecruiterDashboard = () => {
                         icon={<FileText size={24} />}
                         title="Active Jobs"
                         subtitle="Currently open roles"
-                        value="8"
+                        value={stats.ActiveJobs}
                         trend="+2"
                         color="var(--secondary)"
                     />
@@ -45,8 +72,8 @@ const RecruiterDashboard = () => {
                         icon={<TrendingUp size={24} />}
                         title="Placement Rate"
                         subtitle="Candidates hired this month"
-                        value="64%"
-                        trend="+5%"
+                        value={stats.PlacementRate}
+                        trend={stats.Trend}
                         color="var(--success)"
                     />
                 </ThreeDTiltCard>
@@ -72,12 +99,7 @@ const RecruiterDashboard = () => {
                     </div>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                        {[
-                            { name: "John Doe", role: "Senior Python Developer", score: 92, label: "Highly Suitable", time: "2h ago" },
-                            { name: "Jane Smith", role: "Data Scientist", score: 88, label: "Highly Suitable", time: "5h ago" },
-                            { name: "Mike Johnson", role: "ML Engineer", score: 75, label: "Suitable", time: "1d ago" },
-                            { name: "Sarah Williams", role: "Frontend Dev", score: 55, label: "Needs Improvement", time: "2d ago" },
-                        ].map((candidate, i) => (
+                        {recentApplications.map((candidate, i) => (
                             <CandidateRow key={i} candidate={candidate} />
                         ))}
                     </div>
@@ -102,26 +124,26 @@ const RecruiterDashboard = () => {
                         </div>
                     </div>
 
-                    {/* Funnel Preview (Mock) */}
+                    {/* Pipeline Health (Dynamic) */}
                     <div className="glass-panel" style={{ padding: '2rem' }}>
                         <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '1.5rem' }}>Pipeline Health</h3>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
                             <span className="text-subtle" style={{ fontSize: '0.9rem' }}>Screening</span>
-                            <span style={{ fontWeight: 600 }}>12</span>
+                            <span style={{ fontWeight: 600 }}>{pipeline.Screening}</span>
                         </div>
-                        <ProgressBar value={80} color="var(--primary)" />
+                        <ProgressBar value={pipeline.Screening > 0 ? (pipeline.Screening / (pipeline.Screening + pipeline.Interview + pipeline.Offer) * 100) : 0} color="var(--primary)" />
 
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1.5rem', marginBottom: '0.5rem' }}>
                             <span className="text-subtle" style={{ fontSize: '0.9rem' }}>Interview</span>
-                            <span style={{ fontWeight: 600 }}>5</span>
+                            <span style={{ fontWeight: 600 }}>{pipeline.Interview}</span>
                         </div>
-                        <ProgressBar value={40} color="var(--secondary)" />
+                        <ProgressBar value={pipeline.Interview > 0 ? (pipeline.Interview / (pipeline.Screening + pipeline.Interview + pipeline.Offer) * 100) : 0} color="var(--secondary)" />
 
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1.5rem', marginBottom: '0.5rem' }}>
                             <span className="text-subtle" style={{ fontSize: '0.9rem' }}>Offer</span>
-                            <span style={{ fontWeight: 600 }}>2</span>
+                            <span style={{ fontWeight: 600 }}>{pipeline.Offer}</span>
                         </div>
-                        <ProgressBar value={20} color="var(--success)" />
+                        <ProgressBar value={pipeline.Offer > 0 ? (pipeline.Offer / (pipeline.Screening + pipeline.Interview + pipeline.Offer) * 100) : 0} color="var(--success)" />
                     </div>
 
                 </div>

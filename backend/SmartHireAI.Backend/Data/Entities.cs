@@ -195,6 +195,30 @@ namespace SmartHireAI.Backend.Data
         [ForeignKey("RecruiterId")]
         public Recruiter Recruiter { get; set; } = null!;
 
+        [Required]
+        [MaxLength(20)]
+        [Column("status")]
+        public string Status { get; set; } = "Active"; // Active, Closed, Draft
+
+        [Column("description")]
+        public string? Description { get; set; }
+
+        [MaxLength(100)]
+        [Column("department")]
+        public string? Department { get; set; }
+
+        [MaxLength(50)]
+        [Column("employment_type")]
+        public string? EmploymentType { get; set; } // Full-time, Part-time, Contract
+
+        [MaxLength(100)]
+        [Column("location")]
+        public string? Location { get; set; }
+
+        [MaxLength(50)]
+        [Column("location_type")]
+        public string? LocationType { get; set; } // Remote, On-site, Hybrid
+
         public JobEmbedding? Embedding { get; set; }
 
         public ICollection<MatchResult> Matches { get; set; } = new List<MatchResult>();
@@ -281,5 +305,35 @@ namespace SmartHireAI.Backend.Data
 
         [ForeignKey("ResumeId")]
         public Resume Resume { get; set; } = null!;
+    }
+    [Table("job_applications")]
+    public class JobApplication
+    {
+        [Key]
+        [Column("application_id")]
+        public Guid ApplicationId { get; set; }
+
+        [Column("job_id")]
+        public Guid JobId { get; set; }
+
+        [Column("applicant_id")]
+        public Guid ApplicantId { get; set; }
+
+        [Required]
+        [MaxLength(50)]
+        [Column("status")]
+        public string Status { get; set; } = "Applied"; // Applied, UnderReview, InterviewScheduled, Offer, Rejected
+
+        [Column("applied_at")]
+        public DateTime AppliedAt { get; set; } = DateTime.UtcNow;
+
+        [Column("ats_score")]
+        public float AtsScore { get; set; }
+
+        [ForeignKey("JobId")]
+        public JobDescription JobDescription { get; set; } = null!;
+
+        [ForeignKey("ApplicantId")]
+        public Applicant Applicant { get; set; } = null!;
     }
 }

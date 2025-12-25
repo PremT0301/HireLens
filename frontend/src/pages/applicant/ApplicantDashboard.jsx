@@ -12,6 +12,7 @@ import NewsSection from '../../components/NewsSection';
 import ThreeDTiltCard from '../../components/ui/ThreeDTiltCard';
 import ATSScoreDisplay from '../../components/applicant/ATSScoreDisplay';
 import HireLensLoader from '../../components/ui/HireLensLoader';
+import ApplicationService from '../../api/applicationService';
 
 const ApplicantDashboard = () => {
     const navigate = useNavigate();
@@ -40,6 +41,7 @@ const ApplicantDashboard = () => {
     // ... inside useDropzone onDrop ...
     // replace setResult(data) with handleUploadSuccess(data)
     const [profile, setProfile] = useState(null);
+    const [applications, setApplications] = useState([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -53,7 +55,18 @@ const ApplicantDashboard = () => {
                 setLoading(false);
             }
         };
+
+        const loadApplications = async () => {
+            try {
+                const data = await ApplicationService.getMyApplications();
+                setApplications(data);
+            } catch (error) {
+                console.error("Failed to load applications", error);
+            }
+        };
+
         loadProfile();
+        loadApplications();
     }, []);
 
     const onDrop = useCallback(async (acceptedFiles) => {
@@ -103,7 +116,7 @@ const ApplicantDashboard = () => {
         },
         {
             label: 'Jobs Applied',
-            value: '14',
+            value: applications.length || 0,
             icon: <FileText size={24} />,
             color: 'var(--text-secondary)'
         },
@@ -304,29 +317,33 @@ const ApplicantDashboard = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {[
-                                { title: 'Senior React Developer', company: 'TechNova', date: '2025-12-20', status: 'Under Review' },
-                                { title: 'Full Stack Engineer', company: 'InnovateX', date: '2025-12-18', status: 'Interview Scheduled' },
-                                { title: 'Frontend Specialist', company: 'WebFlows', date: '2025-12-15', status: 'Applied' },
-                            ].map((job, i) => (
-                                <tr key={i} style={{ borderBottom: i < 2 ? '1px solid var(--glass-border)' : 'none' }}>
-                                    <td style={{ padding: '1rem', fontWeight: '500' }}>{job.title}</td>
-                                    <td style={{ padding: '1rem', color: 'var(--text-secondary)' }}>{job.company}</td>
-                                    <td style={{ padding: '1rem', color: 'var(--text-secondary)' }}>{job.date}</td>
-                                    <td style={{ padding: '1rem' }}>
-                                        <span style={{
-                                            padding: '4px 12px',
-                                            borderRadius: '20px',
-                                            fontSize: '0.85rem',
-                                            background: job.status === 'Interview Scheduled' ? 'rgba(76, 175, 80, 0.1)' : 'rgba(59, 130, 246, 0.1)',
-                                            color: job.status === 'Interview Scheduled' ? 'var(--success)' : 'var(--primary)',
-                                            border: `1px solid ${job.status === 'Interview Scheduled' ? 'rgba(76, 175, 80, 0.3)' : 'rgba(59, 130, 246, 0.3)'}`
-                                        }}>
-                                            {job.status}
-                                        </span>
+                            {applications.length > 0 ? (
+                                applications.slice(0, 5).map((app, i) => (
+                                    <tr key={i} style={{ borderBottom: i < applications.length - 1 ? '1px solid var(--glass-border)' : 'none' }}>
+                                        <td style={{ padding: '1rem', fontWeight: '500' }}>{app.jobTitle}</td>
+                                        <td style={{ padding: '1rem', color: 'var(--text-secondary)' }}>{app.companyName}</td>
+                                        <td style={{ padding: '1rem', color: 'var(--text-secondary)' }}>{app.appliedDate}</td>
+                                        <td style={{ padding: '1rem' }}>
+                                            <span style={{
+                                                padding: '4px 12px',
+                                                borderRadius: '20px',
+                                                fontSize: '0.85rem',
+                                                background: app.status === 'Interview Scheduled' ? 'rgba(76, 175, 80, 0.1)' : 'rgba(59, 130, 246, 0.1)',
+                                                color: app.status === 'Interview Scheduled' ? 'var(--success)' : 'var(--primary)',
+                                                border: `1px solid ${app.status === 'Interview Scheduled' ? 'rgba(76, 175, 80, 0.3)' : 'rgba(59, 130, 246, 0.3)'}`
+                                            }}>
+                                                {app.status}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr>
+                                    <td colSpan="4" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                                        No applications found. Upload your resume and start applying!
                                     </td>
                                 </tr>
-                            ))}
+                            )}
                         </tbody>
                     </table>
                 </div>
