@@ -1,6 +1,6 @@
-# SmartHireAI - The Intelligent Recruitment Ecosystem
+# HireLens AI - The Intelligent Recruitment Ecosystem
 
-**SmartHireAI** is a comprehensive, full-stack recruitment platform driven by advanced machine learning. It bridges the gap between talent and opportunity by automating resume screening, role validation, and skill-gap analysis. 
+**HireLens AI** is a comprehensive, full-stack recruitment platform driven by advanced machine learning. It bridges the gap between talent and opportunity by automating resume screening, role validation, and skill-gap analysis. 
 
 This document serves as the **complete manual** for the project, covering its architecture, installation, technical implementation, and a detailed guide to every functionality.
 
@@ -23,7 +23,7 @@ This document serves as the **complete manual** for the project, covering its ar
 
 ## 🚀 Project Overview
 
-**SmartHireAI** solves the "black box" problem of hiring. 
+**HireLens AI** solves the "black box" problem of hiring. 
 - **For Candidates**: It doesn't just say "rejected"; it explains *why* (Gap Analysis) and *how* to improve (Recommendations).
 - **For Recruiters**: It replaces keyword matching with semantic understanding, identifying candidates who have the *right skills* even if they use different terminology.
 
@@ -95,7 +95,7 @@ Designed to streamline the hiring workflow.
 
 ## 🧠 Machine Learning Pipeline
 
-The "Brain" of SmartHireAI is a custom-built Python service.
+The "Brain" of HireLens AI is a custom-built Python service.
 
 ### 1. Named Entity Recognition (NER) model
 *   **Purpose**: To read a resume like a human recruiter would.
@@ -230,4 +230,4 @@ D:/HireLens/
 
 ---
 
-**SmartHireAI** - bridging the gap between talent and opportunity.
+**HireLens AI** - bridging the gap between talent and opportunity.

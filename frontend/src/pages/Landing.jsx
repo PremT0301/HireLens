@@ -94,7 +94,7 @@ const Landing = () => {
             </section>
 
             {/* ================= VALUE PROPOSITION ================= */}
-            <Section title="Why SmartHireAI">
+            <Section title="Why HireLens AI">
                 <Grid>
                     <ThreeDTiltCard>
                         <FeatureCard

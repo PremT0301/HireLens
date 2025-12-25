@@ -111,7 +111,7 @@ const Navbar = () => {
                         fontWeight: '700',
                         color: 'var(--text-primary)',
                         letterSpacing: '-0.02em'
-                    }}>SmartHireAI</span>
+                    }}>HireLens AI</span>
                 </Link>
 
                 {/* Desktop Navigation */}
