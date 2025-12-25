@@ -1,312 +1,201 @@
-import React, { useState, useEffect } from 'react';
-import { Users, FileText, TrendingUp, Clock, MoreVertical, Briefcase, Mail, Phone, Calendar, Building } from 'lucide-react';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import Modal from '../../components/ui/Modal';
-import { motion } from 'framer-motion';
-import ScheduleForm from '../../components/forms/ScheduleForm';
-import MessageForm from '../../components/forms/MessageForm';
-import JobService from '../../api/jobService';
-import NewsSection from '../../components/NewsSection';
-import AuthService from '../../api/authService';
-import ProfileService from '../../api/profileService';
-import { useToast } from '../../context/ToastContext';
+import React from 'react';
+import { Users, FileText, TrendingUp, Search, PlusCircle, ArrowUpRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import ThreeDTiltCard from '../../components/ui/ThreeDTiltCard';
 
 const RecruiterDashboard = () => {
-    const [selectedCandidate, setSelectedCandidate] = useState(null);
-    const [modalView, setModalView] = useState('profile'); // 'profile', 'schedule', 'message'
-
-    // Profile State
-    const [showEditProfile, setShowEditProfile] = useState(false);
-    const [recruiterProfile, setRecruiterProfile] = useState({
-        companyName: '',
-        companyLogo: '',
-        designation: ''
-    });
-    const { success, error: toastError } = useToast();
-
-    // Real Data State
-    const [activeJobCount, setActiveJobCount] = useState(0);
-    const [recruiterName, setRecruiterName] = useState('Recruiter');
-    const [loading, setLoading] = useState(false);
-
-    useEffect(() => {
-        const fetchDashboardData = async () => {
-            try {
-                const user = AuthService.getCurrentUser();
-                if (user && user.fullName) {
-                    setRecruiterName(user.fullName);
-                }
-
-                // Fetch extended profile
-                try {
-                    const profile = await ProfileService.getRecruiterProfile();
-                    if (profile) {
-                        setRecruiterProfile({
-                            companyName: profile.companyName || '',
-                            companyLogo: profile.companyLogo || '',
-                            designation: profile.designation || ''
-                        });
-                        // Also update name if returned from profile as source of truth
-                        if (profile.fullName) setRecruiterName(profile.fullName);
-                    }
-                } catch (err) {
-                    console.log("No recruiter profile found yet or error", err);
-                }
-
-                const jobs = await JobService.getAllJobs();
-                setActiveJobCount(jobs.length);
-            } catch (error) {
-                console.error("Failed to load dashboard data", error);
-            }
-        };
-
-        fetchDashboardData();
-    }, []);
-
-    const handleSaveProfile = async (formData) => {
-        setLoading(true);
-        try {
-            await ProfileService.updateRecruiterProfile(formData);
-            setRecruiterProfile(formData);
-            success('Profile updated successfully');
-            setShowEditProfile(false);
-        } catch (error) {
-            toastError('Failed to update profile');
-            console.error(error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleCloseModal = () => {
-        setSelectedCandidate(null);
-        setModalView('profile'); // Reset view on close
-    };
-
-    const data = [
-        { name: 'Mon', applicants: 40, hired: 24 },
-        { name: 'Tue', applicants: 30, hired: 13 },
-        { name: 'Wed', applicants: 20, hired: 58 },
-        { name: 'Thu', applicants: 27, hired: 39 },
-        { name: 'Fri', applicants: 18, hired: 48 },
-        { name: 'Sat', applicants: 23, hired: 38 },
-        { name: 'Sun', applicants: 34, hired: 43 },
-    ];
-
-    const recentActivity = [
-        { id: 1, role: 'Senior Developer', name: 'Alex Johnson', time: '2h ago', status: 'Pending Review' },
-        { id: 2, role: 'UX Designer', name: 'Sarah Wilson', time: '4h ago', status: 'Interviewing' },
-        { id: 3, role: 'Product Manager', name: 'Mike Brown', time: '5h ago', status: 'Rejected' },
-    ];
-
     return (
-        <div className="page-transition">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2rem' }}>
+        <div className="container page-transition" style={{ paddingTop: '50px', paddingBottom: '4rem' }}>
+
+            {/* Header */}
+            <div style={{ marginBottom: '3rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
                 <div>
-                    <h1 className="gradient-text" style={{ fontSize: '2rem', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        Welcome back, {recruiterName}
-                        {recruiterProfile.companyLogo && (
-                            <img src={recruiterProfile.companyLogo.startsWith('/') ? `http://localhost:5033${recruiterProfile.companyLogo}` : recruiterProfile.companyLogo} alt="Logo" style={{ width: '40px', height: '40px', borderRadius: '8px', objectFit: 'cover' }} />
-                        )}
-                    </h1>
-                    <div style={{ color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        {recruiterProfile.designation && <span style={{ fontWeight: '500', color: 'var(--text-primary)' }}>{recruiterProfile.designation}</span>}
-                        {recruiterProfile.designation && recruiterProfile.companyName && <span>at</span>}
-                        {recruiterProfile.companyName && (
-                            <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                <Building size={14} /> {recruiterProfile.companyName}
-                            </span>
-                        )}
-                        {(!recruiterProfile.designation && !recruiterProfile.companyName) && <span>Track your hiring pipeline and market insights</span>}
-                    </div>
+                    <h1 className="title-lg" style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>Recruiter Dashboard</h1>
+                    <p className="text-subtle">Overview of your hiring pipeline and active roles.</p>
                 </div>
+                <Link to="/recruiter/create-job" className="btn-primary">
+                    <PlusCircle size={18} /> Post New Job
+                </Link>
             </div>
 
-            {/* Stats */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
-                <div className="glass-panel hover-lift" style={{ padding: '1.5rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
-                        <div style={{ padding: '10px', borderRadius: '10px', background: 'var(--bg-secondary)', color: 'var(--accent-primary)' }}><Users size={20} /></div>
-                    </div>
-                    <div style={{ fontSize: '1.8rem', fontWeight: 'bold' }}>1,248</div>
-                    <div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>Total Candidates</div>
-                </div>
-
-                <div className="glass-panel hover-lift" style={{ padding: '1.5rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
-                        <div style={{ padding: '10px', borderRadius: '10px', background: 'var(--bg-secondary)', color: 'var(--accent-secondary)' }}><FileText size={20} /></div>
-                    </div>
-                    <div style={{ fontSize: '1.8rem', fontWeight: 'bold' }}>{activeJobCount}</div>
-                    <div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>Active Jobs</div>
-                </div>
-
-                <div className="glass-panel hover-lift" style={{ padding: '1.5rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
-                        <div style={{ padding: '10px', borderRadius: '10px', background: 'var(--bg-secondary)', color: '#34d399' }}><TrendingUp size={20} /></div>
-                    </div>
-                    <div style={{ fontSize: '1.8rem', fontWeight: 'bold' }}>64%</div>
-                    <div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>Placement Rate</div>
-                </div>
-
-                <div className="glass-panel hover-lift" style={{ padding: '1.5rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
-                        <div style={{ padding: '10px', borderRadius: '10px', background: 'var(--bg-secondary)', color: '#fbbf24' }}><Clock size={20} /></div>
-                    </div>
-                    <div style={{ fontSize: '1.8rem', fontWeight: 'bold' }}>14d</div>
-                    <div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>Time to Fill</div>
-                </div>
+            {/* Stats Grid */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', marginBottom: '3rem' }}>
+                <ThreeDTiltCard>
+                    <StatCard
+                        icon={<Users size={24} />}
+                        title="Total Candidates"
+                        subtitle="Total received candidates"
+                        value="1,248"
+                        trend="+12%"
+                        color="var(--primary)"
+                    />
+                </ThreeDTiltCard>
+                <ThreeDTiltCard>
+                    <StatCard
+                        icon={<FileText size={24} />}
+                        title="Active Jobs"
+                        subtitle="Currently open roles"
+                        value="8"
+                        trend="+2"
+                        color="var(--secondary)"
+                    />
+                </ThreeDTiltCard>
+                <ThreeDTiltCard>
+                    <StatCard
+                        icon={<TrendingUp size={24} />}
+                        title="Placement Rate"
+                        subtitle="Candidates hired this month"
+                        value="64%"
+                        trend="+5%"
+                        color="var(--success)"
+                    />
+                </ThreeDTiltCard>
             </div>
 
-            {/* Charts Section */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '2rem', marginBottom: '3rem' }}>
-                <div className="glass-panel" style={{ padding: '2rem', minHeight: '400px' }}>
-                    <h3 style={{ marginBottom: '2rem' }}>Application Trends</h3>
-                    <ResponsiveContainer width="100%" height={300}>
-                        <AreaChart data={data}>
-                            <defs>
-                                <linearGradient id="colorApplicants" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor="#8884d8" stopOpacity={0.8} />
-                                    <stop offset="95%" stopColor="#8884d8" stopOpacity={0} />
-                                </linearGradient>
-                            </defs>
-                            <CartesianGrid strokeDasharray="3 3" stroke="var(--glass-border)" vertical={false} />
-                            <XAxis dataKey="name" stroke="var(--text-secondary)" tick={{ fill: 'var(--text-secondary)' }} axisLine={false} tickLine={false} />
-                            <YAxis stroke="var(--text-secondary)" tick={{ fill: 'var(--text-secondary)' }} axisLine={false} tickLine={false} />
-                            <Tooltip
-                                contentStyle={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--glass-border)', borderRadius: '8px' }}
-                                itemStyle={{ color: 'var(--text-primary)' }}
-                            />
-                            <Area type="monotone" dataKey="applicants" stroke="#8884d8" fillOpacity={1} fill="url(#colorApplicants)" strokeWidth={3} />
-                        </AreaChart>
-                    </ResponsiveContainer>
-                </div>
+            {/* Main Content Layout */}
+            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '2rem' }}>
 
-                <div className="glass-panel" style={{ padding: '2rem' }}>
-                    <h3 style={{ marginBottom: '1rem' }}>Recent Activity</h3>
+                {/* Recent Applications Column */}
+                <div className="glass-panel" style={{ padding: '2rem', minHeight: '500px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                        <h3 style={{ fontSize: '1.25rem', fontWeight: 600 }}>Recent Applications</h3>
+                        <Link to="/recruiter/talent-pool" className="btn-ghost" style={{ fontSize: '0.9rem' }}>
+                            View All <ArrowUpRight size={16} />
+                        </Link>
+                    </div>
+
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                        {recentActivity.map(activity => (
-                            <motion.div
-                                key={activity.id}
-                                whileHover={{ scale: 1.02, backgroundColor: 'var(--bg-secondary)' }}
-                                style={{
-                                    padding: '1rem',
-                                    borderRadius: '12px',
-                                    border: '1px solid var(--glass-border)',
-                                    display: 'flex',
-                                    justifyContent: 'space-between',
-                                    alignItems: 'center',
-                                    transition: 'all 0.2s',
-                                    cursor: 'pointer'
-                                }}
-                                onClick={() => setSelectedCandidate(activity)}
-                            >
-                                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                                    <div style={{
-                                        width: '40px', height: '40px', borderRadius: '50%',
-                                        background: 'linear-gradient(135deg, var(--accent-primary), var(--accent-secondary))',
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                        color: 'white', fontWeight: 'bold'
-                                    }}>
-                                        {activity.name[0]}
-                                    </div>
-                                    <div>
-                                        <h4 style={{ fontSize: '0.95rem', marginBottom: '4px' }}>{activity.name}</h4>
-                                        <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                                            Applied for <span style={{ color: 'var(--primary)' }}>{activity.role}</span> • {activity.time}
-                                        </p>
-                                    </div>
-                                </div>
-                                <button className="btn-ghost" style={{ fontSize: '0.8rem' }}>Review</button>
-                            </motion.div>
+                        {[1, 2, 3, 4, 5].map((i) => (
+                            <CandidateRow key={i} index={i} />
                         ))}
                     </div>
                 </div>
-            </div>
 
-            {/* Candidate Modal */}
-            <Modal
-                isOpen={!!selectedCandidate}
-                onClose={handleCloseModal}
-                title={modalView === 'profile' ? "Candidate Profile" : modalView === 'schedule' ? "Schedule Interview" : "Send Message"}
-            >
-                {selectedCandidate && (
-                    <div>
-                        {modalView === 'profile' && (
-                            <>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', marginBottom: '2rem' }}>
-                                    <div style={{
-                                        width: '80px', height: '80px', borderRadius: '50%',
-                                        background: 'linear-gradient(135deg, var(--accent-primary), var(--accent-secondary))',
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                        fontSize: '2rem', color: 'white', fontWeight: 'bold'
-                                    }}>
-                                        {selectedCandidate.name[0]}
-                                    </div>
-                                    <div>
-                                        <h2 style={{ fontSize: '1.8rem', marginBottom: '0.5rem' }}>{selectedCandidate.name}</h2>
-                                        <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>{selectedCandidate.role}</p>
-                                    </div>
-                                    <span style={{
-                                        marginLeft: 'auto',
-                                        padding: '6px 12px',
-                                        borderRadius: '20px',
-                                        background: 'var(--primary-light)',
-                                        color: 'var(--primary)',
-                                        fontSize: '0.9rem',
-                                        fontWeight: '600'
-                                    }}>
-                                        {selectedCandidate.status}
-                                    </span>
-                                </div>
+                {/* Sidebar / Quick Actions */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
 
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
-                                    <div className="glass-panel" style={{ padding: '1rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                        <Mail size={18} style={{ color: 'var(--text-secondary)' }} />
-                                        <span>{selectedCandidate.name.toLowerCase().replace(' ', '.')}@example.com</span>
-                                    </div>
-                                    <div className="glass-panel" style={{ padding: '1rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                        <Phone size={18} style={{ color: 'var(--text-secondary)' }} />
-                                        <span>+1 (555) 000-0000</span>
-                                    </div>
-                                    <div className="glass-panel" style={{ padding: '1rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                        <Briefcase size={18} style={{ color: 'var(--text-secondary)' }} />
-                                        <span>5 Years Experience</span>
-                                    </div>
-                                    <div className="glass-panel" style={{ padding: '1rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                        <Calendar size={18} style={{ color: 'var(--text-secondary)' }} />
-                                        <span>Available Immediately</span>
-                                    </div>
-                                </div>
-
-                                <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
-                                    <button className="btn-ghost" onClick={() => setModalView('message')}>Message Candidate</button>
-                                    <button className="btn-primary" onClick={() => setModalView('schedule')}>Schedule Interview</button>
-                                </div>
-                            </>
-                        )}
-
-                        {modalView === 'schedule' && (
-                            <ScheduleForm
-                                onSubmit={() => handleCloseModal()}
-                                onCancel={() => setModalView('profile')}
-                            />
-                        )}
-
-                        {modalView === 'message' && (
-                            <MessageForm
-                                candidateName={selectedCandidate.name}
-                                onSubmit={() => handleCloseModal()}
-                                onCancel={() => setModalView('profile')}
-                            />
-                        )}
+                    {/* Quick Actions Card */}
+                    <div className="glass-panel" style={{ padding: '2rem' }}>
+                        <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '1.5rem' }}>Quick Actions</h3>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                            <Link to="/recruiter/create-job" className="btn-primary" style={{ width: '100%', justifyContent: 'center' }}>
+                                Post New Job
+                            </Link>
+                            <button className="btn-ghost" style={{ width: '100%', border: '1px solid var(--border-color)', justifyContent: 'center' }}>
+                                Search Database
+                            </button>
+                            <button className="btn-ghost" style={{ width: '100%', border: '1px solid var(--border-color)', justifyContent: 'center' }}>
+                                Invite Candidate
+                            </button>
+                        </div>
                     </div>
-                )}
-            </Modal>
 
-            {/* Market Insights News */}
-            <NewsSection query="recruitment market hiring trends" title="Market Insights & Hiring Trends" />
+                    {/* Funnel Preview (Mock) */}
+                    <div className="glass-panel" style={{ padding: '2rem' }}>
+                        <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '1.5rem' }}>Pipeline Health</h3>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                            <span className="text-subtle" style={{ fontSize: '0.9rem' }}>Screening</span>
+                            <span style={{ fontWeight: 600 }}>12</span>
+                        </div>
+                        <ProgressBar value={80} color="var(--primary)" />
+
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1.5rem', marginBottom: '0.5rem' }}>
+                            <span className="text-subtle" style={{ fontSize: '0.9rem' }}>Interview</span>
+                            <span style={{ fontWeight: 600 }}>5</span>
+                        </div>
+                        <ProgressBar value={40} color="var(--secondary)" />
+
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1.5rem', marginBottom: '0.5rem' }}>
+                            <span className="text-subtle" style={{ fontSize: '0.9rem' }}>Offer</span>
+                            <span style={{ fontWeight: 600 }}>2</span>
+                        </div>
+                        <ProgressBar value={20} color="var(--success)" />
+                    </div>
+
+                </div>
+
+            </div>
         </div>
     );
 };
+
+/* ================= COMPONENTS ================= */
+
+const StatCard = ({ icon, title, subtitle, value, trend, color }) => (
+    <div className="glass-panel" style={{ padding: '1.5rem', position: 'relative', overflow: 'hidden' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
+            <div style={{
+                padding: '12px',
+                borderRadius: '12px',
+                background: `color-mix(in srgb, ${color} 10%, transparent)`,
+                color: color
+            }}>{icon}</div>
+            <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                color: 'var(--success)',
+                fontSize: '0.85rem',
+                background: 'rgba(34, 197, 94, 0.1)',
+                padding: '4px 8px',
+                borderRadius: '20px',
+                height: 'fit-content'
+            }}>
+                <TrendingUp size={14} /> {trend}
+            </div>
+        </div>
+        <div style={{ fontSize: '2.25rem', fontWeight: 700, marginBottom: '0.2rem', lineHeight: 1 }}>{value}</div>
+        <div style={{ fontWeight: 600, fontSize: '1rem', color: 'var(--text-primary)' }}>{title}</div>
+        <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '4px' }}>{subtitle}</div>
+    </div>
+);
+
+const CandidateRow = ({ index }) => {
+    const isHighMatch = index % 2 !== 0; // Alternating for demo
+    const matchScore = isHighMatch ? 92 : 78;
+
+    return (
+        <div className="glass-panel" style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '1.25rem',
+            border: '1px solid var(--border-color)',
+            boxShadow: 'none',
+            background: 'var(--bg-secondary)' // Inner card background
+        }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <div style={{
+                    width: '48px',
+                    height: '48px',
+                    borderRadius: '50%',
+                    background: 'var(--border-color)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '0.85rem',
+                    color: 'var(--text-secondary)'
+                }}>Img</div>
+                <div>
+                    <h4 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '2px' }}>Candidate Name</h4>
+                    <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Senior Python Developer</span>
+                </div>
+            </div>
+
+            <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px' }}>
+                <div className={isHighMatch ? "badge badge-success" : "badge badge-warning"}>
+                    {matchScore}% Match
+                </div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Applied 2h ago</div>
+            </div>
+        </div>
+    );
+};
+
+const ProgressBar = ({ value, color }) => (
+    <div style={{ width: '100%', height: '6px', background: 'var(--border-color)', borderRadius: '3px', overflow: 'hidden' }}>
+        <div style={{ width: `${value}%`, height: '100%', background: color, borderRadius: '3px' }}></div>
+    </div>
+);
 
 export default RecruiterDashboard;

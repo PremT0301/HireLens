@@ -70,6 +70,7 @@ const AnimatedRoutes = () => {
 };
 
 import Footer from './components/Footer';
+import AnimatedBackground from './components/ui/AnimatedBackground';
 
 function App() {
   return (
@@ -81,6 +82,7 @@ function App() {
           minHeight: '100vh',
           position: 'relative'
         }}>
+          <AnimatedBackground />
           <Navbar />
           {/* Main content wrapper to push footer down */}
           <div style={{ flex: '1', display: 'flex', flexDirection: 'column' }}>

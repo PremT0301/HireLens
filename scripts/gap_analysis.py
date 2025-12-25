@@ -104,6 +104,78 @@ def calculate_skill_match(resume_skills: Set[str], job_skills: Set[str]) -> Dict
     }
 
 
+
+def check_missing_sections(resume_text: str) -> List[str]:
+    """
+    Check for presence of standard resume sections
+    """
+    text_lower = resume_text.lower()
+    
+    # Common section headers
+    sections = {
+        'experience': ['experience', 'work history', 'employment'],
+        'projects': ['projects', 'personal projects', 'key projects'],
+        'education': ['education', 'academic background', 'qualifications'],
+        'skills': ['skills', 'technical skills', 'competencies', 'technologies'],
+        'certifications': ['certifications', 'certificates', 'courses']
+    }
+    
+    missing = []
+    
+    for section, keywords in sections.items():
+        if not any(keyword in text_lower for keyword in keywords):
+            missing.append(section)
+            
+    return missing
+
+
+def generate_smart_suggestions(
+    skill_match: Dict[str, any], 
+    job_requirements: Dict[str, any],
+    resume_section_gaps: List[str]
+) -> List[str]:
+    """
+    Generate personalized, actionable suggestions
+    """
+    suggestions = []
+    missing_skills = skill_match.get('missing_skills', [])
+    match_percentage = skill_match.get('match_percentage', 0)
+    
+    # 1. Critical Skill Gaps
+    if missing_skills:
+        # Group missing skills for readability
+        top_missing = missing_skills[:3]
+        others_count = len(missing_skills) - 3
+        
+        skills_str = ", ".join(top_missing)
+        if others_count > 0:
+            skills_str += f" and {others_count} others"
+            
+        suggestions.append(f"Add projects demonstrating {skills_str}.")
+        suggestions.append(f"Consider acquiring certifications related to {top_missing[0]} to validate your expertise.")
+    
+    # 2. Section Gaps
+    for section in resume_section_gaps:
+        if section == 'projects':
+            suggestions.append("Add a 'Projects' section to showcase practical application of your skills.")
+        elif section == 'certifications':
+            suggestions.append("Include a 'Certifications' section if you have completed relevant courses.")
+        elif section == 'experience' and job_requirements.get('required_experience', 0) > 0:
+            suggestions.append("Ensure your 'Experience' section clearly outlines your roles and responsibilities.")
+            
+    # 3. Fit-based Suggestions
+    if match_percentage < 50:
+        suggestions.append("Focus on hands-on practice with the required technologies to build a stronger portfolio.")
+    elif match_percentage >= 80:
+        suggestions.append("Excellent alignment! Ensure your summary highlights your strongest matching skills.")
+        
+    # 4. Keyword Optimization
+    if missing_skills:
+        suggestions.append(f"Ensure your resume explicitly mentions: {', '.join(missing_skills[:5])} to pass ATS filters.")
+        
+    return suggestions
+
+
 def perform_gap_analysis(
     resume_text: str,
     job_description: str,
@@ -142,19 +214,12 @@ def perform_gap_analysis(
     print("Calculating skill match...")
     skill_match = calculate_skill_match(resume_skills, job_skills)
     
-    # Generate recommendations
-    recommendations = []
+    # Check for missing sections
+    section_gaps = check_missing_sections(resume_text)
     
-    if skill_match['match_percentage'] < 50:
-        recommendations.append("Consider acquiring more of the required skills before applying")
-    elif skill_match['match_percentage'] < 75:
-        recommendations.append("Good match! Consider highlighting relevant projects that demonstrate missing skills")
-    else:
-        recommendations.append("Excellent match! You meet most of the requirements")
-    
-    if skill_match['total_missing'] > 0:
-        top_missing = skill_match['missing_skills'][:5]  # Top 5 missing skills
-        recommendations.append(f"Focus on learning: {', '.join(top_missing)}")
+    # Generate smart recommendations
+    print("Generating recommendations...")
+    recommendations = generate_smart_suggestions(skill_match, job_requirements, section_gaps)
     
     # Compile final report
     report = {
@@ -212,7 +277,7 @@ def print_gap_analysis_report(report: Dict[str, any]):
             print(f"  + {skill}")
     
     print("\n" + "-"*60)
-    print("RECOMMENDATIONS:")
+    print("SMART RECOMMENDATIONS:")
     for i, rec in enumerate(report['recommendations'], 1):
         print(f"  {i}. {rec}")
     
@@ -230,20 +295,38 @@ if __name__ == "__main__":
     
     sample_job = """
     We are looking for a Machine Learning Engineer with 3+ years of experience.
-    Required skills: Python, TensorFlow, PyTorch, machine learning, deep learning, NLP.
-    Nice to have: AWS, Docker, Kubernetes, MLOps experience.
+    Required skills: Python, TensorFlow, PyTorch, machine learning, deep learning, NLP, Kubernetes, Azure.
+    Nice to have: AWS, Docker, MLOps experience.
     """
     
-    print("Example Gap Analysis (without NER model):")
+    print("Example Gap Analysis (Smart Suggestions Demo):")
     print("\nNote: For actual usage, load the trained NER model")
-    print("This example uses keyword matching only")
     
-    # Simple keyword-based analysis for demo
+    # 1. Mock dependencies for standalone test
+    # We can use the actual functions if imports work, but for safety in this __main__ block 
+    # we can just use the functions defined above if we mock the extraction part.
+    
+    # Mocking parser for the test
     job_reqs = parse_job_requirements(sample_job)
     resume_skills = {'python', 'tensorflow', 'pytorch', 'machine learning', 
                      'deep learning', 'nlp', 'aws', 'docker'}
     
     match_result = calculate_skill_match(resume_skills, job_reqs['required_skills'])
-    print(f"\nMatch Percentage: {match_result['match_percentage']}%")
-    print(f"Matched Skills: {match_result['matched_skills']}")
-    print(f"Missing Skills: {match_result['missing_skills']}")
+    section_gaps = check_missing_sections(sample_resume)
+    
+    suggestions = generate_smart_suggestions(match_result, job_reqs, section_gaps)
+    
+    report = {
+        'fit_score': 'Good',
+        'match_summary': {'match_percentage': match_result['match_percentage'], 
+                          'total_matched_skills': match_result['total_matched'],
+                          'total_required_skills': match_result['total_required']},
+        'skill_analysis': {
+            'matched_skills': match_result['matched_skills'],
+            'missing_skills': match_result['missing_skills'],
+            'additional_skills': match_result['extra_skills']
+        },
+        'recommendations': suggestions
+    }
+    
+    print_gap_analysis_report(report)

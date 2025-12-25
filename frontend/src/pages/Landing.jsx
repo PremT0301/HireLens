@@ -4,195 +4,198 @@ import {
     ArrowRight,
     Brain,
     Users,
-    Briefcase,
     LineChart,
-    CheckCircle,
-    Star,
-    MessageSquare,
-    Newspaper,
-    Mic,
-    Cpu,
-    Network
+    Shield,
+    Star
 } from "lucide-react";
 import { motion } from "framer-motion";
+import ThreeDTiltCard from "../components/ui/ThreeDTiltCard";
 
 /* ======================================================
-   LANDING
+   LANDING PAGE (Redesigned with 3D)
 ====================================================== */
 
 const Landing = () => {
     return (
-        <div className="page-transition" style={{ position: "relative", overflow: "hidden" }}>
-            {/* ================= BACKGROUND LAYERS ================= */}
-            <Background />
+        <div className="page-transition aurora-bg" style={{ minHeight: "100vh" }}>
 
-            {/* ================= HERO ================= */}
-            <section style={heroSection}>
+            {/* ================= HERO SECTION ================= */}
+            <section className="container" style={{
+                minHeight: "90vh",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "center",
+                alignItems: "center",
+                textAlign: "center",
+                paddingTop: "6rem",
+                position: "relative",
+                perspective: "1000px" // For 3D context
+            }}>
+
+                {/* Abstract Floating 3D Shape Behind Text */}
                 <motion.div
-                    initial={{ opacity: 0, y: 50 }}
+                    animate={{
+                        rotate: [0, 10, -10, 0],
+                        translateY: [0, -20, 0],
+                    }}
+                    transition={{
+                        duration: 12,
+                        repeat: Infinity,
+                        ease: "easeInOut"
+                    }}
+                    style={{
+                        position: "absolute",
+                        top: "20%",
+                        width: "600px",
+                        height: "600px",
+                        background: "radial-gradient(circle, rgba(79, 70, 229, 0.15) 0%, transparent 60%)",
+                        borderRadius: "50%",
+                        zIndex: 0,
+                        filter: "blur(40px)"
+                    }}
+                />
+
+                <motion.div
+                    initial={{ opacity: 0, y: 40 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.9, ease: "easeOut" }}
-                    style={{ textAlign: "center", position: "relative", zIndex: 2 }}
+                    transition={{ duration: 0.8, ease: "easeOut" }}
+                    style={{ maxWidth: "900px", position: "relative", zIndex: 2 }}
                 >
                     <Badge />
 
-                    <h1 style={heroTitle}>
-                        AI-Driven Hiring <br />
-                        <span className="gradient-text">From Resume to Interview</span>
+                    <h1 className="title-lg" style={{ marginBottom: "1.5rem", fontSize: "clamp(3rem, 5vw, 4.5rem)" }}>
+                        Hire Smarter. <br />
+                        <span className="gradient-text">Get Hired Faster.</span>
                     </h1>
 
-                    <p style={heroSubtitle}>
-                        SmartHireAI is an intelligent recruitment ecosystem that understands
-                        resumes, predicts job fit, explains skill gaps, delivers market insights,
-                        and prepares candidates for interviews — end to end.
+                    <p className="text-subtle" style={{
+                        fontSize: "1.25rem",
+                        maxWidth: "700px",
+                        margin: "0 auto 3rem",
+                        lineHeight: "1.7"
+                    }}>
+                        AI-powered resume analysis, skill gap insights, and intelligent recruitment—built for modern hiring.
                     </p>
 
-                    <div style={heroActions}>
-                        <Link to="/signup" className="btn-primary-glow" style={primaryBtn}>
-                            Get Started <ArrowRight size={20} />
+                    <div style={{ display: "flex", gap: "1rem", justifyContent: "center", flexWrap: "wrap" }}>
+                        <Link to="/signup" className="btn-primary" style={{ padding: "14px 28px", fontSize: "1rem" }}>
+                            Explore as Applicant <ArrowRight size={18} />
                         </Link>
-                        <Link to="/features" style={secondaryBtn}>
-                            Explore Platform
+                        <Link to="/signup" className="btn-ghost" style={{
+                            padding: "14px 28px",
+                            fontSize: "1rem",
+                            border: "1px solid var(--border-color)",
+                            background: "var(--bg-secondary)"
+                        }}>
+                            Explore as Recruiter
                         </Link>
                     </div>
                 </motion.div>
             </section>
 
-            {/* ================= WHY ================= */}
+            {/* ================= VALUE PROPOSITION ================= */}
             <Section title="Why SmartHireAI">
                 <Grid>
-                    <TiltCard
-                        icon={<Brain size={30} color="#a78bfa" />}
-                        title="AI Resume Intelligence"
-                        desc="SpaCy NER extracts skills & experience while BERT classifies real career roles."
-                    />
-                    <TiltCard
-                        icon={<LineChart size={30} color="#60a5fa" />}
-                        title="Skill Gap & ATS Analysis"
-                        desc="Clear fit score, missing skills, and actionable ATS improvement guidance."
-                    />
-                    <TiltCard
-                        icon={<Users size={30} color="#34d399" />}
-                        title="Applicant & Recruiter Portals"
-                        desc="Applicants gain clarity. Recruiters rank talent by AI fit — not keywords."
-                    />
+                    <ThreeDTiltCard>
+                        <FeatureCard
+                            icon={<Brain size={32} className="text-primary" />}
+                            title="AI Resume Intelligence"
+                            desc="Understand resumes beyond keywords using NLP & BERT to classify roles accurately."
+                            color="var(--primary)"
+                        />
+                    </ThreeDTiltCard>
+                    <ThreeDTiltCard>
+                        <FeatureCard
+                            icon={<LineChart size={32} className="text-secondary" />}
+                            title="Transparent Gap Analysis"
+                            desc="Know exactly why a resume matches—or doesn’t—with detailed fit scores."
+                            color="var(--secondary)"
+                        />
+                    </ThreeDTiltCard>
+                    <ThreeDTiltCard>
+                        <FeatureCard
+                            icon={<Users size={32} className="text-success" />}
+                            title="Smarter Hiring Decisions"
+                            desc="Rank candidates by real skill relevance, distinct from simple buzzword matching."
+                            color="var(--success)"
+                        />
+                    </ThreeDTiltCard>
                 </Grid>
             </Section>
 
-            {/* ================= HOW IT WORKS ================= */}
+            {/* ================= HOW IT WORKS (Timeline) ================= */}
             <Section title="How It Works">
-                <Grid>
-                    <StepCard step="01" icon={<CheckCircle />} title="Upload Resume"
-                        desc="Resume text is extracted securely and prepared for AI processing." />
-                    <StepCard step="02" icon={<Cpu />} title="AI Resume Analysis"
-                        desc="NER extracts skills & experience. BERT classifies your role domain." />
-                    <StepCard step="03" icon={<LineChart />} title="Gap & ATS Insights"
-                        desc="Fit score, missing skills, and ATS readiness insights are generated." />
-                    <StepCard step="04" icon={<Briefcase />} title="Smart Job Matching"
-                        desc="Discover jobs aligned with your AI profile before applying." />
-                    <StepCard step="05" icon={<Newspaper />} title="News & Market Insights"
-                        desc="Live industry news and hiring trends to guide career decisions." />
-                    <StepCard step="06" icon={<Mic />} title="Interview Copilot"
-                        desc="AI-generated technical & behavioral interview practice." />
-                    <StepCard step="07" icon={<MessageSquare />} title="Guidance & Communication"
-                        desc="Transparent feedback, recommendations, and career guidance." />
-                </Grid>
+                <div style={{ maxWidth: "800px", margin: "0 auto" }}>
+                    <TimelineItem step="01" title="Upload Resume" desc="Securely parse text for AI processing." />
+                    <TimelineItem step="02" title="AI Analysis" desc="NER & BERT extract skills and classify role." />
+                    <TimelineItem step="03" title="Skill Gap & Fit Score" desc="See your match percentage instantly." />
+                    <TimelineItem step="04" title="Match Jobs" desc="Find roles aligned with your true potential." last />
+                </div>
             </Section>
+
+            {/* ================= TRUST SECTION ================= */}
+            <section className="container" style={{ padding: "4rem 0", textAlign: "center", opacity: 0.8 }}>
+                <p className="text-subtle" style={{ marginBottom: "2rem", fontWeight: 600, letterSpacing: "1px" }}>
+                    TRUSTED TECHNOLOGY STACK
+                </p>
+                <div style={{
+                    display: "flex",
+                    justifyContent: "center",
+                    gap: "2rem",
+                    flexWrap: "wrap",
+                    fontSize: "1.1rem",
+                    fontWeight: 700,
+                    color: "var(--text-secondary)"
+                }}>
+                    <span>React 18</span>
+                    <span>.NET 8 Web API</span>
+                    <span>Python (SpaCy/BERT)</span>
+                    <span>SQL Server</span>
+                </div>
+                <div style={{ marginTop: "3rem", display: "inline-flex", alignItems: "center", gap: "10px", padding: "10px 20px", background: "rgba(34,197,94,0.1)", borderRadius: "30px", color: "var(--success)" }}>
+                    <Shield size={18} />
+                    <span style={{ fontSize: "0.9rem", fontWeight: 600 }}>Enterprise-Grade Privacy & Explainability</span>
+                </div>
+            </section>
 
             {/* ================= CTA ================= */}
             <motion.section
-                style={ctaSection}
+                className="container"
                 initial={{ opacity: 0 }}
                 whileInView={{ opacity: 1 }}
-                transition={{ duration: 0.8 }}
                 viewport={{ once: true }}
+                style={{ padding: "8rem 0", textAlign: "center" }}
             >
-                <h2 style={{ fontSize: "2.6rem", fontWeight: 800 }}>
-                    Your Complete AI Hiring Companion
+                <h2 className="title-lg" style={{ marginBottom: "1.5rem" }}>
+                    Ready to Transform Hiring?
                 </h2>
-                <p style={ctaText}>
-                    Resume analysis, job matching, market insights, and interview prep —
-                    all powered by real AI.
-                </p>
-                <Link to="/signup" className="btn-primary-glow" style={primaryBtn}>
-                    Start Free <ArrowRight size={20} />
-                </Link>
+                <div style={{ display: "flex", justifyContent: "center" }}>
+                    <Link to="/signup" className="btn-primary" style={{ padding: "16px 32px", fontSize: "1.1rem" }}>
+                        Start Free Now <ArrowRight size={20} />
+                    </Link>
+                </div>
             </motion.section>
         </div>
     );
 };
 
 /* ======================================================
-   BACKGROUND (KEY PART)
-====================================================== */
-
-const Background = () => (
-    <div style={bgWrapper}>
-        {/* Soft gradient base */}
-        <div style={bgGradient} />
-
-        {/* Floating Orbs */}
-        <FloatingOrb color="rgba(124,58,237,0.35)" size={520} top="-20%" left="10%" />
-        <FloatingOrb color="rgba(56,189,248,0.25)" size={420} top="40%" left="75%" />
-
-        {/* Data Nodes */}
-        {[...Array(12)].map((_, i) => (
-            <DataNode key={i} />
-        ))}
-
-        {/* Subtle Grid */}
-        <div style={gridOverlay} />
-    </div>
-);
-
-const FloatingOrb = ({ color, size, top, left }) => (
-    <motion.div
-        animate={{ y: [0, -50, 0], opacity: [0.4, 0.7, 0.4] }}
-        transition={{ duration: 14, repeat: Infinity, ease: "easeInOut" }}
-        style={{
-            position: "absolute",
-            top,
-            left,
-            width: size,
-            height: size,
-            borderRadius: "50%",
-            background: `radial-gradient(circle, ${color} 0%, transparent 70%)`,
-            filter: "blur(90px)"
-        }}
-    />
-);
-
-const DataNode = () => {
-    const size = Math.random() * 6 + 4;
-    return (
-        <motion.div
-            animate={{ y: [0, -20, 0], opacity: [0.2, 0.6, 0.2] }}
-            transition={{ duration: 10 + Math.random() * 10, repeat: Infinity }}
-            style={{
-                position: "absolute",
-                top: `${Math.random() * 100}%`,
-                left: `${Math.random() * 100}%`,
-                width: size,
-                height: size,
-                borderRadius: "50%",
-                background: "rgba(255,255,255,0.15)"
-            }}
-        />
-    );
-};
-
-/* ======================================================
-   REUSABLE UI
+   COMPONENTS
 ====================================================== */
 
 const Section = ({ title, children }) => (
-    <section style={section}>
+    <section className="container" style={{ padding: "6rem 0" }}>
+        <div className="section-divider"></div>
         <motion.h2
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
             viewport={{ once: true }}
-            style={sectionTitle}
+            style={{
+                textAlign: "center",
+                fontSize: "2rem",
+                fontWeight: 700,
+                marginBottom: "4rem"
+            }}
         >
             {title}
         </motion.h2>
@@ -201,155 +204,75 @@ const Section = ({ title, children }) => (
 );
 
 const Grid = ({ children }) => (
-    <div style={grid}>{children}</div>
-);
-
-const TiltCard = ({ icon, title, desc }) => (
-    <motion.div
-        className="glass-panel"
-        style={card}
-        whileHover={{ rotateX: 6, rotateY: -6, scale: 1.04 }}
-        transition={{ type: "spring", stiffness: 200, damping: 15 }}
-    >
-        <div style={{ marginBottom: "1.5rem" }}>{icon}</div>
-        <h3>{title}</h3>
-        <p style={cardText}>{desc}</p>
-    </motion.div>
-);
-
-const StepCard = ({ step, icon, title, desc }) => (
-    <TiltCard icon={icon} title={`${step} — ${title}`} desc={desc} />
-);
-
-const Badge = () => (
-    <div style={badge}>
-        <Star size={14} fill="var(--accent-primary)" />
-        <span>AI-Powered Career Intelligence</span>
+    <div style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+        gap: "2rem"
+    }}>
+        {children}
     </div>
 );
 
-/* ======================================================
-   STYLES
-====================================================== */
+const FeatureCard = ({ icon, title, desc, color }) => (
+    <div
+        className="glass-panel"
+        style={{ padding: "2.5rem", height: "100%", pointerEvents: "none" }} // Pointer events none so hover goes to TiltWrapper
+    >
+        <div style={{
+            color: color,
+            marginBottom: "1.5rem",
+            background: `color-mix(in srgb, ${color} 10%, transparent)`,
+            width: "fit-content",
+            padding: "12px",
+            borderRadius: "12px"
+        }}>
+            {icon}
+        </div>
+        <h3 style={{ fontSize: "1.25rem", fontWeight: 700, marginBottom: "1rem" }}>{title}</h3>
+        <p className="text-subtle" style={{ lineHeight: 1.6 }}>{desc}</p>
+    </div>
+);
 
-const bgWrapper = {
-    position: "fixed",
-    inset: 0,
-    zIndex: -1
-};
+const TimelineItem = ({ step, title, desc, last }) => (
+    <div style={{ display: "flex", gap: "2rem", paddingBottom: last ? 0 : "3rem", position: "relative" }}>
+        {!last && <div style={{
+            position: "absolute",
+            left: "24px",
+            top: "50px",
+            bottom: "0",
+            width: "2px",
+            background: "var(--border-color)"
+        }}></div>}
 
-const bgGradient = {
-    position: "absolute",
-    inset: 0,
-    background:
-        "radial-gradient(circle at top, rgba(124,58,237,0.15), transparent 60%)"
-};
+        <div style={{
+            width: "50px",
+            height: "50px",
+            borderRadius: "50%",
+            background: "var(--bg-secondary)",
+            border: "1px solid var(--border-color)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: "1.1rem",
+            fontWeight: 700,
+            color: "var(--primary)",
+            flexShrink: 0,
+            zIndex: 1
+        }}>
+            {step}
+        </div>
+        <div>
+            <h4 style={{ fontSize: "1.25rem", fontWeight: 600, marginBottom: "0.5rem" }}>{title}</h4>
+            <p className="text-subtle">{desc}</p>
+        </div>
+    </div>
+);
 
-const gridOverlay = {
-    position: "absolute",
-    inset: 0,
-    backgroundSize: "40px 40px",
-    backgroundImage:
-        "linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)"
-};
-
-const heroSection = {
-    minHeight: "100vh",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: "0 20px"
-};
-
-const heroTitle = {
-    fontSize: "clamp(3rem, 6vw, 5rem)",
-    fontWeight: 900,
-    marginBottom: "1.5rem"
-};
-
-const heroSubtitle = {
-    maxWidth: 760,
-    margin: "0 auto 3rem",
-    fontSize: "1.25rem",
-    color: "var(--text-secondary)"
-};
-
-const heroActions = {
-    display: "flex",
-    gap: "1rem",
-    justifyContent: "center",
-    flexWrap: "wrap"
-};
-
-const primaryBtn = {
-    padding: "16px 32px",
-    borderRadius: 14,
-    background: "var(--primary)",
-    color: "#fff",
-    textDecoration: "none",
-    fontWeight: 600,
-    display: "inline-flex",
-    alignItems: "center",
-    gap: 8
-};
-
-const secondaryBtn = {
-    ...primaryBtn,
-    background: "var(--bg-secondary)",
-    color: "var(--text-primary)",
-    border: "1px solid var(--glass-border)"
-};
-
-const section = {
-    padding: "6rem 20px",
-    maxWidth: 1200,
-    margin: "0 auto"
-};
-
-const sectionTitle = {
-    textAlign: "center",
-    fontSize: "2.3rem",
-    marginBottom: "3.5rem"
-};
-
-const grid = {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(280px,1fr))",
-    gap: "2rem"
-};
-
-const card = {
-    padding: "2.5rem",
-    borderRadius: 22,
-    transformStyle: "preserve-3d"
-};
-
-const cardText = {
-    marginTop: "0.75rem",
-    color: "var(--text-secondary)",
-    lineHeight: 1.6
-};
-
-const badge = {
-    display: "inline-flex",
-    alignItems: "center",
-    gap: 8,
-    padding: "8px 16px",
-    borderRadius: 30,
-    background: "rgba(255,255,255,0.05)",
-    border: "1px solid var(--glass-border)",
-    marginBottom: "2rem"
-};
-
-const ctaSection = {
-    padding: "7rem 20px",
-    textAlign: "center"
-};
-
-const ctaText = {
-    maxWidth: 640,
-    margin: "1.5rem auto 2.5rem",
-    color: "var(--text-secondary)"
-};
+const Badge = () => (
+    <div className="badge badge-success" style={{ marginBottom: "2rem", padding: "8px 16px", borderRadius: "30px" }}>
+        <Star size={14} style={{ marginRight: "8px" }} />
+        AI-Powered Career Intelligence
+    </div>
+);
 
 export default Landing;

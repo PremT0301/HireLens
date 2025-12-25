@@ -9,6 +9,7 @@ import ProfileService from '../../api/profileService';
 import ResumeService from '../../api/resumeService';
 import JobMatcher from '../../components/applicant/JobMatcher';
 import NewsSection from '../../components/NewsSection';
+import ThreeDTiltCard from '../../components/ui/ThreeDTiltCard';
 
 const ApplicantDashboard = () => {
     const navigate = useNavigate();
@@ -112,50 +113,53 @@ const ApplicantDashboard = () => {
             {/* Stats Grid */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem', marginBottom: '3rem' }}>
                 {stats.map((stat, i) => (
-                    <motion.div
-                        key={i}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: i * 0.1 }}
-                        className="glass-panel"
-                        style={{ padding: '2rem', display: 'flex', alignItems: 'center', gap: '1.5rem' }}
-                    >
-                        <div style={{ padding: '15px', borderRadius: '12px', background: `${stat.color}15`, color: stat.color }}>
-                            {stat.icon}
-                        </div>
-                        <div>
-                            <div style={{ fontSize: '2rem', fontWeight: 'bold' }}>{stat.value}</div>
-                            <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>{stat.label}</div>
-                        </div>
-                    </motion.div>
+                    <ThreeDTiltCard key={i}>
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: i * 0.1 }}
+                            className="glass-panel"
+                            style={{ padding: '2rem', display: 'flex', alignItems: 'center', gap: '1.5rem', height: '100%' }}
+                        >
+                            <div style={{ padding: '15px', borderRadius: '12px', background: `${stat.color}15`, color: stat.color }}>
+                                {stat.icon}
+                            </div>
+                            <div>
+                                <div style={{ fontSize: '2rem', fontWeight: 'bold' }}>{stat.value}</div>
+                                <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>{stat.label}</div>
+                            </div>
+                        </motion.div>
+                    </ThreeDTiltCard>
                 ))}
             </div>
 
             {/* Upload Zone */}
             <h3 style={{ marginBottom: '1rem', fontSize: '1.5rem' }}>Resume Analysis</h3>
-            <div
-                {...getRootProps()}
-                className="glass-panel"
-                style={{
-                    padding: '4rem',
-                    textAlign: 'center',
-                    border: `2px dashed ${isDragActive ? 'var(--primary)' : 'var(--glass-border)'}`,
-                    background: isDragActive ? 'var(--primary-light)' : 'var(--glass-bg)',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s'
-                }}
-            >
-                <input {...getInputProps()} />
-                <div style={{ color: isDragActive ? 'var(--primary)' : 'var(--text-secondary)', marginBottom: '1rem', display: 'flex', justifyContent: 'center' }}>
-                    {analyzing ? <Loader2 size={64} className="spin" /> : <UploadCloud size={64} />}
+            <ThreeDTiltCard>
+                <div
+                    {...getRootProps()}
+                    className="glass-panel"
+                    style={{
+                        padding: '4rem',
+                        textAlign: 'center',
+                        border: `2px dashed ${isDragActive ? 'var(--primary)' : 'var(--glass-border)'}`,
+                        background: isDragActive ? 'var(--primary-light)' : 'var(--glass-bg)',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s'
+                    }}
+                >
+                    <input {...getInputProps()} />
+                    <div style={{ color: isDragActive ? 'var(--primary)' : 'var(--text-secondary)', marginBottom: '1rem', display: 'flex', justifyContent: 'center' }}>
+                        {analyzing ? <Loader2 size={64} className="spin" /> : <UploadCloud size={64} />}
+                    </div>
+                    <h4 style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>
+                        {analyzing ? 'Analyzing Resume...' : (isDragActive ? 'Drop your resume here' : 'Upload your latest resume')}
+                    </h4>
+                    <p style={{ color: 'var(--text-secondary)' }}>
+                        {result ? `Analysis Complete: ${result.analysis.classification.predictedRole} (${(result.analysis.classification.confidence * 100).toFixed(1)}%)` : 'Drag & drop PDF or DOCX (Text only for now)'}
+                    </p>
                 </div>
-                <h4 style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>
-                    {analyzing ? 'Analyzing Resume...' : (isDragActive ? 'Drop your resume here' : 'Upload your latest resume')}
-                </h4>
-                <p style={{ color: 'var(--text-secondary)' }}>
-                    {result ? `Analysis Complete: ${result.analysis.classification.predictedRole} (${(result.analysis.classification.confidence * 100).toFixed(1)}%)` : 'Drag & drop PDF or DOCX (Text only for now)'}
-                </p>
-            </div>
+            </ThreeDTiltCard>
 
             {/* Analysis Results */}
             {result && (
@@ -226,10 +230,10 @@ const ApplicantDashboard = () => {
                         whileHover={{ scale: 1.05, backgroundColor: 'rgba(239, 68, 68, 0.1)' }}
                         whileTap={{ scale: 0.95 }}
                         onClick={handleRemoveResume}
-                        className="btn-outline"
+                        className="btn-ghost"
                         style={{
-                            color: 'var(--error-color)',
-                            borderColor: 'var(--error-color)',
+                            color: 'var(--error)',
+                            border: '1px solid var(--error)',
                             display: 'flex',
                             alignItems: 'center',
                             gap: '0.5rem',

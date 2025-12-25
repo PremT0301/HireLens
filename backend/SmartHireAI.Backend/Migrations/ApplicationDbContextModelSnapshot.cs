@@ -138,6 +138,10 @@ namespace SmartHireAI.Backend.Migrations
                         .HasColumnType("char(36)")
                         .HasColumnName("match_id");
 
+                    b.Property<float>("FinalRankingScore")
+                        .HasColumnType("float")
+                        .HasColumnName("final_ranking_score");
+
                     b.Property<Guid>("JobId")
                         .HasColumnType("char(36)")
                         .HasColumnName("job_id");
@@ -153,6 +157,11 @@ namespace SmartHireAI.Backend.Migrations
                     b.Property<Guid>("ResumeId")
                         .HasColumnType("char(36)")
                         .HasColumnName("resume_id");
+
+                    b.Property<string>("SuitabilityLabel")
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)")
+                        .HasColumnName("suitability_label");
 
                     b.HasKey("MatchId");
 
@@ -213,6 +222,14 @@ namespace SmartHireAI.Backend.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("char(36)")
                         .HasColumnName("resume_id");
+
+                    b.Property<string>("ATSFeedback")
+                        .HasColumnType("longtext")
+                        .HasColumnName("ats_feedback");
+
+                    b.Property<int>("ATSScore")
+                        .HasColumnType("int")
+                        .HasColumnName("ats_score");
 
                     b.Property<Guid>("ApplicantId")
                         .HasColumnType("char(36)")
