@@ -22,12 +22,13 @@ const MessageForm = ({ onSubmit, onCancel, candidateName }) => {
         });
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        setTimeout(() => {
-            addToast('Message sent successfully', 'success');
-            onSubmit(formData);
-        }, 800);
+        try {
+            await onSubmit(formData);
+        } catch (error) {
+            console.error("Message sending failed", error);
+        }
     };
 
     return (

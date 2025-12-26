@@ -38,11 +38,15 @@ public class ApplicationsController : ControllerBase
             .Select(a => new
             {
                 a.ApplicationId,
+                a.JobId, // Added JobId for frontend mapping
                 JobTitle = a.JobDescription.Title,
                 CompanyName = a.JobDescription.Recruiter.CompanyName,
                 AppliedDate = a.AppliedAt.ToString("yyyy-MM-dd"),
                 a.Status,
-                a.AtsScore
+                a.AtsScore,
+                a.InterviewDate,
+                a.InterviewMode,
+                a.MeetingLink
             })
             .ToListAsync();
 
@@ -183,7 +187,15 @@ public class ApplicationsController : ControllerBase
                 a.Status,
                 Email = a.Applicant.User.Email,
                 Phone = a.Applicant.User.MobileNumber,
-                Experience = a.Applicant.ExperienceYears
+                Experience = a.Applicant.ExperienceYears,
+                a.Applicant.Location,
+                College = a.Applicant.CollegeName,
+                CurrentRole = a.Applicant.CurrentRole,
+                // Grade = a.Applicant.Grade,
+                a.InterviewDate,
+                a.InterviewMode,
+                a.MeetingLink,
+                a.AppliedAt
             })
             .ToListAsync();
 
@@ -192,12 +204,20 @@ public class ApplicationsController : ControllerBase
         {
             Id = c.ApplicationId,
             c.Name,
-            c.Role,
+            c.Role, // Job applied for
+            c.CurrentRole, // Actual current role
             c.Score,
             c.Status,
             c.Email,
             c.Phone,
             c.Experience,
+            c.Location,
+            c.College,
+            Label = c.Score >= 90 ? "Highly Suitable" : c.Score >= 70 ? "Suitable" : "Average",
+            Time = c.AppliedAt.ToString("MMM dd"), // Simple format for frontend
+            c.InterviewDate,
+            c.InterviewMode,
+            c.MeetingLink,
             // Mock skills based on role for the radar chart
             Skills = MockSkills(c.Role)
         });
@@ -248,4 +268,85 @@ public class ApplicationsController : ControllerBase
 
         return Ok(result);
     }
+
+    // DELETE: api/applications/withdraw/{jobId}
+    [HttpDelete("withdraw/{jobId}")]
+    [Authorize]
+    public async Task<IActionResult> Withdraw(Guid jobId)
+    {
+        var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (!Guid.TryParse(userIdString, out var userId)) return Unauthorized();
+
+        var applicant = await _context.Applicants.FirstOrDefaultAsync(a => a.User.UserId == userId);
+        if (applicant == null) return BadRequest("Must be an applicant profile to withdraw");
+
+        var app = await _context.JobApplications.FirstOrDefaultAsync(a => a.JobId == jobId && a.ApplicantId == applicant.ApplicantId);
+        if (app == null) return NotFound("Application not found");
+
+        _context.JobApplications.Remove(app);
+        await _context.SaveChangesAsync();
+
+        return Ok(new { Message = "Application withdrawn successfully" });
+    }
+
+    // PATCH: api/applications/{id}/status
+    [HttpPatch("{id}/status")]
+    [Authorize]
+    public async Task<IActionResult> UpdateStatus(Guid id, [FromBody] string status)
+    {
+        var app = await _context.JobApplications.FindAsync(id);
+        if (app == null) return NotFound("Application not found");
+
+        app.Status = status;
+        await _context.SaveChangesAsync();
+
+        return Ok(new { Message = "Status updated successfully" });
+    }
+
+    // POST: api/applications/{id}/schedule
+    [HttpPost("{id}/schedule")]
+    [Authorize]
+    public async Task<IActionResult> ScheduleInterview(Guid id, [FromBody] InterviewDto request)
+    {
+        var app = await _context.JobApplications.FindAsync(id);
+        if (app == null) return NotFound("Application not found");
+
+        app.Status = "Interview Scheduled";
+        app.InterviewDate = request.Date;
+        app.InterviewMode = request.Mode;
+        app.MeetingLink = request.Link ?? "https://meet.google.com/abc-defg-hij"; // Mock link if not provided
+        app.InterviewDuration = request.Duration;
+        app.InterviewNotes = request.Notes;
+
+        await _context.SaveChangesAsync();
+
+        return Ok(new { Message = "Interview scheduled successfully" });
+    }
+
+    // POST: api/applications/{id}/message
+    [HttpPost("{id}/message")]
+    [Authorize]
+    public async Task<IActionResult> SendMessage(Guid id, [FromBody] MessageDto request)
+    {
+        var app = await _context.JobApplications.FindAsync(id);
+        if (app == null) return NotFound("Application not found");
+
+        var message = new ApplicationMessage
+        {
+            MessageId = Guid.NewGuid(),
+            ApplicationId = id,
+            SenderRole = "Recruiter", // Assuming recruiter context for now
+            Subject = request.Subject,
+            Body = request.Message,
+            SentAt = DateTime.UtcNow
+        };
+
+        _context.ApplicationMessages.Add(message);
+        await _context.SaveChangesAsync();
+
+        return Ok(new { Message = "Message sent successfully" });
+    }
+
+    public record InterviewDto(DateTime Date, string Mode, string? Link, int? Duration, string? Notes);
+    public record MessageDto(string Subject, string Message);
 }

@@ -12,13 +12,23 @@ const ScheduleForm = ({ onSubmit, onCancel }) => {
         notes: ''
     });
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        // Simulate API call
-        setTimeout(() => {
-            addToast('Interview scheduled successfully', 'success');
-            onSubmit(formData);
-        }, 800);
+        try {
+            // Transform data for backend DTO
+            const dateTime = new Date(`${formData.date}T${formData.time}`);
+            const payload = {
+                date: dateTime.toISOString(),
+                mode: formData.type === 'video' ? 'Video' : 'Phone',
+                duration: parseInt(formData.duration, 10),
+                notes: formData.notes
+            };
+
+            await onSubmit(payload);
+            // Toast is handled by the parent or if onSubmit resolves
+        } catch (error) {
+            console.error("Scheduling failed", error);
+        }
     };
 
     return (

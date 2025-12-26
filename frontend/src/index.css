@@ -285,7 +285,8 @@ input:focus, select:focus, textarea:focus {
   width: 180%;
   height: 180%;
   background: radial-gradient(circle at center, 
-    rgba(37, 99, 235, 0.08) 0%, 
+    rgba(37, 99, 235, 0.08) 
+    0%, 
     rgba(14, 165, 233, 0.05) 30%, 
     transparent 70%);
   animation: aurora-spin 30s linear infinite;
@@ -296,4 +297,18 @@ input:focus, select:focus, textarea:focus {
 @keyframes aurora-spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+}
+
+/* Modal Overlay */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
 }

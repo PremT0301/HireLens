@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../../api/axios'; // Or use a dedicated jobService if preferred
 
-const JobMatcher = ({ resumeId, initialJobDescription = '' }) => {
+const JobMatcher = ({ resumeId, initialJobDescription = '', onSessionExpired, onMatchComplete }) => {
     const [jobDescription, setJobDescription] = useState(initialJobDescription);
     const [matchResult, setMatchResult] = useState(null);
     const [loading, setLoading] = useState(false);
@@ -25,9 +25,18 @@ const JobMatcher = ({ resumeId, initialJobDescription = '' }) => {
                 jobDescription: jobDescription
             });
             setMatchResult(response.data);
+            if (onMatchComplete) onMatchComplete(response.data);
         } catch (err) {
             console.error("Match failed", err);
-            setError("Failed to analyze match. Please try again.");
+            if (err.response && err.response.status === 404) {
+                if (onSessionExpired) {
+                    onSessionExpired();
+                    return;
+                }
+                setError("Resume session expired. Please re-upload your resume.");
+            } else {
+                setError("Failed to analyze match. Please try again.");
+            }
         } finally {
             setLoading(false);
         }

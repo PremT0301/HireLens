@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Users, FileText, TrendingUp, Search, PlusCircle, ArrowUpRight } from 'lucide-react';
+import { Users, FileText, TrendingUp, Search, PlusCircle, ArrowUpRight, MoreHorizontal, Calendar, Mail, FileText as FileIcon, X, Phone, Briefcase } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import ThreeDTiltCard from '../../components/ui/ThreeDTiltCard';
 import ApplicationService from '../../api/applicationService';
+import Modal from '../../components/ui/Modal';
 
 const RecruiterDashboard = () => {
     const [stats, setStats] = useState({
@@ -12,7 +13,51 @@ const RecruiterDashboard = () => {
         trend: '+0%'
     });
     const [recentApplications, setRecentApplications] = useState([]);
+    const [sortOrder, setSortOrder] = useState('score_desc');
+
     const [pipeline, setPipeline] = useState({ Screening: 0, Interview: 0, Offer: 0 });
+    const [selectedCandidate, setSelectedCandidate] = useState(null);
+    const [isInterviewModalOpen, setIsInterviewModalOpen] = useState(false);
+    const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+
+    const handleStatusUpdate = async (appId, status) => {
+        try {
+            await ApplicationService.updateStatus(appId, status);
+            // innovative: optimistic update or reload
+            const updated = recentApplications.map(app =>
+                app.applicationId === appId ? { ...app, status } : app
+            );
+            setRecentApplications(updated);
+        } catch (error) {
+            console.error("Failed to update status", error);
+        }
+    };
+
+    const handleScheduleClick = (candidate) => {
+        setSelectedCandidate(candidate);
+        setIsInterviewModalOpen(true);
+    };
+
+    const handleViewProfile = (candidate) => {
+        setSelectedCandidate(candidate);
+        setIsProfileModalOpen(true);
+    };
+
+    const handleInterviewScheduled = async (interviewData) => {
+        try {
+            await ApplicationService.scheduleInterview(selectedCandidate.applicationId, interviewData);
+            setIsInterviewModalOpen(false);
+            // Refresh list or optimistic update
+            const updated = recentApplications.map(app =>
+                app.applicationId === selectedCandidate.applicationId ? { ...app, status: 'Interview Scheduled' } : app
+            );
+            setRecentApplications(updated);
+            alert("Interview Scheduled Successfully!");
+        } catch (error) {
+            console.error("Failed to schedule interview", error);
+            alert("Failed to schedule interview.");
+        }
+    };
 
     useEffect(() => {
         const loadDashboardData = async () => {
@@ -84,24 +129,67 @@ const RecruiterDashboard = () => {
 
                 {/* Recent Applications Column */}
                 <div className="glass-panel" style={{ padding: '2rem', minHeight: '500px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-                        <h3 style={{ fontSize: '1.25rem', fontWeight: 600 }}>Recent Applications</h3>
-                        <div style={{ display: 'flex', gap: '1rem' }}>
-                            <select className="btn-ghost" style={{ border: '1px solid var(--border-color)', fontSize: '0.9rem' }}>
-                                <option value="score_desc">Sort by Score (High to Low)</option>
-                                <option value="score_asc">Sort by Score (Low to High)</option>
-                                <option value="date_desc">Sort by Date</option>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+                        <h3 style={{ fontSize: '1.25rem', fontWeight: 600, margin: 0 }}>Recent Applications</h3>
+                        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                            <select
+                                className="btn-ghost"
+                                style={{
+                                    border: '1px solid var(--border-color)',
+                                    fontSize: '0.85rem',
+                                    padding: '6px 12px',
+                                    height: '32px',
+                                    cursor: 'pointer',
+                                    backgroundPosition: 'right 8px center'
+                                }}
+                                value={sortOrder}
+                                onChange={(e) => setSortOrder(e.target.value)}
+                            >
+                                <option value="score_desc">Score: High to Low</option>
+                                <option value="score_asc">Score: Low to High</option>
+                                <option value="date_desc">Date: Newest</option>
+                                <option value="date_asc">Date: Oldest</option>
                             </select>
-                            <Link to="/recruiter/talent-pool" className="btn-ghost" style={{ fontSize: '0.9rem' }}>
-                                View All <ArrowUpRight size={16} />
+                            <Link to="/recruiter/talent-pool" className="btn-ghost" style={{ fontSize: '0.85rem', height: '32px', padding: '0 12px', whiteSpace: 'nowrap' }}>
+                                View All <ArrowUpRight size={14} />
                             </Link>
                         </div>
                     </div>
 
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                        {recentApplications.map((candidate, i) => (
-                            <CandidateRow key={i} candidate={candidate} />
-                        ))}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                        {[...recentApplications]
+                            .sort((a, b) => {
+                                if (sortOrder === 'score_desc') return b.score - a.score;
+                                if (sortOrder === 'score_asc') return a.score - b.score;
+
+                                // Parse time strings like "0h ago", "2d ago"
+                                const parseTime = (str) => {
+                                    if (!str) return 0;
+                                    const match = str.match(/(\d+)([hd])/);
+                                    if (!match) return 9999;
+                                    const val = parseInt(match[1]);
+                                    const unit = match[2];
+                                    // Convert to hours for comparison
+                                    return unit === 'd' ? val * 24 : val;
+                                };
+
+                                const timeA = parseTime(a.time);
+                                const timeB = parseTime(b.time);
+
+                                // date_desc means smallest time ago first (0h < 5h)
+                                if (sortOrder === 'date_desc') return timeA - timeB;
+                                if (sortOrder === 'date_asc') return timeB - timeA;
+                                return 0;
+                            })
+                            .map((candidate, i) => (
+                                <CandidateRow
+                                    key={i}
+                                    candidate={candidate}
+                                    onSchedule={handleScheduleClick}
+                                    onStatusUpdate={handleStatusUpdate}
+                                    onViewProfile={handleViewProfile}
+                                />
+                            ))}
                     </div>
                 </div>
 
@@ -149,6 +237,72 @@ const RecruiterDashboard = () => {
                 </div>
 
             </div>
+
+            {isInterviewModalOpen && (
+                <ScheduleInterviewModal
+                    candidate={selectedCandidate}
+                    onClose={() => setIsInterviewModalOpen(false)}
+                    onSubmit={handleInterviewScheduled}
+                />
+            )}
+
+            {isProfileModalOpen && selectedCandidate && (
+                <Modal
+                    isOpen={isProfileModalOpen}
+                    onClose={() => setIsProfileModalOpen(false)}
+                    title="Candidate Profile"
+                >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', marginBottom: '2rem' }}>
+                        <div style={{
+                            width: '80px', height: '80px', borderRadius: '50%',
+                            background: 'linear-gradient(135deg, var(--primary), var(--secondary))',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontSize: '2rem', color: 'white', fontWeight: 'bold'
+                        }}>
+                            {selectedCandidate.name.charAt(0)}
+                        </div>
+                        <div>
+                            <h2 style={{ fontSize: '1.8rem', marginBottom: '0.5rem' }}>{selectedCandidate.name}</h2>
+                            <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>{selectedCandidate.role}</p>
+                        </div>
+                        <span style={{
+                            marginLeft: 'auto',
+                            padding: '6px 12px',
+                            borderRadius: '20px',
+                            background: 'var(--primary-light)', // Fallback if badge style function not accessible here
+                            color: 'var(--primary)',
+                            fontSize: '0.9rem',
+                            fontWeight: '600'
+                        }}>
+                            {selectedCandidate.label || 'Candidate'}
+                        </span>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
+                        <div className="glass-panel" style={{ padding: '1rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <Mail size={18} className="text-gray-400" />
+                            <span>{selectedCandidate.email || 'No email provided'}</span>
+                        </div>
+                        <div className="glass-panel" style={{ padding: '1rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <Phone size={18} className="text-gray-400" />
+                            <span>{selectedCandidate.phone || 'N/A'}</span>
+                        </div>
+                        <div className="glass-panel" style={{ padding: '1rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <Briefcase size={18} className="text-gray-400" />
+                            <span>{selectedCandidate.experience || '0'} Years Experience</span>
+                        </div>
+                        <div className="glass-panel" style={{ padding: '1rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <Calendar size={18} className="text-gray-400" />
+                            <span>{selectedCandidate.time}</span>
+                        </div>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+                        <button className="btn-ghost" onClick={() => setIsProfileModalOpen(false)}>Close</button>
+                        <button className="btn-primary" onClick={() => { setIsProfileModalOpen(false); setIsInterviewModalOpen(true); }}>Schedule Interview</button>
+                    </div>
+                </Modal>
+            )}
         </div>
     );
 };
@@ -184,12 +338,14 @@ const StatCard = ({ icon, title, subtitle, value, trend, color }) => (
     </div>
 );
 
-const CandidateRow = ({ candidate }) => {
+const CandidateRow = ({ candidate, onSchedule, onStatusUpdate, onViewProfile }) => {
+    const [showMenu, setShowMenu] = useState(false);
     const getBadgeColor = (label) => {
         if (label === 'Highly Suitable') return 'badge-success';
         if (label === 'Suitable') return 'badge-primary'; // Adjust if badge-primary is not defined as blue/yellow equivalent, assuming badge-warning or similar
         return 'badge-warning'; // Fallback
     };
+
 
     // Custom style for badges if class not available
     const getBadgeStyle = (label) => {
@@ -202,51 +358,73 @@ const CandidateRow = ({ candidate }) => {
 
     return (
         <div className="glass-panel" style={{
-            display: 'flex',
+            display: 'grid',
+            gridTemplateColumns: 'min-content 2fr 1.5fr 1fr 1fr 1fr',
             alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '1.25rem',
+            gap: '1.5rem',
+            padding: '1rem 1.5rem',
             border: '1px solid var(--border-color)',
             boxShadow: 'none',
-            background: 'var(--bg-secondary)' // Inner card background
+            background: 'var(--bg-secondary)',
+            transition: 'transform 0.2s ease',
         }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                <div style={{
-                    width: '48px',
-                    height: '48px',
-                    borderRadius: '50%',
-                    background: 'var(--border-color)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '0.85rem',
-                    color: 'var(--text-secondary)'
-                }}>
-                    {candidate.name.charAt(0)}
-                </div>
-                <div>
-                    <h4 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '2px' }}>{candidate.name}</h4>
-                    <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{candidate.role}</span>
-                </div>
+            {/* Avatar */}
+            <div style={{
+                width: '40px',
+                height: '40px',
+                borderRadius: '50%',
+                background: 'var(--border-color)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '0.9rem',
+                fontWeight: '600',
+                color: 'var(--text-secondary)'
+            }}>
+                {candidate.name.charAt(0)}
             </div>
 
-            <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px' }}>
-                <div style={{
+            {/* Name */}
+            <div style={{ fontWeight: 600, fontSize: '0.95rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {candidate.name}
+            </div>
+
+            {/* Role */}
+            <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {candidate.role}
+            </div>
+
+            {/* Match Score */}
+            <div style={{
+                textAlign: 'center',
+                fontSize: '0.9rem',
+                fontWeight: '700',
+                color: badgeStyle.color
+            }}>
+                {candidate.score}%
+            </div>
+
+            {/* Badge */}
+            <div style={{ display: 'flex', justifyContent: 'center' }}>
+                <span style={{
                     padding: '4px 10px',
-                    borderRadius: '12px',
+                    borderRadius: '20px',
                     background: badgeStyle.bg,
                     color: badgeStyle.color,
                     border: `1px solid ${badgeStyle.border}`,
-                    fontSize: '0.8rem',
-                    fontWeight: '600'
+                    fontSize: '0.75rem',
+                    fontWeight: '600',
+                    whiteSpace: 'nowrap'
                 }}>
-                    {candidate.score}% Match
-                </div>
-                <div style={{ fontSize: '0.75rem', color: badgeStyle.color, fontWeight: 500 }}>
                     {candidate.label}
-                </div>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Applied {candidate.time}</div>
+                </span>
             </div>
+
+            {/* Time */}
+            <div style={{ textAlign: 'right', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                {candidate.time}
+            </div>
+
         </div>
     );
 };

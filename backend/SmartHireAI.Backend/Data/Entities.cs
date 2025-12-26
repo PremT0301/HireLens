@@ -330,10 +330,58 @@ namespace SmartHireAI.Backend.Data
         [Column("ats_score")]
         public float AtsScore { get; set; }
 
+        [Column("interview_date")]
+        public DateTime? InterviewDate { get; set; }
+
+        [MaxLength(50)]
+        [Column("interview_mode")]
+        public string? InterviewMode { get; set; } // Online, Offline
+
+        [MaxLength(500)]
+        [Column("meeting_link")]
+        public string? MeetingLink { get; set; } // URL or Location Address
+
+        [Column("interview_duration")]
+        public int? InterviewDuration { get; set; } // in minutes
+
+        [MaxLength(1000)]
+        [Column("interview_notes")]
+        public string? InterviewNotes { get; set; }
+
         [ForeignKey("JobId")]
         public JobDescription JobDescription { get; set; } = null!;
 
         [ForeignKey("ApplicantId")]
         public Applicant Applicant { get; set; } = null!;
+    }
+
+    [Table("application_messages")]
+    public class ApplicationMessage
+    {
+        [Key]
+        [Column("message_id")]
+        public Guid MessageId { get; set; }
+
+        [Column("application_id")]
+        public Guid ApplicationId { get; set; }
+
+        [Required]
+        [Column("sender_role")] // "Recruiter" or "Applicant"
+        public string SenderRole { get; set; } = string.Empty;
+
+        [Required]
+        [MaxLength(200)]
+        [Column("subject")]
+        public string Subject { get; set; } = string.Empty;
+
+        [Required]
+        [Column("body")]
+        public string Body { get; set; } = string.Empty;
+
+        [Column("sent_at")]
+        public DateTime SentAt { get; set; } = DateTime.UtcNow;
+
+        [ForeignKey("ApplicationId")]
+        public JobApplication JobApplication { get; set; } = null!;
     }
 }

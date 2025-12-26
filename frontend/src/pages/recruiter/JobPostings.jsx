@@ -112,7 +112,7 @@ const JobPostings = () => {
                         {jobs.map(job => (
                             <tr key={job.jobId} style={{ borderBottom: '1px solid var(--glass-border)' }}>
                                 <td style={{ padding: '1.5rem', fontWeight: '600' }}>{job.title}</td>
-                                <td style={{ padding: '1.5rem', color: 'var(--text-secondary)' }}>Engineering</td> {/* Mock Department */}
+                                <td style={{ padding: '1.5rem', color: 'var(--text-secondary)' }}>{job.department || 'General'}</td>
                                 <td style={{ padding: '1.5rem' }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                         <div style={{ display: 'flex' }}>

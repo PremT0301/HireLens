@@ -97,6 +97,10 @@ const GapAnalysis = () => {
                         resumeId={resumeId}
                         initialJobDescription={jobDescription}
                         onMatchComplete={(data) => setAnalysisResult(data)}
+                        onSessionExpired={() => {
+                            localStorage.removeItem('resumeResult');
+                            navigate('/applicant/dashboard', { state: { error: 'Session expired. Please re-upload resume.' } });
+                        }}
                     />
                 </div>
             ) : (
