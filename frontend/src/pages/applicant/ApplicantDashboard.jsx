@@ -269,17 +269,6 @@ const ApplicantDashboard = () => {
                 result && (
                     <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem', justifyContent: 'center' }}>
                         <motion.button
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                            className="btn-primary"
-                            onClick={() => navigate('/applicant/gap-analysis', { state: { resumeId: result.resumeId } })}
-                            style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.8rem 2rem', fontSize: '1.1rem' }}
-                        >
-                            <TrendingUp size={20} />
-                            Go to Gap Analysis & Prediction
-                        </motion.button>
-
-                        <motion.button
                             whileHover={{ scale: 1.05, backgroundColor: 'rgba(239, 68, 68, 0.1)' }}
                             whileTap={{ scale: 0.95 }}
                             onClick={handleRemoveResume}

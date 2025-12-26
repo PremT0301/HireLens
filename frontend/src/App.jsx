@@ -46,6 +46,7 @@ const AnimatedRoutes = () => {
           <Route path="dashboard" element={<ApplicantDashboard />} />
           <Route path="ats-score" element={<ATSScore />} />
           <Route path="jobs" element={<Jobs />} />
+          <Route path="jobs/:jobId" element={<JobDetails />} />
           <Route path="gap-analysis" element={<GapAnalysis />} />
           <Route path="interview-copilot" element={<InterviewCopilot />} />
         </Route>

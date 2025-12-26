@@ -20,6 +20,11 @@ const ApplicationService = {
     applyToJob: async (jobId) => {
         const response = await axios.post(`${endpoints.applications}/apply?jobId=${jobId}`);
         return response.data;
+    },
+
+    getTalentPool: async () => {
+        const response = await axios.get(`${endpoints.applications}/talent-pool`);
+        return response.data;
     }
 };
 

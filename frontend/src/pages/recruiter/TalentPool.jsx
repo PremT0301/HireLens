@@ -24,6 +24,7 @@ const TalentPool = () => {
                 setCandidates(data);
             } catch (error) {
                 console.error("Failed to load talent pool", error);
+                // alert("Failed to load candidates. Please try again."); // Optional: verify backend connectivity
             } finally {
                 setLoading(false);
             }

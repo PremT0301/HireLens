@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../../api/axios'; // Or use a dedicated jobService if preferred
 
-const JobMatcher = ({ resumeId }) => {
-    const [jobDescription, setJobDescription] = useState('');
+const JobMatcher = ({ resumeId, initialJobDescription = '' }) => {
+    const [jobDescription, setJobDescription] = useState(initialJobDescription);
     const [matchResult, setMatchResult] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -33,6 +33,13 @@ const JobMatcher = ({ resumeId }) => {
         }
     };
 
+    React.useEffect(() => {
+        if (initialJobDescription && initialJobDescription.trim()) {
+            handleMatch();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
     const getFitColor = (score) => {
         if (score === 'Excellent') return 'var(--success-color)';
         if (score === 'Good') return 'var(--primary-color)';
@@ -48,20 +55,21 @@ const JobMatcher = ({ resumeId }) => {
 
             <div style={{ marginBottom: '1.5rem' }}>
                 <textarea
+                    readOnly
                     value={jobDescription}
-                    onChange={(e) => setJobDescription(e.target.value)}
-                    placeholder="Paste job description here..."
+                    placeholder="Job description will appear here..."
                     style={{
                         width: '100%',
                         height: '150px',
                         padding: '1rem',
                         borderRadius: 'var(--border-radius)',
                         border: '1px solid var(--glass-border)',
-                        background: 'rgba(255, 255, 255, 0.05)',
-                        color: 'var(--text-primary)',
+                        background: 'rgba(0, 0, 0, 0.2)', // Darker background to indicate read-only
+                        color: 'var(--text-secondary)',
                         fontSize: '0.95rem',
                         marginBottom: '1rem',
-                        resize: 'vertical'
+                        resize: 'none',
+                        cursor: 'not-allowed'
                     }}
                 />
                 <motion.button

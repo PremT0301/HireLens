@@ -6,10 +6,10 @@ import ApplicationService from '../../api/applicationService';
 
 const RecruiterDashboard = () => {
     const [stats, setStats] = useState({
-        TotalCandidates: 0,
-        ActiveJobs: 0,
-        PlacementRate: '0%',
-        Trend: '+0%'
+        totalCandidates: 0,
+        activeJobs: 0,
+        placementRate: '0%',
+        trend: '+0%'
     });
     const [recentApplications, setRecentApplications] = useState([]);
     const [pipeline, setPipeline] = useState({ Screening: 0, Interview: 0, Offer: 0 });
@@ -52,7 +52,7 @@ const RecruiterDashboard = () => {
                         icon={<Users size={24} />}
                         title="Total Candidates"
                         subtitle="Total received candidates"
-                        value={stats.TotalCandidates}
+                        value={stats.totalCandidates}
                         trend="+12%"
                         color="var(--primary)"
                     />
@@ -62,7 +62,7 @@ const RecruiterDashboard = () => {
                         icon={<FileText size={24} />}
                         title="Active Jobs"
                         subtitle="Currently open roles"
-                        value={stats.ActiveJobs}
+                        value={stats.activeJobs}
                         trend="+2"
                         color="var(--secondary)"
                     />
@@ -72,8 +72,8 @@ const RecruiterDashboard = () => {
                         icon={<TrendingUp size={24} />}
                         title="Placement Rate"
                         subtitle="Candidates hired this month"
-                        value={stats.PlacementRate}
-                        trend={stats.Trend}
+                        value={stats.placementRate}
+                        trend={stats.trend}
                         color="var(--success)"
                     />
                 </ThreeDTiltCard>

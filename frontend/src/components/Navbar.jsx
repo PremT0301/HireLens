@@ -60,7 +60,6 @@ const Navbar = () => {
     // Navigation Links Configuration
     const applicantLinks = [
         { label: 'Dashboard', path: '/applicant/dashboard', icon: LayoutDashboard },
-        { label: 'Analysis', path: '/applicant/gap-analysis', icon: TrendingUp },
         { label: 'Copilot', path: '/applicant/interview-copilot', icon: MessageSquare },
         { label: 'Matches', path: '/applicant/jobs', icon: Briefcase },
     ];

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { ArrowRight, BookOpen, User, CheckCircle, XCircle, ChevronLeft, AlertCircle, Award, Briefcase, Code, FileText, Lightbulb } from 'lucide-react';
+import { ArrowRight, BookOpen, User, CheckCircle, XCircle, ChevronLeft, AlertCircle, Award, Briefcase, Code, FileText, Lightbulb, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import JobMatcher from '../../components/applicant/JobMatcher';
 import ThreeDTiltCard from '../../components/ui/ThreeDTiltCard';
@@ -8,7 +8,7 @@ import ThreeDTiltCard from '../../components/ui/ThreeDTiltCard';
 const GapAnalysis = () => {
     const location = useLocation();
     const navigate = useNavigate();
-    const { resumeId: stateResumeId } = location.state || {};
+    const { resumeId: stateResumeId, jobDescription, jobId } = location.state || {}; // Extract jobId
 
     // Fallback to locally stored result if valid
     const resumeId = stateResumeId || (() => {
@@ -33,6 +33,23 @@ const GapAnalysis = () => {
                     </p>
                     <button className="btn-primary" onClick={() => navigate('/applicant/dashboard')}>
                         Go to Dashboard
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    if (!location.state?.jobDescription) {
+        return (
+            <div className="container" style={{ minHeight: '60vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+                <div className="glass-panel" style={{ padding: '3rem', maxWidth: '500px', width: '100%', textAlign: 'center' }}>
+                    <div style={{ marginBottom: '1rem', color: 'var(--text-secondary)' }}><AlertCircle size={48} /></div>
+                    <h2 className="title-md" style={{ marginBottom: '1rem', fontSize: '1.5rem', fontWeight: 600 }}>Invalid Access</h2>
+                    <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem', lineHeight: 1.6 }}>
+                        Gap Analysis is only available for specific jobs. Please select a job from the list.
+                    </p>
+                    <button className="btn-primary" onClick={() => navigate('/applicant/jobs')}>
+                        Browse Jobs
                     </button>
                 </div>
             </div>
@@ -78,6 +95,7 @@ const GapAnalysis = () => {
                 <div style={{ maxWidth: '800px', margin: '0 auto' }}>
                     <JobMatcher
                         resumeId={resumeId}
+                        initialJobDescription={jobDescription}
                         onMatchComplete={(data) => setAnalysisResult(data)}
                     />
                 </div>
@@ -240,9 +258,9 @@ const GapAnalysis = () => {
                         <button
                             className="btn-ghost"
                             style={{ border: '1px solid var(--border-color)' }}
-                            onClick={() => setAnalysisResult(null)}
+                            onClick={() => navigate('/applicant/jobs')}
                         >
-                            Analyze Another Job
+                            Back to Jobs
                         </button>
                     </div>
 

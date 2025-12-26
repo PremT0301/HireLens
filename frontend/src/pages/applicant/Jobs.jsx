@@ -2,6 +2,7 @@ import React from 'react';
 import { MapPin, DollarSign, Building } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import JobService from '../../api/jobService';
+import ApplicationService from '../../api/applicationService';
 import HireLensLoader from '../../components/ui/HireLensLoader';
 
 const Jobs = () => {
@@ -15,9 +16,29 @@ const Jobs = () => {
         }
     }, []);
 
+    const handleApply = async (jobId) => {
+        if (!window.confirm("Are you sure you want to apply for this job?")) return;
+
+        try {
+            await ApplicationService.applyToJob(jobId);
+            alert("Application submitted successfully!");
+        } catch (error) {
+            console.error(error);
+            alert(error.response?.data || "Failed to submit application.");
+        }
+    };
+
     const handleAnalyze = (job) => {
-        // In a real app, we'd pass the job ID/Description context
-        navigate('/applicant/gap-analysis');
+        if (!job.description || job.description.trim() === '') {
+            alert("Job Description not provided by the recruiter.");
+            return;
+        }
+        navigate('/applicant/gap-analysis', {
+            state: {
+                jobId: job.jobId,
+                jobDescription: job.description
+            }
+        });
     };
 
     const getSuitability = (matchScore) => {
@@ -82,9 +103,22 @@ const Jobs = () => {
                             </div>
 
                             <div style={{ display: 'flex', gap: '1rem' }}>
-                                <button className="btn-ghost" style={{ border: '1px solid var(--glass-border)' }}>View Details</button>
+                                <button
+                                    className="btn-ghost"
+                                    style={{ border: '1px solid var(--glass-border)' }}
+                                    onClick={() => navigate(`/applicant/jobs/${job.jobId}`)}
+                                >
+                                    View Details
+                                </button>
                                 <button onClick={() => handleAnalyze(job)} className="btn-primary">
                                     {resumeData ? 'Check Readiness' : 'Analyze Fit'}
+                                </button>
+                                <button
+                                    className="btn-primary"
+                                    style={{ background: 'var(--success)', border: 'none' }}
+                                    onClick={() => handleApply(job.jobId)}
+                                >
+                                    Apply
                                 </button>
                             </div>
                         </div>
