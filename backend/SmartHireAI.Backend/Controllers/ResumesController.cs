@@ -73,15 +73,33 @@ public class ResumesController : ControllerBase
                 }
             }
 
-            // 1. Parse Text from PDF/DOCX
+            // 1. Save File to Disk
+            var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "resumes");
+            if (!Directory.Exists(uploadsFolder))
+            {
+                Directory.CreateDirectory(uploadsFolder);
+            }
+
+            var resumeId = Guid.NewGuid();
+            var fileExtension = Path.GetExtension(file.FileName);
+            var filePath = Path.Combine(uploadsFolder, resumeId + fileExtension);
+
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await file.CopyToAsync(stream);
+            }
+
+            // 2. Parse Text from PDF/DOCX
             var text = await _parserService.ParseResumeAsync(file);
 
             if (string.IsNullOrWhiteSpace(text) || text.Length < 50)
             {
+                // Clean up file if parsing fails (optional, but good practice)
+                if (System.IO.File.Exists(filePath)) System.IO.File.Delete(filePath);
                 return BadRequest("Could not extract sufficient text from the resume. Please ensure it's a valid PDF containing text.");
             }
 
-            // 2. Send to AI Microservice
+            // 3. Send to AI Microservice
             var analysisResult = await _aiService.AnalyzeResumeAsync(text);
 
             if (analysisResult == null)
@@ -94,12 +112,12 @@ public class ResumesController : ControllerBase
                                    $"DesignationsCount={analysisResult.NerResults?.Designations?.Count ?? 0}, " +
                                    $"AtsScore={analysisResult.AtsScore}");
 
-            // 3. Save to Database
+            // 4. Save to Database
             _logger.LogInformation($"Saving resume for ApplicantId: {applicant.ApplicantId}");
 
             var resume = new Resume
             {
-                ResumeId = Guid.NewGuid(),
+                ResumeId = resumeId, // Use the pre-generated ID
                 ApplicantId = applicant.ApplicantId,
                 ParsedAt = DateTime.UtcNow,
                 ResumeText = text,
@@ -159,6 +177,52 @@ public class ResumesController : ControllerBase
         {
             _logger.LogError(ex, "Error processing resume upload");
             return StatusCode(500, $"Processing failed: {ex.Message}");
+        }
+    }
+
+    [HttpGet("download/{id}")]
+    public async Task<IActionResult> DownloadResume(Guid id)
+    {
+        try
+        {
+            var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "resumes");
+
+            // Try explicit PDF first
+            var filePath = Path.Combine(uploadsFolder, id + ".pdf");
+            if (!System.IO.File.Exists(filePath))
+            {
+                // Try DOCX
+                filePath = Path.Combine(uploadsFolder, id + ".docx");
+                if (!System.IO.File.Exists(filePath))
+                {
+                    // Fallback: Check if we have the text in DB and generate a text file
+                    var resume = await _context.Resumes.FindAsync(id);
+                    if (resume != null && !string.IsNullOrEmpty(resume.ResumeText))
+                    {
+                        var bytes = System.Text.Encoding.UTF8.GetBytes(resume.ResumeText);
+                        return File(bytes, "text/plain", $"Resume_{id}.txt");
+                    }
+
+                    return NotFound("Resume file not found.");
+                }
+            }
+
+            var memory = new MemoryStream();
+            using (var stream = new FileStream(filePath, FileMode.Open))
+            {
+                await stream.CopyToAsync(memory);
+            }
+            memory.Position = 0;
+
+            var contentType = filePath.EndsWith(".pdf") ? "application/pdf" : "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+            var fileName = filePath.EndsWith(".pdf") ? $"Resume_{id}.pdf" : $"Resume_{id}.docx";
+
+            return File(memory, contentType, fileName);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error downloading resume");
+            return StatusCode(500, "Error downloading resume.");
         }
     }
     [HttpPost("match")]

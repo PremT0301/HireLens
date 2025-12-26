@@ -162,6 +162,73 @@ public class ApplicationsController : ControllerBase
         return Ok(new { Message = "Application submitted successfully" });
     }
 
+    // GET: api/applications/{id}
+    [HttpGet("{id}")]
+    [Authorize]
+    public async Task<ActionResult<object>> GetApplicationById(Guid id)
+    {
+        try
+        {
+            var application = await _context.JobApplications
+                .Include(a => a.Applicant)
+                .ThenInclude(app => app.User)
+                .Include(a => a.JobDescription)
+                .Include(a => a.Applicant.Resumes)
+                .FirstOrDefaultAsync(a => a.ApplicationId == id);
+
+            if (application == null) return NotFound("Application not found");
+
+            // Safe navigation for Applicant
+            var applicant = application.Applicant;
+            if (applicant == null) return NotFound("Applicant profile not found for this application");
+
+            // Get the latest resume safely
+            var latestResume = applicant.Resumes?
+                .OrderByDescending(r => r.ParsedAt)
+                .FirstOrDefault();
+
+            var user = applicant.User;
+
+            var response = new
+            {
+                application.ApplicationId,
+                Name = user?.FullName ?? "Unknown",
+                Role = application.JobDescription?.Title ?? "Unknown Role",
+                Score = (int)application.AtsScore,
+                application.Status,
+                Email = user?.Email,
+                Phone = applicant.MobileNumber ?? user?.MobileNumber ?? "N/A",
+                Experience = applicant.ExperienceYears,
+                Location = applicant.Location ?? user?.Location ?? "Unknown",
+                College = applicant.CollegeName,
+                CompletionYear = applicant.CompletionYear,
+                Grade = applicant.Grade,
+                CurrentRole = applicant.CurrentRole,
+                ProfileImage = user?.ProfileImage,
+                application.InterviewDate,
+                application.InterviewMode,
+                application.MeetingLink,
+                application.AppliedAt,
+                // Resume Details
+                ResumeId = latestResume?.ResumeId,
+                ResumeText = latestResume?.ResumeText ?? "No resume text available.",
+                ResumeHealthScore = latestResume?.ResumeHealthScore ?? 0,
+                Skills = latestResume?.Entities
+                            .Where(e => e.EntityType == "SKILL")
+                            .Select(e => e.EntityValue)
+                            .Distinct()
+                            .ToList() ?? new List<string>()
+            };
+
+            return Ok(response);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error fetching application details: {ex}");
+            return StatusCode(500, $"Internal Server Error: {ex.Message}");
+        }
+    }
+
     // GET: api/applications/talent-pool
     [HttpGet("talent-pool")]
     [Authorize]
@@ -315,8 +382,8 @@ public class ApplicationsController : ControllerBase
         app.InterviewDate = request.Date;
         app.InterviewMode = request.Mode;
         app.MeetingLink = request.Link ?? "https://meet.google.com/abc-defg-hij"; // Mock link if not provided
-        app.InterviewDuration = request.Duration;
-        app.InterviewNotes = request.Notes;
+        // app.InterviewDuration = request.Duration;
+        // app.InterviewNotes = request.Notes;
 
         await _context.SaveChangesAsync();
 

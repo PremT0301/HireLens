@@ -341,12 +341,12 @@ namespace SmartHireAI.Backend.Data
         [Column("meeting_link")]
         public string? MeetingLink { get; set; } // URL or Location Address
 
-        [Column("interview_duration")]
-        public int? InterviewDuration { get; set; } // in minutes
+        // [Column("interview_duration")]
+        // public int? InterviewDuration { get; set; } // in minutes
 
-        [MaxLength(1000)]
-        [Column("interview_notes")]
-        public string? InterviewNotes { get; set; }
+        // [MaxLength(1000)]
+        // [Column("interview_notes")]
+        // public string? InterviewNotes { get; set; }
 
         [ForeignKey("JobId")]
         public JobDescription JobDescription { get; set; } = null!;

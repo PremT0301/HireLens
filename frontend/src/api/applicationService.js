@@ -47,6 +47,16 @@ const ApplicationService = {
     sendMessage: async (applicationId, messageData) => {
         const response = await axios.post(`${endpoints.applications}/${applicationId}/message`, messageData);
         return response.data;
+    },
+
+    getApplicationDetails: async (applicationId) => {
+        const response = await axios.get(`${endpoints.applications}/${applicationId}`);
+        return response.data;
+    },
+
+    getPipelineHealth: async () => {
+        const response = await axios.get(`${endpoints.applications}/pipeline-health`);
+        return response.data;
     }
 };
 

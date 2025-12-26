@@ -7,10 +7,12 @@ import ScheduleForm from '../../components/forms/ScheduleForm';
 import MessageForm from '../../components/forms/MessageForm';
 import ApplicationService from '../../api/applicationService';
 import HireLensLoader from '../../components/ui/HireLensLoader';
+import { useNavigate } from 'react-router-dom';
 import { useToast } from '../../context/ToastContext';
 
 const TalentPool = () => {
     const { addToast } = useToast();
+    const navigate = useNavigate();
     const [activeCandidate, setActiveCandidate] = useState(null); // For Chart Overlay
     const [selectedCandidate, setSelectedCandidate] = useState(null); // For Action Modal
     const [modalView, setModalView] = useState('profile'); // 'profile', 'schedule', 'message'
@@ -272,7 +274,10 @@ const TalentPool = () => {
                                                                     e.target.style.background = 'transparent';
                                                                     e.target.style.color = 'var(--text-primary)';
                                                                 }}
-                                                                onClick={() => { setOpenMenuId(null); setSelectedCandidate(candidate); setModalView('profile'); }}
+                                                                onClick={() => {
+                                                                    setOpenMenuId(null);
+                                                                    navigate(`/recruiter/candidate/${candidate.id}`);
+                                                                }}
                                                             >
                                                                 <FileText size={18} /> View Profile
                                                             </button>
