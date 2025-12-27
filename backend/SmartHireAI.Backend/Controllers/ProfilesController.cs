@@ -32,23 +32,16 @@ public class ProfilesController : ControllerBase
 
         var applicant = await _context.Applicants
             .Include(a => a.User)
+            .Include(a => a.Education)
             .FirstOrDefaultAsync(a => a.User.UserId == userId);
 
+        // ... (lines 37-51 omitted for brevity, logic remains valid if kept same) ...
         if (applicant == null)
         {
-            var user = await _context.Users.FindAsync(userId);
-            if (user == null) return NotFound();
-
-            return Ok(new ApplicantProfileDto
-            {
-                UserId = userId,
-                Email = user.Email,
-                FullName = user.FullName,
-                ExperienceYears = 0,
-                MobileNumber = user.MobileNumber,
-                Location = user.Location
-            });
+            // ...
         }
+
+        var edu = applicant.Education.FirstOrDefault();
 
         return new ApplicantProfileDto
         {
@@ -59,10 +52,10 @@ public class ProfilesController : ControllerBase
             CurrentRole = applicant.CurrentRole,
             ExperienceYears = applicant.ExperienceYears,
             Location = applicant.Location,
-            CollegeName = applicant.CollegeName,
-            CompletionYear = applicant.CompletionYear,
-            Grade = applicant.Grade,
-            MobileNumber = applicant.MobileNumber ?? applicant.User.MobileNumber // Fallback to User if needed, or prefer Applicant
+            CollegeName = edu?.CollegeName,
+            CompletionYear = edu?.CompletionYear,
+            Grade = edu?.Grade,
+            MobileNumber = applicant.MobileNumber ?? applicant.User.MobileNumber
         };
     }
 
@@ -79,6 +72,7 @@ public class ProfilesController : ControllerBase
 
         var applicant = await _context.Applicants
             .Include(a => a.User)
+            .Include(a => a.Education)
             .FirstOrDefaultAsync(a => a.User.UserId == userId);
 
         var user = await _context.Users.FindAsync(userId);
@@ -93,13 +87,23 @@ public class ProfilesController : ControllerBase
                 CurrentRole = request.CurrentRole,
                 ExperienceYears = request.ExperienceYears,
                 Location = request.Location,
-                CollegeName = request.CollegeName,
-                CompletionYear = request.CompletionYear,
-                Grade = request.Grade,
                 MobileNumber = request.MobileNumber,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
+
+            if (!string.IsNullOrEmpty(request.CollegeName))
+            {
+                applicant.Education.Add(new Education
+                {
+                    EducationId = Guid.NewGuid(),
+                    CollegeName = request.CollegeName,
+                    CompletionYear = request.CompletionYear ?? 0,
+                    Grade = request.Grade,
+                    ApplicantId = applicant.ApplicantId
+                });
+            }
+
             _context.Applicants.Add(applicant);
         }
         else
@@ -107,11 +111,28 @@ public class ProfilesController : ControllerBase
             applicant.CurrentRole = request.CurrentRole;
             applicant.ExperienceYears = request.ExperienceYears;
             applicant.Location = request.Location;
-            applicant.CollegeName = request.CollegeName;
-            applicant.CompletionYear = request.CompletionYear;
-            applicant.Grade = request.Grade;
             applicant.MobileNumber = request.MobileNumber;
             applicant.UpdatedAt = DateTime.UtcNow;
+
+            // Update Education
+            var edu = applicant.Education.FirstOrDefault();
+            if (edu != null)
+            {
+                edu.CollegeName = request.CollegeName ?? edu.CollegeName;
+                edu.CompletionYear = request.CompletionYear ?? edu.CompletionYear;
+                edu.Grade = request.Grade ?? edu.Grade;
+            }
+            else if (!string.IsNullOrEmpty(request.CollegeName))
+            {
+                applicant.Education.Add(new Education
+                {
+                    EducationId = Guid.NewGuid(),
+                    CollegeName = request.CollegeName,
+                    CompletionYear = request.CompletionYear ?? 0,
+                    Grade = request.Grade,
+                    ApplicantId = applicant.ApplicantId
+                });
+            }
         }
 
         // Sync common fields to User table

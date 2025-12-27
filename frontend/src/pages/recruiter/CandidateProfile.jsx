@@ -263,38 +263,20 @@ const CandidateProfile = () => {
 
                     {/* Additional Info */}
                     <div className="glass-panel" style={{ padding: '1.5rem' }}>
-                        <h3 className="title-sm" style={{ marginBottom: '1rem' }}>Overview</h3>
+                        <h3 className="title-sm" style={{ marginBottom: '1rem' }}>Application Info</h3>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                <Briefcase size={18} className="text-gray-400" />
-                                <div>
-                                    <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Experience</div>
-                                    <div style={{ fontWeight: '500' }}>{candidate.experience} Years</div>
-                                </div>
-                            </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                <Building size={18} className="text-gray-400" />
-                                <div>
-                                    <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Education</div>
-                                    <div style={{ fontWeight: '500' }}>{candidate.college || 'N/A'}</div>
-                                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                                        {candidate.completionYear ? `Class of ${candidate.completionYear}` : ''}
-                                        {candidate.grade ? ` • ${candidate.grade}` : ''}
-                                    </div>
-                                </div>
-                            </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                <Briefcase size={18} className="text-gray-400" />
-                                <div>
-                                    <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Current Role</div>
-                                    <div style={{ fontWeight: '500' }}>{candidate.currentRole || 'N/A'}</div>
-                                </div>
-                            </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                 <Calendar size={18} className="text-gray-400" />
                                 <div>
                                     <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Applied On</div>
                                     <div style={{ fontWeight: '500' }}>{new Date(candidate.appliedAt).toLocaleDateString()}</div>
+                                </div>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                <MapPin size={18} className="text-gray-400" />
+                                <div>
+                                    <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Location</div>
+                                    <div style={{ fontWeight: '500' }}>{candidate.location || 'Unknown'}</div>
                                 </div>
                             </div>
                         </div>

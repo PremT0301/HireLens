@@ -79,7 +79,9 @@ const AuthService = {
 
         } catch (error) {
             console.error("Registration failed", error);
-
+            if (error.response && error.response.data) {
+                console.error("Server Validation Errors:", error.response.data);
+            }
             throw error.response?.data || {
                 message: "Unable to connect to server"
             };

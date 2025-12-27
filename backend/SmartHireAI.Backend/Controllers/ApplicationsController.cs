@@ -172,6 +172,7 @@ public class ApplicationsController : ControllerBase
             var application = await _context.JobApplications
                 .Include(a => a.Applicant)
                 .ThenInclude(app => app.User)
+                .Include(a => a.Applicant.Education) // Include Education
                 .Include(a => a.JobDescription)
                 .Include(a => a.Applicant.Resumes)
                 .FirstOrDefaultAsync(a => a.ApplicationId == id);
@@ -188,6 +189,7 @@ public class ApplicationsController : ControllerBase
                 .FirstOrDefault();
 
             var user = applicant.User;
+            var edu = applicant.Education.FirstOrDefault();
 
             var response = new
             {
@@ -200,9 +202,9 @@ public class ApplicationsController : ControllerBase
                 Phone = applicant.MobileNumber ?? user?.MobileNumber ?? "N/A",
                 Experience = applicant.ExperienceYears,
                 Location = applicant.Location ?? user?.Location ?? "Unknown",
-                College = applicant.CollegeName,
-                CompletionYear = applicant.CompletionYear,
-                Grade = applicant.Grade,
+                College = edu?.CollegeName,
+                CompletionYear = edu?.CompletionYear,
+                Grade = edu?.Grade,
                 CurrentRole = applicant.CurrentRole,
                 ProfileImage = user?.ProfileImage,
                 application.InterviewDate,
@@ -243,6 +245,7 @@ public class ApplicationsController : ControllerBase
         var rawCandidates = await _context.JobApplications
             .Include(a => a.Applicant)
             .ThenInclude(app => app.User)
+            .Include(a => a.Applicant.Education) // Include Education
             .Include(a => a.JobDescription)
             .Where(a => a.JobDescription.RecruiterId == recruiter.RecruiterId)
             .Select(a => new
@@ -256,9 +259,9 @@ public class ApplicationsController : ControllerBase
                 Phone = a.Applicant.User.MobileNumber,
                 Experience = a.Applicant.ExperienceYears,
                 a.Applicant.Location,
-                College = a.Applicant.CollegeName,
+                College = a.Applicant.Education.FirstOrDefault().CollegeName, // Map first edu
                 CurrentRole = a.Applicant.CurrentRole,
-                // Grade = a.Applicant.Grade,
+                // Grade = a.Applicant.Education.FirstOrDefault().Grade,
                 a.InterviewDate,
                 a.InterviewMode,
                 a.MeetingLink,

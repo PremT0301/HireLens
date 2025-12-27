@@ -87,20 +87,82 @@ public class AuthService : IAuthService
         }
         else if (request.Role.Equals("Applicant", StringComparison.OrdinalIgnoreCase))
         {
+            // Resume Upload
+            string resumeUrl = "";
+            if (request.Resume != null && request.Resume.Length > 0)
+            {
+                var extension = Path.GetExtension(request.Resume.FileName).ToLowerInvariant();
+                if (extension != ".pdf")
+                {
+                    throw new Exception("Only PDF resumes are allowed.");
+                }
+
+                var webRootPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+                var uploadsFolder = Path.Combine(webRootPath, "uploads", "resumes");
+                if (!Directory.Exists(uploadsFolder)) Directory.CreateDirectory(uploadsFolder);
+
+                var fileName = $"{Guid.NewGuid()}{extension}";
+                var filePath = Path.Combine(uploadsFolder, fileName);
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await request.Resume.CopyToAsync(stream);
+                }
+                resumeUrl = $"/uploads/resumes/{fileName}";
+            }
+
             var applicant = new Applicant
             {
                 ApplicantId = Guid.NewGuid(),
                 User = user,
-                CollegeName = request.CollegeName,
-                CompletionYear = request.CompletionYear,
-                Grade = request.Grade,
+                // CollegeName = request.CollegeName, // Removed
+                // CompletionYear = request.CompletionYear, // Removed
+                // Grade = request.Grade, // Removed
+                Address = request.Address,
+                ResumeUrl = resumeUrl,
                 Location = request.Location,
                 MobileNumber = request.MobileNumber,
-                ExperienceYears = 0, // Default to 0? Or from request if added?
+                ExperienceYears = 0,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
             _context.Applicants.Add(applicant);
+
+            // Add Education
+            if (request.Education != null)
+            {
+                foreach (var eduDto in request.Education)
+                {
+                    var education = new Education
+                    {
+                        EducationId = Guid.NewGuid(),
+                        ApplicantId = applicant.ApplicantId,
+                        CollegeName = eduDto.CollegeName,
+                        Degree = eduDto.Degree,
+                        Specialization = eduDto.Specialization,
+                        CompletionYear = eduDto.CompletionYear,
+                        Grade = eduDto.Grade
+                    };
+                    _context.Education.Add(education);
+                }
+            }
+
+            // Add Work Experience
+            if (request.WorkExperience != null)
+            {
+                foreach (var expDto in request.WorkExperience)
+                {
+                    var experience = new WorkExperience
+                    {
+                        ExperienceId = Guid.NewGuid(),
+                        ApplicantId = applicant.ApplicantId,
+                        CompanyName = expDto.CompanyName,
+                        Role = expDto.Role,
+                        Duration = expDto.Duration,
+                        Description = expDto.Description
+                    };
+                    _context.WorkExperience.Add(experience);
+                }
+            }
         }
 
         await _context.SaveChangesAsync();

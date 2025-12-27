@@ -67,15 +67,12 @@ namespace SmartHireAI.Backend.Data
         public int ExperienceYears { get; set; }
 
         [MaxLength(255)]
-        [Column("college_name")]
-        public string? CollegeName { get; set; }
+        [Column("address")]
+        public string? Address { get; set; }
 
-        [Column("completion_year")]
-        public int? CompletionYear { get; set; }
-
-        [MaxLength(10)]
-        [Column("grade")]
-        public string? Grade { get; set; }
+        [MaxLength(500)]
+        [Column("resume_url")]
+        public string? ResumeUrl { get; set; }
 
         [MaxLength(100)]
         [Column("location")]
@@ -95,6 +92,72 @@ namespace SmartHireAI.Backend.Data
         public User User { get; set; } = null!;
 
         public ICollection<Resume> Resumes { get; set; } = new List<Resume>();
+        public ICollection<Education> Education { get; set; } = new List<Education>();
+        public ICollection<WorkExperience> WorkExperience { get; set; } = new List<WorkExperience>();
+    }
+
+    [Table("education")]
+    public class Education
+    {
+        [Key]
+        [Column("education_id")]
+        public Guid EducationId { get; set; }
+
+        [Column("applicant_id")]
+        public Guid ApplicantId { get; set; }
+
+        [Required]
+        [MaxLength(255)]
+        [Column("college_name")]
+        public string CollegeName { get; set; } = string.Empty;
+
+        [MaxLength(255)]
+        [Column("degree")]
+        public string? Degree { get; set; }
+
+        [MaxLength(255)]
+        [Column("specialization")]
+        public string? Specialization { get; set; }
+
+        [Column("completion_year")]
+        public int CompletionYear { get; set; }
+
+        [MaxLength(10)]
+        [Column("grade")]
+        public string? Grade { get; set; }
+
+        [ForeignKey("ApplicantId")]
+        public Applicant Applicant { get; set; } = null!;
+    }
+
+    [Table("work_experience")]
+    public class WorkExperience
+    {
+        [Key]
+        [Column("experience_id")]
+        public Guid ExperienceId { get; set; }
+
+        [Column("applicant_id")]
+        public Guid ApplicantId { get; set; }
+
+        [Required]
+        [MaxLength(255)]
+        [Column("company_name")]
+        public string CompanyName { get; set; } = string.Empty;
+
+        [MaxLength(255)]
+        [Column("role")]
+        public string? Role { get; set; }
+
+        [MaxLength(100)]
+        [Column("duration")]
+        public string? Duration { get; set; }
+
+        [Column("description")]
+        public string? Description { get; set; }
+
+        [ForeignKey("ApplicantId")]
+        public Applicant Applicant { get; set; } = null!;
     }
 
     [Table("recruiters")]
