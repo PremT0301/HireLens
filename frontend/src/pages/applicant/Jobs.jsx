@@ -247,13 +247,13 @@ const Jobs = () => {
                                     View Details
                                 </button>
 
-                                {!application && (
+                                {!application || application.status === 'Rejected' ? (
                                     <button onClick={() => handleAnalyze(job)} className="btn-primary">
                                         {resumeData ? 'Check Readiness' : 'Analyze Fit'}
                                     </button>
-                                )}
+                                ) : null}
 
-                                {application ? (
+                                {application && application.status !== 'Rejected' ? (
                                     <button
                                         className="btn-ghost"
                                         style={{ color: 'var(--error)', border: '1px solid var(--error)' }}
@@ -267,7 +267,7 @@ const Jobs = () => {
                                         style={{ background: 'var(--success)', border: 'none' }}
                                         onClick={() => openApplyModal(job)}
                                     >
-                                        Apply
+                                        {application && application.status === 'Rejected' ? 'Reapply' : 'Apply'}
                                     </button>
                                 )}
                             </div>

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using SmartHireAI.Backend.Models;
 using SmartHireAI.Backend.Services;
 using SmartHireAI.Backend.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace SmartHireAI.Backend.Controllers;
 
@@ -166,6 +167,34 @@ public class ResumesController : ControllerBase
             _context.Resumes.Add(resume);
             var changes = await _context.SaveChangesAsync();
             _logger.LogInformation($"Resume saved. Changes in DB: {changes}. ResumeId: {resume.ResumeId}");
+
+            // 5. Update Scores for Existing Applications
+            try
+            {
+                var activeApplications = await _context.JobApplications
+                    .Include(a => a.JobDescription)
+                    .Where(a => a.ApplicantId == applicant.ApplicantId && a.Status != "Rejected")
+                    .ToListAsync();
+
+                foreach (var app in activeApplications)
+                {
+                    if (!string.IsNullOrWhiteSpace(app.JobDescription?.Description))
+                    {
+                        var matchResult = await _aiService.MatchJobAsync(text, app.JobDescription.Description);
+                        if (matchResult != null)
+                        {
+                            app.AtsScore = matchResult.MatchSummary.MatchPercentage;
+                            _logger.LogInformation($"Updated score for AppId: {app.ApplicationId} to {app.AtsScore}");
+                        }
+                    }
+                }
+                await _context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to auto-update application scores");
+                // Don't fail the request, just log it
+            }
 
             return Ok(new
             {

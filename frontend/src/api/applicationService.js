@@ -33,7 +33,7 @@ const ApplicationService = {
     },
 
     updateStatus: async (applicationId, status) => {
-        const response = await axios.patch(`${endpoints.applications}/${applicationId}/status`, status, {
+        const response = await axios.patch(`${endpoints.applications}/${applicationId}/status`, { status }, {
             headers: { 'Content-Type': 'application/json' }
         });
         return response.data;

@@ -12,10 +12,12 @@ namespace SmartHireAI.Backend.Controllers;
 public class ApplicationsController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
+    private readonly Services.IAIService _aiService;
 
-    public ApplicationsController(ApplicationDbContext context)
+    public ApplicationsController(ApplicationDbContext context, Services.IAIService aiService)
     {
         _context = context;
+        _aiService = aiService;
     }
 
     // GET: api/applications/my
@@ -142,10 +144,49 @@ public class ApplicationsController : ControllerBase
         if (applicant == null) return BadRequest("Must be an applicant profile to apply");
 
         // Check if already applied
-        var exists = await _context.JobApplications.AnyAsync(a => a.JobId == jobId && a.ApplicantId == applicant.ApplicantId);
-        if (exists) return BadRequest("Already applied to this job");
+        var existingApp = await _context.JobApplications
+            .FirstOrDefaultAsync(a => a.JobId == jobId && a.ApplicantId == applicant.ApplicantId);
 
-        var stats = new Random(); // Mock ATS score for now
+        if (existingApp != null && !existingApp.Status.Equals("Rejected", StringComparison.OrdinalIgnoreCase))
+        {
+            return BadRequest($"Already applied to this job. Status is: {existingApp.Status}");
+        }
+
+        // Get Job Description
+        var job = await _context.JobDescriptions.FindAsync(jobId);
+        if (job == null) return NotFound("Job not found");
+
+        // Get Latest Resume
+        var latestResume = await _context.Resumes
+            .Where(r => r.ApplicantId == applicant.ApplicantId)
+            .OrderByDescending(r => r.ParsedAt)
+            .FirstOrDefaultAsync();
+
+        float finalScore = 0;
+
+        if (latestResume != null && !string.IsNullOrWhiteSpace(latestResume.ResumeText) && !string.IsNullOrWhiteSpace(job.Description))
+        {
+            var matchResult = await _aiService.MatchJobAsync(latestResume.ResumeText, job.Description);
+            if (matchResult != null)
+            {
+                finalScore = matchResult.MatchSummary.MatchPercentage;
+            }
+        }
+
+        if (existingApp != null)
+        {
+            // Reapply logic
+            existingApp.Status = "Applied";
+            existingApp.AppliedAt = DateTime.UtcNow;
+            existingApp.AtsScore = finalScore;
+            existingApp.InterviewDate = null;
+            existingApp.InterviewMode = null;
+            existingApp.MeetingLink = null;
+
+            await _context.SaveChangesAsync();
+            return Ok(new { Message = "Re-application submitted successfully", Score = finalScore });
+        }
+
         var app = new JobApplication
         {
             ApplicationId = Guid.NewGuid(),
@@ -153,13 +194,13 @@ public class ApplicationsController : ControllerBase
             ApplicantId = applicant.ApplicantId,
             Status = "Applied",
             AppliedAt = DateTime.UtcNow,
-            AtsScore = stats.Next(60, 99)
+            AtsScore = finalScore
         };
 
         _context.JobApplications.Add(app);
         await _context.SaveChangesAsync();
 
-        return Ok(new { Message = "Application submitted successfully" });
+        return Ok(new { Message = "Application submitted successfully", Score = finalScore });
     }
 
     // GET: api/applications/{id}
@@ -219,7 +260,8 @@ public class ApplicationsController : ControllerBase
                             .Where(e => e.EntityType == "SKILL")
                             .Select(e => e.EntityValue)
                             .Distinct()
-                            .ToList() ?? new List<string>()
+                            .ToList() ?? new List<string>(),
+                JobDescriptionText = application.JobDescription?.Description
             };
 
             return Ok(response);
@@ -362,12 +404,12 @@ public class ApplicationsController : ControllerBase
     // PATCH: api/applications/{id}/status
     [HttpPatch("{id}/status")]
     [Authorize]
-    public async Task<IActionResult> UpdateStatus(Guid id, [FromBody] string status)
+    public async Task<IActionResult> UpdateStatus(Guid id, [FromBody] StatusDto request)
     {
         var app = await _context.JobApplications.FindAsync(id);
         if (app == null) return NotFound("Application not found");
 
-        app.Status = status;
+        app.Status = request.Status;
         await _context.SaveChangesAsync();
 
         return Ok(new { Message = "Status updated successfully" });
@@ -419,4 +461,5 @@ public class ApplicationsController : ControllerBase
 
     public record InterviewDto(DateTime Date, string Mode, string? Link, int? Duration, string? Notes);
     public record MessageDto(string Subject, string Message);
+    public record StatusDto(string Status);
 }

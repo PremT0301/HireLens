@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Filter, MoreHorizontal, Eye, Mail, Phone, Briefcase, Calendar, FileText, MapPin, Building } from 'lucide-react';
+import { Search, Filter, MoreHorizontal, Eye, Mail, Phone, Briefcase, Calendar, FileText, MapPin, Building, XCircle } from 'lucide-react';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';
 import Modal from '../../components/ui/Modal';
@@ -94,6 +94,25 @@ const TalentPool = () => {
         }
     };
 
+    const handleReject = async (candidate) => {
+        if (!window.confirm(`Are you sure you want to reject ${candidate.name}?`)) return;
+
+        try {
+            await ApplicationService.updateStatus(candidate.id, "Rejected");
+            addToast('Candidate status updated to Rejected', 'info');
+
+            // Update local state
+            setCandidates(prev => prev.map(c =>
+                c.id === candidate.id ? { ...c, status: 'Rejected' } : c
+            ));
+
+            setOpenMenuId(null);
+        } catch (error) {
+            console.error("Failed to reject candidate", error);
+            addToast('Failed to update status', 'error');
+        }
+    };
+
     const handleCloseModal = () => {
         setSelectedCandidate(null);
         setModalView('profile');
@@ -142,12 +161,15 @@ const TalentPool = () => {
                     </thead>
                     <tbody>
                         {candidates.map(candidate => {
-                            const getBadgeStyle = (label) => {
-                                if (label === 'Highly Suitable') return { bg: 'rgba(34, 197, 94, 0.1)', color: 'var(--success)', border: 'var(--success)' };
-                                if (label === 'Suitable') return { bg: 'rgba(59, 130, 246, 0.1)', color: 'var(--primary)', border: 'var(--primary)' };
-                                return { bg: 'rgba(251, 191, 36, 0.1)', color: 'var(--warning)', border: 'var(--warning)' };
+                            const getBadgeStyle = (status, label) => {
+                                if (status === 'Rejected') return { bg: 'rgba(239, 68, 68, 0.1)', color: 'var(--error)', border: 'var(--error)', text: 'Rejected' };
+                                if (status === 'Interview Scheduled') return { bg: 'rgba(139, 92, 246, 0.1)', color: 'var(--accent-primary)', border: 'var(--accent-primary)', text: 'Interview Scheduled' };
+
+                                if (label === 'Highly Suitable') return { bg: 'rgba(34, 197, 94, 0.1)', color: 'var(--success)', border: 'var(--success)', text: label };
+                                if (label === 'Suitable') return { bg: 'rgba(59, 130, 246, 0.1)', color: 'var(--primary)', border: 'var(--primary)', text: label };
+                                return { bg: 'rgba(251, 191, 36, 0.1)', color: 'var(--warning)', border: 'var(--warning)', text: label };
                             };
-                            const badgeStyle = getBadgeStyle(candidate.label);
+                            const badgeStyle = getBadgeStyle(candidate.status, candidate.label);
 
                             return (
                                 <tr
@@ -191,7 +213,7 @@ const TalentPool = () => {
                                             fontWeight: '600',
                                             whiteSpace: 'nowrap'
                                         }}>
-                                            {candidate.label}
+                                            {badgeStyle.text}
                                         </span>
                                     </td>
                                     <td style={{ padding: '1.5rem' }}>
@@ -338,6 +360,35 @@ const TalentPool = () => {
                                                                 onClick={() => { setOpenMenuId(null); setSelectedCandidate(candidate); setModalView('message'); }}
                                                             >
                                                                 <Mail size={18} /> Contact Candidate
+                                                            </button>
+                                                            <button
+                                                                style={{
+                                                                    width: '100%',
+                                                                    textAlign: 'left',
+                                                                    padding: '12px 16px',
+                                                                    background: 'transparent',
+                                                                    border: 'none',
+                                                                    color: 'var(--error)',
+                                                                    cursor: 'pointer',
+                                                                    fontSize: '0.9rem',
+                                                                    fontWeight: '500',
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    gap: '12px',
+                                                                    borderRadius: '10px',
+                                                                    transition: 'all 0.2s',
+                                                                    marginTop: '4px',
+                                                                    borderTop: '1px solid var(--border-color)'
+                                                                }}
+                                                                onMouseEnter={(e) => {
+                                                                    e.target.style.background = 'rgba(239, 68, 68, 0.1)';
+                                                                }}
+                                                                onMouseLeave={(e) => {
+                                                                    e.target.style.background = 'transparent';
+                                                                }}
+                                                                onClick={() => handleReject(candidate)}
+                                                            >
+                                                                <XCircle size={18} /> Reject Candidate
                                                             </button>
                                                         </div>
                                                     </>

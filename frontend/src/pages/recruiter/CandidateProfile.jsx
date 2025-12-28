@@ -13,6 +13,7 @@ import { useToast } from '../../context/ToastContext';
 import ScheduleForm from '../../components/forms/ScheduleForm';
 import MessageForm from '../../components/forms/MessageForm';
 import Modal from '../../components/ui/Modal';
+import api from '../../api/axios';
 
 const CandidateProfile = () => {
     const { applicationId } = useParams();
@@ -20,6 +21,7 @@ const CandidateProfile = () => {
     const { addToast } = useToast();
 
     const [candidate, setCandidate] = useState(null);
+    const [gapAnalysis, setGapAnalysis] = useState(null);
     const [loading, setLoading] = useState(true);
     const [modalView, setModalView] = useState(null); // 'schedule', 'message'
 
@@ -41,6 +43,23 @@ const CandidateProfile = () => {
             fetchCandidate();
         }
     }, [applicationId, navigate, addToast]);
+
+    useEffect(() => {
+        if (candidate?.resumeId && candidate?.jobDescriptionText) {
+            const fetchGap = async () => {
+                try {
+                    const res = await api.post('/resumes/match', {
+                        resumeId: candidate.resumeId,
+                        jobDescription: candidate.jobDescriptionText
+                    });
+                    setGapAnalysis(res.data);
+                } catch (e) {
+                    console.error("Gap analysis failed", e);
+                }
+            };
+            fetchGap();
+        }
+    }, [candidate]);
 
     const handleScheduleSubmit = async (formData) => {
         try {
@@ -209,16 +228,16 @@ const CandidateProfile = () => {
                                 <circle
                                     cx="60" cy="60" r="54"
                                     fill="none"
-                                    stroke={candidate.score > 90 ? 'var(--success)' : 'var(--primary)'}
+                                    stroke={Math.round(gapAnalysis?.matchSummary?.matchPercentage ?? candidate.score) > 90 ? 'var(--success)' : 'var(--primary)'}
                                     strokeWidth="10"
-                                    strokeDasharray={`${(candidate.score / 100) * 339.292} 339.292`}
+                                    strokeDasharray={`${(Math.round(gapAnalysis?.matchSummary?.matchPercentage ?? candidate.score) / 100) * 339.292} 339.292`}
                                     strokeDashoffset="0"
                                     transform="rotate(-90 60 60)"
                                     strokeLinecap="round"
                                 />
                             </svg>
                             <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
-                                <span style={{ fontSize: '2rem', fontWeight: 'bold' }}>{candidate.score}%</span>
+                                <span style={{ fontSize: '2rem', fontWeight: 'bold' }}>{Math.round(gapAnalysis?.matchSummary?.matchPercentage ?? candidate.score)}%</span>
                                 <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Match</span>
                             </div>
                         </div>
@@ -229,36 +248,79 @@ const CandidateProfile = () => {
                     {/* Skills Chart */}
                     <div className="glass-panel" style={{ padding: '2rem' }}>
                         <h3 className="title-sm" style={{ marginBottom: '1.5rem' }}>Skill Analysis</h3>
-                        <div style={{ height: '250px', width: '100%' }}>
-                            <ResponsiveContainer width="100%" height="100%">
-                                <RadarChart cx="50%" cy="50%" outerRadius="70%" data={getChartData(candidate.skills)}>
-                                    <PolarGrid stroke="var(--glass-border)" />
-                                    <PolarAngleAxis dataKey="subject" tick={{ fill: 'var(--text-secondary)', fontSize: 11 }} />
-                                    <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
-                                    <Radar
-                                        name="Skills"
-                                        dataKey="A"
-                                        stroke="var(--primary)"
-                                        strokeWidth={3}
-                                        fill="var(--primary)"
-                                        fillOpacity={0.3}
-                                    />
-                                </RadarChart>
-                            </ResponsiveContainer>
-                        </div>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '1rem', justifyContent: 'center' }}>
-                            {candidate.skills && candidate.skills.map((skill, index) => (
-                                <span key={index} style={{
-                                    fontSize: '0.8rem',
-                                    padding: '4px 10px',
-                                    background: 'var(--bg-secondary)',
-                                    borderRadius: '12px',
-                                    color: 'var(--text-secondary)'
-                                }}>
-                                    {skill}
-                                </span>
-                            ))}
-                        </div>
+                        {candidate.skills && candidate.skills.length > 0 && (
+                            <>
+                                <div style={{ height: '250px', width: '100%' }}>
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <RadarChart cx="50%" cy="50%" outerRadius="70%" data={getChartData(candidate.skills)}>
+                                            <PolarGrid stroke="var(--glass-border)" />
+                                            <PolarAngleAxis dataKey="subject" tick={{ fill: 'var(--text-secondary)', fontSize: 11 }} />
+                                            <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
+                                            <Radar
+                                                name="Skills"
+                                                dataKey="A"
+                                                stroke="var(--primary)"
+                                                strokeWidth={3}
+                                                fill="var(--primary)"
+                                                fillOpacity={0.3}
+                                            />
+                                        </RadarChart>
+                                    </ResponsiveContainer>
+                                </div>
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '1rem', justifyContent: 'center' }}>
+                                    {candidate.skills.map((skill, index) => (
+                                        <span key={index} style={{
+                                            fontSize: '0.8rem',
+                                            padding: '4px 10px',
+                                            background: 'var(--bg-secondary)',
+                                            borderRadius: '12px',
+                                            color: 'var(--text-secondary)'
+                                        }}>
+                                            {skill}
+                                        </span>
+                                    ))}
+                                </div>
+                            </>
+                        )}
+
+                        {gapAnalysis && gapAnalysis.skillAnalysis && (
+                            <>
+                                {gapAnalysis.skillAnalysis.matchedSkills && gapAnalysis.skillAnalysis.matchedSkills.length > 0 && (
+                                    <div style={{ marginTop: '1.5rem', borderTop: '1px solid var(--glass-border)', paddingTop: '1.5rem' }}>
+                                        <h4 style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--success)', marginBottom: '0.8rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '20px', height: '20px', borderRadius: '50%', background: 'rgba(34, 197, 94, 0.15)' }}>✓</span>
+                                            Matched Skills (Gap Analysis)
+                                        </h4>
+                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                                            {gapAnalysis.skillAnalysis.matchedSkills.map((skill, index) => (
+                                                <span key={index} className="badge badge-success">
+                                                    {skill}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {gapAnalysis.skillAnalysis.missingSkills && gapAnalysis.skillAnalysis.missingSkills.length > 0 && (
+                                    <div style={{ marginTop: '1.5rem', borderTop: '1px solid var(--glass-border)', paddingTop: '1.5rem' }}>
+                                        <h4 style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--error)', marginBottom: '0.8rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '20px', height: '20px', borderRadius: '50%', background: 'rgba(239, 68, 68, 0.15)' }}>!</span>
+                                            Missing Skills (Gap Analysis)
+                                        </h4>
+                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                                            {gapAnalysis.skillAnalysis.missingSkills.map((skill, index) => (
+                                                <span key={index} className="badge badge-error">
+                                                    {skill}
+                                                </span>
+                                            ))}
+                                        </div>
+                                        <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.8rem', fontStyle: 'italic' }}>
+                                            These skills are required for the role but were not detected in the resume.
+                                        </p>
+                                    </div>
+                                )}
+                            </>
+                        )}
                     </div>
 
                     {/* Additional Info */}
