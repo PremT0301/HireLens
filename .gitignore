@@ -14,7 +14,7 @@ obj/
 *.sln.docstates
 
 # Sensitive files
-# backend/SmartHireAI.Backend/appsettings.json
+backend/SmartHireAI.Backend/appsettings.json
 
 PROJECT_STATUS.md
 PROJECT_TIMELINE.md
