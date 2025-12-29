@@ -17,7 +17,17 @@ This document serves as the **complete manual** for the project, covering its ar
 5. [Technical Stack](#-technical-stack)
 6. [Installation & Setup](#-installation--setup)
 7. [Project Structure](#-project-directory-structure)
-8. [Troubleshooting](#-troubleshooting)
+10. [Project Progress](#-project-progress)
+11. [Troubleshooting](#-troubleshooting)
+
+---
+
+## 📈 Project Progress
+
+Stay up to date with our current development status and timeline:
+- [Project Status Report](file:///d:/HireLens/PROJECT_STATUS.md)
+- [Project Roadmap & Timeline](file:///d:/HireLens/PROJECT_TIMELINE.md)
+- [Architecture & Workflow Flow](file:///d:/HireLens/project_flow.md)
 
 ---
 

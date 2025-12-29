@@ -50,6 +50,9 @@ graph TD
     *   AI Service compares `Proccessed Resume` vs `Job Description` (NER & Semantic Matching).
     *   Returns: Match %, Skills Match, Missing Skills.
 4.  **Action**: Recruiter schedules an interview or rejects the candidate.
+5.  **Hiring**: Recruiter clicks "Hire Candidate".
+    *   **Validation**: Backend checks if the candidate is already hired elsewhere and if the job has remaining openings.
+    *   **Auto-Close**: If the hire fills the last opening (e.g., 3/3 hires), the job status is automatically updated to `Closed`.
 
 ## 🧠 AI Intelligence Flow
 
