@@ -20,7 +20,7 @@ const CreateJob = () => {
         salaryMin: '',
         salaryMax: '',
         experienceRequired: 0,
-        experienceRequired: 0,
+
         numberOfOpenings: 1,
         description: '',
         requirements: []
@@ -46,7 +46,7 @@ const CreateJob = () => {
                         salaryMin: job.salaryMin || '',
                         salaryMax: job.salaryMax || '',
                         experienceRequired: job.experienceRequired,
-                        experienceRequired: job.experienceRequired,
+
                         numberOfOpenings: job.numberOfOpenings || 1,
                         description: job.description || '',
                         requirements: job.requiredSkills ? job.requiredSkills.split(',').map(s => s.trim()) : []

@@ -31,6 +31,28 @@ public class AuthService : IAuthService
         // 2. Hash Password
         string passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
 
+        // 2.1 Handle Profile Image Upload (Common for User)
+        string? profileImageUrl = null;
+        if (request.ProfileImage != null && request.ProfileImage.Length > 0)
+        {
+            var extension = Path.GetExtension(request.ProfileImage.FileName).ToLowerInvariant();
+            var validExtensions = new[] { ".jpg", ".jpeg", ".png" };
+            if (validExtensions.Contains(extension))
+            {
+                var webRootPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+                var uploadsFolder = Path.Combine(webRootPath, "uploads", "profiles");
+                if (!Directory.Exists(uploadsFolder)) Directory.CreateDirectory(uploadsFolder);
+
+                var fileName = $"{Guid.NewGuid()}{extension}";
+                var filePath = Path.Combine(uploadsFolder, fileName);
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await request.ProfileImage.CopyToAsync(stream);
+                }
+                profileImageUrl = $"/uploads/profiles/{fileName}";
+            }
+        }
+
         // 3. Create User
         var user = new User
         {
@@ -41,6 +63,7 @@ public class AuthService : IAuthService
             MobileNumber = request.MobileNumber,
             Location = request.Location,
             Role = request.Role,
+            ProfileImage = profileImageUrl, // Set Profile Image
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         };
@@ -122,6 +145,11 @@ public class AuthService : IAuthService
                 Location = request.Location,
                 MobileNumber = request.MobileNumber,
                 ExperienceYears = 0,
+
+                Skills = request.Skills != null ? string.Join(",", request.Skills) : null,
+                LinkedInUrl = request.LinkedInUrl,
+                PreferredRole = request.PreferredRole,
+                PreferredWorkLocation = request.PreferredWorkLocation,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
@@ -187,6 +215,64 @@ public class AuthService : IAuthService
         }
 
         // 3. Generate Token
+        return CreateAuthResponse(user);
+    }
+
+    public async Task<AuthResponseDto> GoogleLoginAsync(GoogleLoginDto request)
+    {
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
+
+        if (user == null)
+        {
+            // Register new Google User
+            user = new User
+            {
+                UserId = Guid.NewGuid(),
+                Email = request.Email,
+                FullName = request.FullName,
+                GoogleId = request.GoogleId,
+                AuthProvider = "Google",
+                IsEmailVerified = true,
+                ProfileImage = request.ProfileImage,
+                Role = "Applicant", // Default to Applicant
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
+                PasswordHash = null // Explicitly null
+            };
+            _context.Users.Add(user);
+
+            // Create Profile
+            var applicant = new Applicant
+            {
+                ApplicantId = Guid.NewGuid(),
+                User = user,
+                ExperienceYears = 0,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+            _context.Applicants.Add(applicant);
+
+            await _context.SaveChangesAsync();
+        }
+        else
+        {
+            // User exists - Check consistency
+            if (user.AuthProvider != "Google" && string.IsNullOrEmpty(user.GoogleId))
+            {
+                // Optional: Could merge here, but for now strict separation as per initial plan safety
+                // Or actually, checking if GoogleId is empty is enough.
+                // If email matches but no GoogleId, they registered with password.
+                throw new Exception("User exists with password authentication. Please login via password.");
+            }
+            // Update Google Info if needed
+            if (string.IsNullOrEmpty(user.GoogleId))
+            {
+                user.GoogleId = request.GoogleId;
+                user.AuthProvider = "Google"; // Upgrade to Google?
+                await _context.SaveChangesAsync();
+            }
+        }
+
         return CreateAuthResponse(user);
     }
 

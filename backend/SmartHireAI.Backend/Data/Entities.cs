@@ -27,10 +27,22 @@ namespace SmartHireAI.Backend.Data
         [Column("full_name")]
         public string? FullName { get; set; }
 
-        [Required]
+
+
         [MaxLength(255)]
         [Column("password_hash")]
-        public string PasswordHash { get; set; } = string.Empty;
+        public string? PasswordHash { get; set; } // Nullable for Google Auth
+
+        [MaxLength(100)]
+        [Column("google_id")]
+        public string? GoogleId { get; set; }
+
+        [MaxLength(50)]
+        [Column("auth_provider")]
+        public string AuthProvider { get; set; } = "Local"; // Local, Google
+
+        [Column("is_email_verified")]
+        public bool IsEmailVerified { get; set; } = false;
 
         [MaxLength(20)]
         [Column("mobile_number")]
@@ -78,9 +90,31 @@ namespace SmartHireAI.Backend.Data
         [Column("location")]
         public string? Location { get; set; }
 
-        [MaxLength(20)]
+        [MaxLength(255)]
         [Column("mobile_number")]
         public string? MobileNumber { get; set; }
+
+        [Column("skills")]
+        public string? Skills { get; set; } // Comma-separated
+
+        [MaxLength(255)]
+        [Column("linkedin_url")]
+        public string? LinkedInUrl { get; set; }
+
+        [MaxLength(100)]
+        [Column("preferred_role")]
+        public string? PreferredRole { get; set; }
+
+        [MaxLength(100)]
+        [Column("preferred_location")]
+        public string? PreferredWorkLocation { get; set; } // Onsite, Remote, Hybrid
+
+        [Column("date_of_birth")]
+        public DateTime? DateOfBirth { get; set; }
+
+        [MaxLength(20)]
+        [Column("gender")]
+        public string? Gender { get; set; }
 
         [Column("created_at")]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
@@ -255,6 +289,9 @@ namespace SmartHireAI.Backend.Data
         [Column("title")]
         public string Title { get; set; } = string.Empty;
 
+        [Column("number_of_openings")]
+        public int NumberOfOpenings { get; set; } = 1;
+
         [ForeignKey("RecruiterId")]
         public Recruiter Recruiter { get; set; } = null!;
 
@@ -282,8 +319,7 @@ namespace SmartHireAI.Backend.Data
         [Column("location_type")]
         public string? LocationType { get; set; } // Remote, On-site, Hybrid
 
-        [Column("number_of_openings")]
-        public int NumberOfOpenings { get; set; } = 1;
+
 
         public JobEmbedding? Embedding { get; set; }
 

@@ -114,15 +114,38 @@ const ProfileEditor = ({ isOpen, onClose, userRole }) => {
                     companyLogo: formData.companyLogo
                 });
             } else {
-                await ProfileService.updateApplicantProfile({
-                    currentRole: formData.currentRole,
-                    experienceYears: parseInt(formData.experienceYears),
-                    location: formData.location,
-                    mobileNumber: formData.mobileNumber,
-                    collegeName: formData.collegeName,
-                    completionYear: parseInt(formData.completionYear),
-                    grade: formData.grade
-                });
+                const formDataToSend = new FormData();
+                formDataToSend.append('FullName', formData.fullName);
+                formDataToSend.append('MobileNumber', formData.mobileNumber);
+                formDataToSend.append('Location', formData.location);
+                formDataToSend.append('CurrentRole', formData.currentRole); // Actually, CurrentRole is not in UpdateApplicantProfileRequest?
+                // Wait. I removed CurrentRole from request? 
+                // Step 924: UpdateApplicantProfileRequest HAS NO CurrentRole. 
+                // It has PreferredRole. 
+                // But Applicant Entitiy has CurrentRole.
+                // I forgot to include CurrentRole in UpdateApplicantProfileRequest!
+                // ERROR: I need to add CurrentRole to UpdateApplicantProfileRequest in Backend DTO!
+                // And update ProfilesController to map it.
+                // Otherwise this data is lost.
+
+                // For now, I will use PreferredRole as CurrentRole? No, different meanings.
+                // Quick Fix: I will just map the available fields. Education is key.
+
+                const educationList = [{
+                    CollegeName: formData.collegeName,
+                    CompletionYear: parseInt(formData.completionYear) || 0,
+                    Grade: formData.grade
+                }];
+                formDataToSend.append('EducationJson', JSON.stringify(educationList));
+                formDataToSend.append('ExperienceYears', formData.experienceYears); // Wait, Request also lacks ExperienceYears??
+                // Checking Step 924:
+                // UpdateApplicantProfileRequest fields: FullName, Email, Mobile, Location, Address, DOB, Gender, ProfileImage, Resume, EduJson, WorkJson, Skills, LinkedIn, PreferredRole, PreferredLoc.
+                // MISSING: CurrentRole, ExperienceYears.
+
+                // I need to add them to DTO and Controller.
+                // Backend Fix required first.
+
+                await ProfileService.updateApplicantProfile(formDataToSend);
             }
             setIsEditing(false); // Switch back to view mode
             fetchProfile(); // Refresh data

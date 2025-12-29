@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SmartHireAI.Backend.Data;
 
@@ -10,9 +11,11 @@ using SmartHireAI.Backend.Data;
 namespace SmartHireAI.Backend.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251229062914_EnhanceApplicantProfile")]
+    partial class EnhanceApplicantProfile
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -39,18 +42,9 @@ namespace SmartHireAI.Backend.Migrations
                         .HasColumnType("varchar(100)")
                         .HasColumnName("current_role");
 
-                    b.Property<DateTime?>("DateOfBirth")
-                        .HasColumnType("datetime(6)")
-                        .HasColumnName("date_of_birth");
-
                     b.Property<int>("ExperienceYears")
                         .HasColumnType("int")
                         .HasColumnName("experience_years");
-
-                    b.Property<string>("Gender")
-                        .HasMaxLength(20)
-                        .HasColumnType("varchar(20)")
-                        .HasColumnName("gender");
 
                     b.Property<string>("LinkedInUrl")
                         .HasMaxLength(255)

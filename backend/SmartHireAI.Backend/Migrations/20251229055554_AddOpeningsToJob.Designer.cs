@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SmartHireAI.Backend.Data;
 
@@ -10,9 +11,11 @@ using SmartHireAI.Backend.Data;
 namespace SmartHireAI.Backend.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251229055554_AddOpeningsToJob")]
+    partial class AddOpeningsToJob
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -39,23 +42,9 @@ namespace SmartHireAI.Backend.Migrations
                         .HasColumnType("varchar(100)")
                         .HasColumnName("current_role");
 
-                    b.Property<DateTime?>("DateOfBirth")
-                        .HasColumnType("datetime(6)")
-                        .HasColumnName("date_of_birth");
-
                     b.Property<int>("ExperienceYears")
                         .HasColumnType("int")
                         .HasColumnName("experience_years");
-
-                    b.Property<string>("Gender")
-                        .HasMaxLength(20)
-                        .HasColumnType("varchar(20)")
-                        .HasColumnName("gender");
-
-                    b.Property<string>("LinkedInUrl")
-                        .HasMaxLength(255)
-                        .HasColumnType("varchar(255)")
-                        .HasColumnName("linkedin_url");
 
                     b.Property<string>("Location")
                         .HasMaxLength(100)
@@ -63,28 +52,14 @@ namespace SmartHireAI.Backend.Migrations
                         .HasColumnName("location");
 
                     b.Property<string>("MobileNumber")
-                        .HasMaxLength(255)
-                        .HasColumnType("varchar(255)")
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)")
                         .HasColumnName("mobile_number");
-
-                    b.Property<string>("PreferredRole")
-                        .HasMaxLength(100)
-                        .HasColumnType("varchar(100)")
-                        .HasColumnName("preferred_role");
-
-                    b.Property<string>("PreferredWorkLocation")
-                        .HasMaxLength(100)
-                        .HasColumnType("varchar(100)")
-                        .HasColumnName("preferred_location");
 
                     b.Property<string>("ResumeUrl")
                         .HasMaxLength(500)
                         .HasColumnType("varchar(500)")
                         .HasColumnName("resume_url");
-
-                    b.Property<string>("Skills")
-                        .HasColumnType("longtext")
-                        .HasColumnName("skills");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime(6)")
@@ -493,12 +468,6 @@ namespace SmartHireAI.Backend.Migrations
                         .HasColumnType("char(36)")
                         .HasColumnName("user_id");
 
-                    b.Property<string>("AuthProvider")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("varchar(50)")
-                        .HasColumnName("auth_provider");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)")
                         .HasColumnName("created_at");
@@ -514,15 +483,6 @@ namespace SmartHireAI.Backend.Migrations
                         .HasColumnType("varchar(100)")
                         .HasColumnName("full_name");
 
-                    b.Property<string>("GoogleId")
-                        .HasMaxLength(100)
-                        .HasColumnType("varchar(100)")
-                        .HasColumnName("google_id");
-
-                    b.Property<bool>("IsEmailVerified")
-                        .HasColumnType("tinyint(1)")
-                        .HasColumnName("is_email_verified");
-
                     b.Property<string>("Location")
                         .HasMaxLength(255)
                         .HasColumnType("varchar(255)")
@@ -534,6 +494,7 @@ namespace SmartHireAI.Backend.Migrations
                         .HasColumnName("mobile_number");
 
                     b.Property<string>("PasswordHash")
+                        .IsRequired()
                         .HasMaxLength(255)
                         .HasColumnType("varchar(255)")
                         .HasColumnName("password_hash");

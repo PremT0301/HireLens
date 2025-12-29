@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using SmartHireAI.Backend.Data;
 using SmartHireAI.Backend.Models;
 using System.IO;
+using System.Text.Json;
 
 namespace SmartHireAI.Backend.Controllers;
 
@@ -38,7 +39,7 @@ public class ProfilesController : ControllerBase
         // ... (lines 37-51 omitted for brevity, logic remains valid if kept same) ...
         if (applicant == null)
         {
-            // ...
+            return NotFound("Applicant profile not found.");
         }
 
         var edu = applicant.Education.FirstOrDefault();
@@ -60,9 +61,10 @@ public class ProfilesController : ControllerBase
     }
 
     // PUT: api/profiles/me (Applicant)
+    // PUT: api/profiles/me (Applicant)
     [HttpPut("me")]
     [Authorize]
-    public async Task<IActionResult> UpdateMyProfile(UpdateProfileDto request)
+    public async Task<IActionResult> UpdateMyProfile([FromForm] UpdateApplicantProfileRequest request)
     {
         var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
@@ -70,13 +72,13 @@ public class ProfilesController : ControllerBase
             return Unauthorized();
         }
 
-        var applicant = await _context.Applicants
-            .Include(a => a.User)
-            .Include(a => a.Education)
-            .FirstOrDefaultAsync(a => a.User.UserId == userId);
-
         var user = await _context.Users.FindAsync(userId);
         if (user == null) return NotFound("User not found");
+
+        var applicant = await _context.Applicants
+            .Include(a => a.Education)
+            .Include(a => a.WorkExperience)
+            .FirstOrDefaultAsync(a => a.User.UserId == userId);
 
         if (applicant == null)
         {
@@ -84,65 +86,122 @@ public class ProfilesController : ControllerBase
             {
                 ApplicantId = Guid.NewGuid(),
                 User = user,
-                CurrentRole = request.CurrentRole,
-                ExperienceYears = request.ExperienceYears,
-                Location = request.Location,
-                MobileNumber = request.MobileNumber,
+                ExperienceYears = 0,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
-
-            if (!string.IsNullOrEmpty(request.CollegeName))
-            {
-                applicant.Education.Add(new Education
-                {
-                    EducationId = Guid.NewGuid(),
-                    CollegeName = request.CollegeName,
-                    CompletionYear = request.CompletionYear ?? 0,
-                    Grade = request.Grade,
-                    ApplicantId = applicant.ApplicantId
-                });
-            }
-
             _context.Applicants.Add(applicant);
         }
-        else
-        {
-            applicant.CurrentRole = request.CurrentRole;
-            applicant.ExperienceYears = request.ExperienceYears;
-            applicant.Location = request.Location;
-            applicant.MobileNumber = request.MobileNumber;
-            applicant.UpdatedAt = DateTime.UtcNow;
 
-            // Update Education
-            var edu = applicant.Education.FirstOrDefault();
-            if (edu != null)
+        // Update User Fields
+        if (!string.IsNullOrEmpty(request.FullName)) user.FullName = request.FullName;
+        if (!string.IsNullOrEmpty(request.MobileNumber)) user.MobileNumber = request.MobileNumber;
+        if (!string.IsNullOrEmpty(request.Location)) user.Location = request.Location;
+        user.UpdatedAt = DateTime.UtcNow;
+
+        // Profile Image Upload
+        if (request.ProfileImage != null && request.ProfileImage.Length > 0)
+        {
+            var extension = Path.GetExtension(request.ProfileImage.FileName).ToLowerInvariant();
+            if (new[] { ".jpg", ".jpeg", ".png" }.Contains(extension))
             {
-                edu.CollegeName = request.CollegeName ?? edu.CollegeName;
-                edu.CompletionYear = request.CompletionYear ?? edu.CompletionYear;
-                edu.Grade = request.Grade ?? edu.Grade;
-            }
-            else if (!string.IsNullOrEmpty(request.CollegeName))
-            {
-                applicant.Education.Add(new Education
+                var folder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "profiles");
+                if (!Directory.Exists(folder)) Directory.CreateDirectory(folder);
+                var fileName = $"{Guid.NewGuid()}{extension}";
+                using (var stream = new FileStream(Path.Combine(folder, fileName), FileMode.Create))
                 {
-                    EducationId = Guid.NewGuid(),
-                    CollegeName = request.CollegeName,
-                    CompletionYear = request.CompletionYear ?? 0,
-                    Grade = request.Grade,
-                    ApplicantId = applicant.ApplicantId
-                });
+                    await request.ProfileImage.CopyToAsync(stream);
+                }
+                user.ProfileImage = $"/uploads/profiles/{fileName}";
             }
         }
 
-        // Sync common fields to User table
-        if (!string.IsNullOrEmpty(request.Location)) user.Location = request.Location;
-        if (!string.IsNullOrEmpty(request.MobileNumber)) user.MobileNumber = request.MobileNumber;
-        user.UpdatedAt = DateTime.UtcNow;
+        // Update Applicant Specifics
+        applicant.Address = request.Address;
+        applicant.DateOfBirth = request.DateOfBirth;
+        applicant.Gender = request.Gender;
+        applicant.Skills = request.Skills;
+        applicant.LinkedInUrl = request.LinkedInUrl;
+        applicant.PreferredRole = request.PreferredRole;
+        applicant.PreferredWorkLocation = request.PreferredWorkLocation;
 
+        if (!string.IsNullOrEmpty(request.CurrentRole)) applicant.CurrentRole = request.CurrentRole;
+        applicant.ExperienceYears = request.ExperienceYears;
+
+        // Resume Upload
+        if (request.Resume != null && request.Resume.Length > 0)
+        {
+            var extension = Path.GetExtension(request.Resume.FileName).ToLowerInvariant();
+            if (extension == ".pdf")
+            {
+                var folder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "resumes");
+                if (!Directory.Exists(folder)) Directory.CreateDirectory(folder);
+                var fileName = $"{Guid.NewGuid()}{extension}";
+                using (var stream = new FileStream(Path.Combine(folder, fileName), FileMode.Create))
+                {
+                    await request.Resume.CopyToAsync(stream);
+                }
+                applicant.ResumeUrl = $"/uploads/resumes/{fileName}";
+            }
+        }
+
+        // Parse and Update Lists (Education)
+        if (!string.IsNullOrEmpty(request.EducationJson))
+        {
+            try
+            {
+                var eduList = JsonSerializer.Deserialize<List<EducationDto>>(request.EducationJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                if (eduList != null)
+                {
+                    _context.Education.RemoveRange(applicant.Education);
+                    foreach (var item in eduList)
+                    {
+                        _context.Education.Add(new Education
+                        {
+                            EducationId = Guid.NewGuid(),
+                            ApplicantId = applicant.ApplicantId,
+                            CollegeName = item.CollegeName,
+                            Degree = item.Degree,
+                            Specialization = item.Specialization,
+                            CompletionYear = item.CompletionYear,
+                            Grade = item.Grade
+                        });
+                    }
+                }
+            }
+            catch { /* Ignore JSON errors for now */ }
+        }
+
+        // Parse and Update Lists (Work Experience)
+        if (!string.IsNullOrEmpty(request.WorkExperienceJson))
+        {
+            try
+            {
+                var expList = JsonSerializer.Deserialize<List<WorkExperienceDto>>(request.WorkExperienceJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                if (expList != null)
+                {
+                    _context.WorkExperience.RemoveRange(applicant.WorkExperience);
+                    foreach (var item in expList)
+                    {
+                        _context.WorkExperience.Add(new WorkExperience
+                        {
+                            ExperienceId = Guid.NewGuid(),
+                            ApplicantId = applicant.ApplicantId,
+                            CompanyName = item.CompanyName,
+                            Role = item.Role,
+                            Duration = item.Duration,
+                            Description = item.Description
+                        });
+                    }
+                }
+            }
+            catch { /* Ignore JSON errors */ }
+        }
+
+        applicant.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
 
-        return NoContent();
+        return Ok(new { message = "Profile updated successfully" });
     }
 
     // GET: api/profiles/recruiter/me

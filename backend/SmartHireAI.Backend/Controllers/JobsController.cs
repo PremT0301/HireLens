@@ -41,7 +41,8 @@ public class JobsController : ControllerBase
                 Department = j.Department,
                 EmploymentType = j.EmploymentType,
                 Location = j.Location,
-                LocationType = j.LocationType
+                LocationType = j.LocationType,
+                NumberOfOpenings = j.NumberOfOpenings
             })
             .ToListAsync();
 
@@ -78,7 +79,8 @@ public class JobsController : ControllerBase
                 Department = j.Department,
                 EmploymentType = j.EmploymentType,
                 Location = j.Location,
-                LocationType = j.LocationType
+                LocationType = j.LocationType,
+                NumberOfOpenings = j.NumberOfOpenings
             })
             .ToListAsync();
 
@@ -115,7 +117,8 @@ public class JobsController : ControllerBase
             Department = job.Department,
             EmploymentType = job.EmploymentType,
             Location = job.Location,
-            LocationType = job.LocationType
+            LocationType = job.LocationType,
+            NumberOfOpenings = job.NumberOfOpenings
         };
     }
 
@@ -177,7 +180,8 @@ public class JobsController : ControllerBase
             Department = job.Department,
             EmploymentType = job.EmploymentType,
             Location = job.Location,
-            LocationType = job.LocationType
+            LocationType = job.LocationType,
+            NumberOfOpenings = job.NumberOfOpenings
         });
     }
 

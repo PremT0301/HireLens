@@ -122,3 +122,4 @@ D:\HireLens\backend\SmartHireAI.Backend\obj\Debug\net10.0\refint\SmartHireAI.Bac
 D:\HireLens\backend\SmartHireAI.Backend\obj\Debug\net10.0\SmartHireAI.Backend.pdb
 D:\HireLens\backend\SmartHireAI.Backend\obj\Debug\net10.0\SmartHireAI.Backend.genruntimeconfig.cache
 D:\HireLens\backend\SmartHireAI.Backend\obj\Debug\net10.0\ref\SmartHireAI.Backend.dll
+D:\HireLens\backend\SmartHireAI.Backend\bin\Debug\net10.0\Microsoft.AspNetCore.Authentication.Google.dll
