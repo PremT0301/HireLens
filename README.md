@@ -91,6 +91,15 @@ Designed to streamline the hiring workflow.
 *   **📊 Analytics Suite**
     *   Deep dive metrics into which jobs are attracting the most attention and where candidates are dropping off.
 
+*   **📅 Interview & Hiring Workflow**
+    *   **Interactive Scheduling**: Schedule interviews directly from the platform.
+    *   **Status Tracking**: Real-time updates for "Interview Scheduled", "Interview Accepted", and "Hired".
+    *   **Hire Button**: One-click hiring action that automatically closes the loop.
+
+*   **🔄 Advanced Re-application Logic**
+    *   Rejected candidates can re-apply, updating their status to "Reapplied" with a fresh timestamp and score.
+    *   **Auto-Close**: Jobs automatically close when the number of desired openings is filled.
+
 ---
 
 ## 🧠 Machine Learning Pipeline
