@@ -209,6 +209,11 @@ public class AuthService : IAuthService
         }
 
         // 2. Verify Password
+        if (string.IsNullOrEmpty(user.PasswordHash))
+        {
+            throw new Exception("This account is registered via Google. Please use 'Sign in with Google'.");
+        }
+
         if (!BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
         {
             throw new Exception("Invalid credentials.");

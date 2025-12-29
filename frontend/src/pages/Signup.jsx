@@ -55,7 +55,7 @@ const Signup = () => {
         const token = params.get('token');
         if (token) {
             setMode('complete');
-            localStorage.setItem('token', token);
+            sessionStorage.setItem('token', token);
             fetchInitialProfile();
         }
     }, [locationHook]);
@@ -125,12 +125,12 @@ const Signup = () => {
 
             // Common
             data.append('FullName', formData.fullName);
+            data.append('Email', formData.email);
             data.append('MobileNumber', formData.mobileNumber);
             data.append('Location', formData.location);
             if (profileImage) data.append('ProfileImage', profileImage);
 
             if (mode === 'register') {
-                data.append('Email', formData.email);
                 data.append('Password', formData.password);
                 data.append('Role', role);
             }
@@ -151,7 +151,7 @@ const Signup = () => {
             } else {
                 // Applicant
                 data.append('Address', formData.address);
-                data.append('DateOfBirth', formData.dateOfBirth);
+                if (formData.dateOfBirth) data.append('DateOfBirth', formData.dateOfBirth);
                 data.append('Gender', formData.gender);
                 // data.append('FormattedSkills', formData.skills); // Helper? No, string
                 // data.append('Skills', formData.skills); // Backend Expects Comma Separated String? 
@@ -214,8 +214,8 @@ const Signup = () => {
                 navigate('/login');
             } else {
                 // Complete profile
-                // Using axios directly to ensure multipart
-                await axios.put('/profiles/me', data, { headers: { 'Content-Type': 'multipart/form-data' } });
+                // Do NOT set Content-Type manually, axios will handle boundary
+                await axios.put('/profiles/me', data);
 
                 // Force reload profile cache/context if any
                 alert("Profile completed successfully! Welcome.");

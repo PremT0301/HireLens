@@ -70,6 +70,19 @@ const Login = () => {
 
 
 
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '2rem' }}>
+                    <button
+                        type="button"
+                        onClick={() => window.location.href = 'http://localhost:5033/api/auth/google-login'}
+                        className="btn-secondary"
+                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', padding: '12px' }}
+                    >
+                        <img src="https://cdn-icons-png.flaticon.com/512/300/300221.png" alt="Google" style={{ width: 18 }} />
+                        Sign in with Google
+                    </button>
+                    <div style={{ textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>OR</div>
+                </div>
+
                 <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                     <div>
                         <label style={{ display: 'block', color: 'var(--text-secondary)', marginBottom: '8px', fontSize: '0.9rem' }}>Email Address</label>

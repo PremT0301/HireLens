@@ -79,10 +79,15 @@ public class AuthController : ControllerBase
                 FullName = name ?? "Google User",
                 ProfileImage = claims?.FirstOrDefault(c => c.Type == "picture")?.Value
             });
-            return Ok(authResponse); // Returns JWT
+
+            // Redirect to frontend Signup page with the token
+            // The frontend will detect the token and enter 'complete' mode
+            var redirectUrl = $"http://localhost:5173/signup?token={authResponse.Token}";
+            return Redirect(redirectUrl);
         }
         catch (Exception ex)
         {
+            // Redirect with error message? Or just bad request
             return BadRequest(new { message = ex.Message });
         }
     }

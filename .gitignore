@@ -6,6 +6,16 @@ models/
 .vscode/
 __pycache__/
 
+# .NET core bits
+bin/
+obj/
+*.user
+*.userosscache
+*.sln.docstates
+
+# Sensitive files
+# backend/SmartHireAI.Backend/appsettings.json
+
 PROJECT_STATUS.md
 PROJECT_TIMELINE.md
 QUICKSTART.md
