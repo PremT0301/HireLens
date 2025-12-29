@@ -44,8 +44,18 @@ const ApplicationService = {
         return response.data;
     },
 
-    sendMessage: async (applicationId, messageData) => {
-        const response = await axios.post(`${endpoints.applications}/${applicationId}/message`, messageData);
+    sendMessage: async (applicationId, subject, message) => {
+        const response = await axios.post(`${endpoints.applications}/${applicationId}/message`, { subject, message });
+        return response.data;
+    },
+
+    acceptInterview: async (applicationId) => {
+        const response = await axios.post(`${endpoints.applications}/${applicationId}/accept-interview`);
+        return response.data;
+    },
+
+    hireCandidate: async (applicationId) => {
+        const response = await axios.post(`${endpoints.applications}/${applicationId}/hire`);
         return response.data;
     },
 

@@ -160,7 +160,8 @@ public class JobsController : ControllerBase
             Department = request.Department,
             EmploymentType = request.EmploymentType,
             Location = request.Location,
-            LocationType = request.LocationType
+            LocationType = request.LocationType,
+            NumberOfOpenings = request.NumberOfOpenings
         };
 
         _context.JobDescriptions.Add(job);
@@ -205,6 +206,7 @@ public class JobsController : ControllerBase
         job.EmploymentType = request.EmploymentType;
         job.Location = request.Location;
         job.LocationType = request.LocationType;
+        job.NumberOfOpenings = request.NumberOfOpenings;
 
         await _context.SaveChangesAsync();
 

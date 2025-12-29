@@ -349,6 +349,7 @@ const CandidateRow = ({ candidate, onSchedule, onStatusUpdate, onViewProfile }) 
 
     // Custom style for badges if class not available
     const getBadgeStyle = (label) => {
+        if (label === 'Hired') return { bg: 'rgba(34, 197, 94, 0.1)', color: 'var(--success)', border: 'var(--success)' };
         if (label === 'Highly Suitable') return { bg: 'rgba(34, 197, 94, 0.1)', color: 'var(--success)', border: 'var(--success)' };
         if (label === 'Suitable') return { bg: 'rgba(59, 130, 246, 0.1)', color: 'var(--primary)', border: 'var(--primary)' };
         return { bg: 'rgba(251, 191, 36, 0.1)', color: 'var(--warning)', border: 'var(--warning)' };

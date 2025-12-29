@@ -145,9 +145,12 @@ const Jobs = () => {
 
     const getStatusConfig = (status) => {
         switch (status) {
-            case 'Interview Scheduled': return { bg: 'var(--primary)', color: 'white', label: 'Interview Scheduled' }; // Primary is often blue/purple
+            case 'Interview Scheduled': return { bg: 'var(--primary)', color: 'white', label: 'Interview Scheduled' };
+            case 'Interview Accepted': return { bg: 'var(--success)', color: 'white', label: 'Interview Accepted' };
+            case 'Reapplied': return { bg: 'var(--primary)', color: 'white', label: 'Reapplied' };
             case 'Contacted': return { bg: 'rgba(59, 130, 246, 0.1)', color: 'var(--primary)', label: 'Contacted' };
             case 'Offer': return { bg: 'var(--success)', color: 'white', label: 'Offer Received' };
+            case 'Hired': return { bg: 'var(--success)', color: 'white', label: 'Hired' };
             case 'Rejected': return { bg: 'var(--error)', color: 'white', label: 'Rejected' };
             default: return { bg: 'var(--secondary)', color: 'white', label: 'Applied' }; // Default applied
         }
@@ -211,7 +214,7 @@ const Jobs = () => {
 
 
                                 {/* Interview Details Block */}
-                                {application?.status === 'Interview Scheduled' && application.interviewDate && (
+                                {['Interview Scheduled', 'Interview Accepted'].includes(application?.status) && application.interviewDate && (
                                     <div style={{ marginTop: '1.5rem', padding: '1rem', background: 'rgba(59, 130, 246, 0.05)', borderRadius: '12px', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
                                         <h4 style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--primary)', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
                                             <Calendar size={16} /> Interview Scheduled
@@ -238,39 +241,58 @@ const Jobs = () => {
                                 )}
                             </div>
 
-                            <div style={{ display: 'flex', gap: '1rem' }}>
-                                <button
-                                    className="btn-ghost"
-                                    style={{ border: '1px solid var(--glass-border)' }}
-                                    onClick={() => navigate(`/applicant/jobs/${job.jobId}`)}
-                                >
-                                    View Details
-                                </button>
-
-                                {!application || application.status === 'Rejected' ? (
-                                    <button onClick={() => handleAnalyze(job)} className="btn-primary">
-                                        {resumeData ? 'Check Readiness' : 'Analyze Fit'}
-                                    </button>
-                                ) : null}
-
-                                {application && application.status !== 'Rejected' ? (
+                            {application?.status === 'Hired' ? (
+                                <div style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'flex-end',
+                                    gap: '0.5rem',
+                                    padding: '0.8rem 1.5rem',
+                                    background: 'rgba(34, 197, 94, 0.1)',
+                                    borderRadius: '12px',
+                                    border: '1px solid var(--success)',
+                                    color: 'var(--success)',
+                                    fontWeight: '600',
+                                    marginLeft: 'auto'
+                                }}>
+                                    <span style={{ fontSize: '1.2rem' }}>🎉</span>
+                                    <span>Congratulations! You've been hired!</span>
+                                </div>
+                            ) : (
+                                <div style={{ display: 'flex', gap: '1rem' }}>
                                     <button
                                         className="btn-ghost"
-                                        style={{ color: 'var(--error)', border: '1px solid var(--error)' }}
-                                        onClick={() => openWithdrawModal(job)}
+                                        style={{ border: '1px solid var(--glass-border)' }}
+                                        onClick={() => navigate(`/applicant/jobs/${job.jobId}`)}
                                     >
-                                        Withdraw
+                                        View Details
                                     </button>
-                                ) : (
-                                    <button
-                                        className="btn-primary"
-                                        style={{ background: 'var(--success)', border: 'none' }}
-                                        onClick={() => openApplyModal(job)}
-                                    >
-                                        {application && application.status === 'Rejected' ? 'Reapply' : 'Apply'}
-                                    </button>
-                                )}
-                            </div>
+
+                                    {!application || application.status === 'Rejected' ? (
+                                        <button onClick={() => handleAnalyze(job)} className="btn-primary">
+                                            {resumeData ? 'Check Readiness' : 'Analyze Fit'}
+                                        </button>
+                                    ) : null}
+
+                                    {application && application.status !== 'Rejected' ? (
+                                        <button
+                                            className="btn-ghost"
+                                            style={{ color: 'var(--error)', border: '1px solid var(--error)' }}
+                                            onClick={() => openWithdrawModal(job)}
+                                        >
+                                            Withdraw
+                                        </button>
+                                    ) : (
+                                        <button
+                                            className="btn-primary"
+                                            style={{ background: 'var(--success)', border: 'none' }}
+                                            onClick={() => openApplyModal(job)}
+                                        >
+                                            {application && application.status === 'Rejected' ? 'Reapply' : 'Apply'}
+                                        </button>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     );
                 })}

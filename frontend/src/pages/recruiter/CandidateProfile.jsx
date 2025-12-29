@@ -84,6 +84,19 @@ const CandidateProfile = () => {
         }
     };
 
+
+    const handleHire = async () => {
+        if (!window.confirm(`Are you sure you want to HIRE ${candidate.name}?`)) return;
+        try {
+            await ApplicationService.hireCandidate(candidate.applicationId);
+            addToast(`Successfully hired ${candidate.name}!`, 'success');
+            setCandidate(prev => ({ ...prev, status: 'Hired' }));
+        } catch (error) {
+            console.error("Failed to hire", error);
+            addToast('Failed to hire candidate.', 'error');
+        }
+    };
+
     const getChartData = (skills) => {
         if (!skills || !Array.isArray(skills)) return [];
         // Take top 6 skills for the chart to avoid overcrowding
@@ -157,195 +170,206 @@ const CandidateProfile = () => {
 
                     <div style={{ display: 'flex', gap: '1rem' }}>
                         <button className="btn-ghost" onClick={() => setModalView('message')}>Message</button>
+                        {candidate.status === 'Interview Accepted' && (
+                            <button
+                                className="btn-primary"
+                                style={{ background: 'var(--success)', borderColor: 'var(--success)' }}
+                                onClick={handleHire}
+                            >
+                                Hire Candidate
+                            </button>
+                        )}
                         <button className="btn-primary" onClick={() => setModalView('schedule')}>Schedule Interview</button>
                     </div>
                 </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 350px', gap: '2rem' }}>
+
+                    {/* Left Column: Details & Resume */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+
+                        {/* Resume Section */}
+                        <div className="glass-panel" style={{ padding: '2rem' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                                <h2 className="title-sm" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                    <FileText size={24} className="text-primary" /> Resume
+                                </h2>
+                                <div style={{ display: 'flex', gap: '1rem' }}>
+                                    {candidate.resumeId && (
+                                        <a
+                                            href={`${API_BASE_URL}/resumes/download/${candidate.resumeId}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="btn-primary"
+                                            style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none', color: 'white' }}
+                                        >
+                                            <Download size={18} /> Download Original
+                                        </a>
+                                    )}
+                                    <button className="btn-ghost" title="Download Text" onClick={() => {
+                                        const blob = new Blob([candidate.resumeText], { type: 'text/plain' });
+                                        const url = window.URL.createObjectURL(blob);
+                                        const a = document.createElement('a');
+                                        a.href = url;
+                                        a.download = `${candidate.name.replace(/\s+/g, '_')}_Resume.txt`;
+                                        a.click();
+                                    }}>
+                                        <FileText size={18} /> Download Text
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div style={{
+                                background: 'var(--bg-secondary)',
+                                padding: '2rem',
+                                borderRadius: '12px',
+                                border: '1px solid var(--glass-border)',
+                                whiteSpace: 'pre-wrap',
+                                fontFamily: 'monospace',
+                                fontSize: '0.9rem',
+                                lineHeight: '1.6',
+                                maxHeight: '600px',
+                                overflowY: 'auto',
+                                color: 'var(--text-primary)'
+                            }}>
+                                {candidate.resumeText}
+                            </div>
+                        </div>
+
+                    </div>
+
+                    {/* Right Column: Stats & Meta */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+
+                        {/* Match Score */}
+                        <div className="glass-panel" style={{ padding: '2rem', textAlign: 'center' }}>
+                            <div style={{ position: 'relative', width: '120px', height: '120px', margin: '0 auto 1rem' }}>
+                                <svg width="120" height="120" viewBox="0 0 120 120">
+                                    <circle cx="60" cy="60" r="54" fill="none" stroke="var(--border-color)" strokeWidth="10" />
+                                    <circle
+                                        cx="60" cy="60" r="54"
+                                        fill="none"
+                                        stroke={Math.round(gapAnalysis?.matchSummary?.matchPercentage ?? candidate.score) > 90 ? 'var(--success)' : 'var(--primary)'}
+                                        strokeWidth="10"
+                                        strokeDasharray={`${(Math.round(gapAnalysis?.matchSummary?.matchPercentage ?? candidate.score) / 100) * 339.292} 339.292`}
+                                        strokeDashoffset="0"
+                                        transform="rotate(-90 60 60)"
+                                        strokeLinecap="round"
+                                    />
+                                </svg>
+                                <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
+                                    <span style={{ fontSize: '2rem', fontWeight: 'bold' }}>{Math.round(gapAnalysis?.matchSummary?.matchPercentage ?? candidate.score)}%</span>
+                                    <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Match</span>
+                                </div>
+                            </div>
+                            <h3 style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>AI Matching Score</h3>
+                            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Based on skills and experience relevance.</p>
+                        </div>
+
+                        {/* Skills Chart */}
+                        <div className="glass-panel" style={{ padding: '2rem' }}>
+                            <h3 className="title-sm" style={{ marginBottom: '1.5rem' }}>Skill Analysis</h3>
+                            {candidate.skills && candidate.skills.length > 0 && (
+                                <>
+                                    <div style={{ height: '250px', width: '100%' }}>
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <RadarChart cx="50%" cy="50%" outerRadius="70%" data={getChartData(candidate.skills)}>
+                                                <PolarGrid stroke="var(--glass-border)" />
+                                                <PolarAngleAxis dataKey="subject" tick={{ fill: 'var(--text-secondary)', fontSize: 11 }} />
+                                                <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
+                                                <Radar
+                                                    name="Skills"
+                                                    dataKey="A"
+                                                    stroke="var(--primary)"
+                                                    strokeWidth={3}
+                                                    fill="var(--primary)"
+                                                    fillOpacity={0.3}
+                                                />
+                                            </RadarChart>
+                                        </ResponsiveContainer>
+                                    </div>
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '1rem', justifyContent: 'center' }}>
+                                        {candidate.skills.map((skill, index) => (
+                                            <span key={index} style={{
+                                                fontSize: '0.8rem',
+                                                padding: '4px 10px',
+                                                background: 'var(--bg-secondary)',
+                                                borderRadius: '12px',
+                                                color: 'var(--text-secondary)'
+                                            }}>
+                                                {skill}
+                                            </span>
+                                        ))}
+                                    </div>
+                                </>
+                            )}
+
+                            {gapAnalysis && gapAnalysis.skillAnalysis && (
+                                <>
+                                    {gapAnalysis.skillAnalysis.matchedSkills && gapAnalysis.skillAnalysis.matchedSkills.length > 0 && (
+                                        <div style={{ marginTop: '1.5rem', borderTop: '1px solid var(--glass-border)', paddingTop: '1.5rem' }}>
+                                            <h4 style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--success)', marginBottom: '0.8rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '20px', height: '20px', borderRadius: '50%', background: 'rgba(34, 197, 94, 0.15)' }}>✓</span>
+                                                Matched Skills (Gap Analysis)
+                                            </h4>
+                                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                                                {gapAnalysis.skillAnalysis.matchedSkills.map((skill, index) => (
+                                                    <span key={index} className="badge badge-success">
+                                                        {skill}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {gapAnalysis.skillAnalysis.missingSkills && gapAnalysis.skillAnalysis.missingSkills.length > 0 && (
+                                        <div style={{ marginTop: '1.5rem', borderTop: '1px solid var(--glass-border)', paddingTop: '1.5rem' }}>
+                                            <h4 style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--error)', marginBottom: '0.8rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '20px', height: '20px', borderRadius: '50%', background: 'rgba(239, 68, 68, 0.15)' }}>!</span>
+                                                Missing Skills (Gap Analysis)
+                                            </h4>
+                                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                                                {gapAnalysis.skillAnalysis.missingSkills.map((skill, index) => (
+                                                    <span key={index} className="badge badge-error">
+                                                        {skill}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.8rem', fontStyle: 'italic' }}>
+                                                These skills are required for the role but were not detected in the resume.
+                                            </p>
+                                        </div>
+                                    )}
+                                </>
+                            )}
+                        </div>
+
+                        {/* Additional Info */}
+                        <div className="glass-panel" style={{ padding: '1.5rem' }}>
+                            <h3 className="title-sm" style={{ marginBottom: '1rem' }}>Application Info</h3>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                    <Calendar size={18} className="text-gray-400" />
+                                    <div>
+                                        <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Applied On</div>
+                                        <div style={{ fontWeight: '500' }}>{new Date(candidate.appliedAt).toLocaleDateString()}</div>
+                                    </div>
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                    <MapPin size={18} className="text-gray-400" />
+                                    <div>
+                                        <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Location</div>
+                                        <div style={{ fontWeight: '500' }}>{candidate.location || 'Unknown'}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 350px', gap: '2rem' }}>
-
-                {/* Left Column: Details & Resume */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-
-                    {/* Resume Section */}
-                    <div className="glass-panel" style={{ padding: '2rem' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                            <h2 className="title-sm" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                <FileText size={24} className="text-primary" /> Resume
-                            </h2>
-                            <div style={{ display: 'flex', gap: '1rem' }}>
-                                {candidate.resumeId && (
-                                    <a
-                                        href={`${API_BASE_URL}/resumes/download/${candidate.resumeId}`}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="btn-primary"
-                                        style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none', color: 'white' }}
-                                    >
-                                        <Download size={18} /> Download Original
-                                    </a>
-                                )}
-                                <button className="btn-ghost" title="Download Text" onClick={() => {
-                                    const blob = new Blob([candidate.resumeText], { type: 'text/plain' });
-                                    const url = window.URL.createObjectURL(blob);
-                                    const a = document.createElement('a');
-                                    a.href = url;
-                                    a.download = `${candidate.name.replace(/\s+/g, '_')}_Resume.txt`;
-                                    a.click();
-                                }}>
-                                    <FileText size={18} /> Download Text
-                                </button>
-                            </div>
-                        </div>
-
-                        <div style={{
-                            background: 'var(--bg-secondary)',
-                            padding: '2rem',
-                            borderRadius: '12px',
-                            border: '1px solid var(--glass-border)',
-                            whiteSpace: 'pre-wrap',
-                            fontFamily: 'monospace',
-                            fontSize: '0.9rem',
-                            lineHeight: '1.6',
-                            maxHeight: '600px',
-                            overflowY: 'auto',
-                            color: 'var(--text-primary)'
-                        }}>
-                            {candidate.resumeText}
-                        </div>
-                    </div>
-
-                </div>
-
-                {/* Right Column: Stats & Meta */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-
-                    {/* Match Score */}
-                    <div className="glass-panel" style={{ padding: '2rem', textAlign: 'center' }}>
-                        <div style={{ position: 'relative', width: '120px', height: '120px', margin: '0 auto 1rem' }}>
-                            <svg width="120" height="120" viewBox="0 0 120 120">
-                                <circle cx="60" cy="60" r="54" fill="none" stroke="var(--border-color)" strokeWidth="10" />
-                                <circle
-                                    cx="60" cy="60" r="54"
-                                    fill="none"
-                                    stroke={Math.round(gapAnalysis?.matchSummary?.matchPercentage ?? candidate.score) > 90 ? 'var(--success)' : 'var(--primary)'}
-                                    strokeWidth="10"
-                                    strokeDasharray={`${(Math.round(gapAnalysis?.matchSummary?.matchPercentage ?? candidate.score) / 100) * 339.292} 339.292`}
-                                    strokeDashoffset="0"
-                                    transform="rotate(-90 60 60)"
-                                    strokeLinecap="round"
-                                />
-                            </svg>
-                            <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
-                                <span style={{ fontSize: '2rem', fontWeight: 'bold' }}>{Math.round(gapAnalysis?.matchSummary?.matchPercentage ?? candidate.score)}%</span>
-                                <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Match</span>
-                            </div>
-                        </div>
-                        <h3 style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>AI Matching Score</h3>
-                        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Based on skills and experience relevance.</p>
-                    </div>
-
-                    {/* Skills Chart */}
-                    <div className="glass-panel" style={{ padding: '2rem' }}>
-                        <h3 className="title-sm" style={{ marginBottom: '1.5rem' }}>Skill Analysis</h3>
-                        {candidate.skills && candidate.skills.length > 0 && (
-                            <>
-                                <div style={{ height: '250px', width: '100%' }}>
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <RadarChart cx="50%" cy="50%" outerRadius="70%" data={getChartData(candidate.skills)}>
-                                            <PolarGrid stroke="var(--glass-border)" />
-                                            <PolarAngleAxis dataKey="subject" tick={{ fill: 'var(--text-secondary)', fontSize: 11 }} />
-                                            <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
-                                            <Radar
-                                                name="Skills"
-                                                dataKey="A"
-                                                stroke="var(--primary)"
-                                                strokeWidth={3}
-                                                fill="var(--primary)"
-                                                fillOpacity={0.3}
-                                            />
-                                        </RadarChart>
-                                    </ResponsiveContainer>
-                                </div>
-                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '1rem', justifyContent: 'center' }}>
-                                    {candidate.skills.map((skill, index) => (
-                                        <span key={index} style={{
-                                            fontSize: '0.8rem',
-                                            padding: '4px 10px',
-                                            background: 'var(--bg-secondary)',
-                                            borderRadius: '12px',
-                                            color: 'var(--text-secondary)'
-                                        }}>
-                                            {skill}
-                                        </span>
-                                    ))}
-                                </div>
-                            </>
-                        )}
-
-                        {gapAnalysis && gapAnalysis.skillAnalysis && (
-                            <>
-                                {gapAnalysis.skillAnalysis.matchedSkills && gapAnalysis.skillAnalysis.matchedSkills.length > 0 && (
-                                    <div style={{ marginTop: '1.5rem', borderTop: '1px solid var(--glass-border)', paddingTop: '1.5rem' }}>
-                                        <h4 style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--success)', marginBottom: '0.8rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                            <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '20px', height: '20px', borderRadius: '50%', background: 'rgba(34, 197, 94, 0.15)' }}>✓</span>
-                                            Matched Skills (Gap Analysis)
-                                        </h4>
-                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-                                            {gapAnalysis.skillAnalysis.matchedSkills.map((skill, index) => (
-                                                <span key={index} className="badge badge-success">
-                                                    {skill}
-                                                </span>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-
-                                {gapAnalysis.skillAnalysis.missingSkills && gapAnalysis.skillAnalysis.missingSkills.length > 0 && (
-                                    <div style={{ marginTop: '1.5rem', borderTop: '1px solid var(--glass-border)', paddingTop: '1.5rem' }}>
-                                        <h4 style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--error)', marginBottom: '0.8rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                            <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '20px', height: '20px', borderRadius: '50%', background: 'rgba(239, 68, 68, 0.15)' }}>!</span>
-                                            Missing Skills (Gap Analysis)
-                                        </h4>
-                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-                                            {gapAnalysis.skillAnalysis.missingSkills.map((skill, index) => (
-                                                <span key={index} className="badge badge-error">
-                                                    {skill}
-                                                </span>
-                                            ))}
-                                        </div>
-                                        <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.8rem', fontStyle: 'italic' }}>
-                                            These skills are required for the role but were not detected in the resume.
-                                        </p>
-                                    </div>
-                                )}
-                            </>
-                        )}
-                    </div>
-
-                    {/* Additional Info */}
-                    <div className="glass-panel" style={{ padding: '1.5rem' }}>
-                        <h3 className="title-sm" style={{ marginBottom: '1rem' }}>Application Info</h3>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                <Calendar size={18} className="text-gray-400" />
-                                <div>
-                                    <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Applied On</div>
-                                    <div style={{ fontWeight: '500' }}>{new Date(candidate.appliedAt).toLocaleDateString()}</div>
-                                </div>
-                            </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                <MapPin size={18} className="text-gray-400" />
-                                <div>
-                                    <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Location</div>
-                                    <div style={{ fontWeight: '500' }}>{candidate.location || 'Unknown'}</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                </div>
-            </div>
+            {/* End of Header/Glass Panel */}
 
             {/* Modals */}
             <Modal
@@ -373,3 +397,4 @@ const CandidateProfile = () => {
 };
 
 export default CandidateProfile;
+

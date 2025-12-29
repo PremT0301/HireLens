@@ -69,6 +69,22 @@ const ApplicantDashboard = () => {
         loadApplications();
     }, []);
 
+    const handleAcceptInterview = async (applicationId) => {
+        try {
+            await ApplicationService.acceptInterview(applicationId);
+            // Update local state
+            setApplications(prev => prev.map(app =>
+                app.applicationId === applicationId
+                    ? { ...app, status: 'Interview Accepted' }
+                    : app
+            ));
+            // alert("Interview Accepted!"); // Ideally use a Toast here if available
+        } catch (error) {
+            console.error("Failed to accept interview", error);
+            alert("Failed to accept interview. Please try again.");
+        }
+    };
+
     const onDrop = useCallback(async (acceptedFiles) => {
         const file = acceptedFiles[0];
         if (!file) return;
@@ -317,12 +333,29 @@ const ApplicantDashboard = () => {
                                                 padding: '4px 12px',
                                                 borderRadius: '20px',
                                                 fontSize: '0.85rem',
-                                                background: app.status === 'Interview Scheduled' ? 'rgba(76, 175, 80, 0.1)' : 'rgba(59, 130, 246, 0.1)',
-                                                color: app.status === 'Interview Scheduled' ? 'var(--success)' : 'var(--primary)',
-                                                border: `1px solid ${app.status === 'Interview Scheduled' ? 'rgba(76, 175, 80, 0.3)' : 'rgba(59, 130, 246, 0.3)'}`
+                                                background: ['Interview Scheduled', 'Interview Accepted', 'Hired', 'Reapplied'].includes(app.status) ? 'rgba(76, 175, 80, 0.1)' : 'rgba(59, 130, 246, 0.1)',
+                                                color: ['Interview Scheduled', 'Interview Accepted', 'Hired', 'Reapplied'].includes(app.status) ? 'var(--success)' : 'var(--primary)',
+                                                border: `1px solid ${['Interview Scheduled', 'Interview Accepted', 'Hired', 'Reapplied'].includes(app.status) ? 'rgba(76, 175, 80, 0.3)' : 'rgba(59, 130, 246, 0.3)'}`
                                             }}>
                                                 {app.status}
                                             </span>
+                                            {app.status === 'Interview Scheduled' && (
+                                                <button
+                                                    onClick={() => handleAcceptInterview(app.applicationId)}
+                                                    style={{
+                                                        marginLeft: '10px',
+                                                        padding: '4px 12px',
+                                                        borderRadius: '20px',
+                                                        border: '1px solid var(--success)',
+                                                        background: 'rgba(34, 197, 94, 0.1)',
+                                                        color: 'var(--success)',
+                                                        cursor: 'pointer',
+                                                        fontSize: '0.85rem'
+                                                    }}
+                                                >
+                                                    Accept Interview
+                                                </button>
+                                            )}
                                         </td>
                                     </tr>
                                 ))

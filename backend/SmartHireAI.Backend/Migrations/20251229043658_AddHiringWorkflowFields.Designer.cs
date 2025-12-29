@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SmartHireAI.Backend.Data;
 
@@ -10,9 +11,11 @@ using SmartHireAI.Backend.Data;
 namespace SmartHireAI.Backend.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251229043658_AddHiringWorkflowFields")]
+    partial class AddHiringWorkflowFields
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -246,10 +249,6 @@ namespace SmartHireAI.Backend.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("varchar(50)")
                         .HasColumnName("location_type");
-
-                    b.Property<int>("NumberOfOpenings")
-                        .HasColumnType("int")
-                        .HasColumnName("number_of_openings");
 
                     b.Property<Guid>("RecruiterId")
                         .HasColumnType("char(36)")

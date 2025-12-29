@@ -73,12 +73,12 @@ public class ApplicationsController : ControllerBase
         var activeJobs = await _context.JobDescriptions
             .CountAsync(j => j.RecruiterId == recruiter.RecruiterId);
 
-        // Calculate placement rate (Mock logic: "Offer" status count / Total applications)
-        var offers = await _context.JobApplications
+        // Calculate placement rate (Based on Hired status)
+        var hiredCount = await _context.JobApplications
              .Include(a => a.JobDescription)
-             .CountAsync(a => a.JobDescription.RecruiterId == recruiter.RecruiterId && a.Status == "Offer");
+             .CountAsync(a => a.JobDescription.RecruiterId == recruiter.RecruiterId && a.Status == "Hired");
 
-        var placementRate = totalCandidates > 0 ? (offers * 100 / totalCandidates) : 0;
+        var placementRate = totalCandidates > 0 ? (hiredCount * 100 / totalCandidates) : 0;
 
         return Ok(new
         {
@@ -122,7 +122,7 @@ public class ApplicationsController : ControllerBase
             a.Name,
             a.Role,
             a.Score,
-            Label = a.Score >= 90 ? "Highly Suitable" : a.Score >= 70 ? "Suitable" : "Needs Improvement",
+            Label = a.Status == "Hired" ? "Hired" : (a.Score >= 90 ? "Highly Suitable" : a.Score >= 70 ? "Suitable" : "Needs Improvement"),
             Time = (DateTime.UtcNow - a.AppliedAt).TotalHours < 24
                     ? $"{(int)(DateTime.UtcNow - a.AppliedAt).TotalHours}h ago"
                     : $"{(int)(DateTime.UtcNow - a.AppliedAt).TotalDays}d ago",
@@ -176,7 +176,7 @@ public class ApplicationsController : ControllerBase
         if (existingApp != null)
         {
             // Reapply logic
-            existingApp.Status = "Applied";
+            existingApp.Status = "Reapplied";
             existingApp.AppliedAt = DateTime.UtcNow;
             existingApp.AtsScore = finalScore;
             existingApp.InterviewDate = null;
@@ -295,13 +295,13 @@ public class ApplicationsController : ControllerBase
                 a.ApplicationId,
                 Name = a.Applicant.User.FullName ?? "Unknown",
                 Role = a.JobDescription.Title,
-                Score = (int)a.AtsScore,
+                Score = (int)(a.AtsScore <= 1f ? a.AtsScore * 100 : a.AtsScore),
                 a.Status,
                 Email = a.Applicant.User.Email,
                 Phone = a.Applicant.User.MobileNumber,
                 Experience = a.Applicant.ExperienceYears,
                 a.Applicant.Location,
-                College = a.Applicant.Education.FirstOrDefault().CollegeName, // Map first edu
+                College = a.Applicant.Education.Select(e => e.CollegeName).FirstOrDefault(), // Map first edu
                 CurrentRole = a.Applicant.CurrentRole,
                 // Grade = a.Applicant.Education.FirstOrDefault().Grade,
                 a.InterviewDate,
@@ -457,6 +457,81 @@ public class ApplicationsController : ControllerBase
         await _context.SaveChangesAsync();
 
         return Ok(new { Message = "Message sent successfully" });
+    }
+
+    // POST: api/applications/{id}/accept-interview
+    [HttpPost("{id}/accept-interview")]
+    [Authorize]
+    public async Task<IActionResult> AcceptInterview(Guid id)
+    {
+        var app = await _context.JobApplications.FindAsync(id);
+        if (app == null) return NotFound("Application not found");
+
+        if (app.Status != "Interview Scheduled")
+        {
+            return BadRequest($"Cannot accept interview. Current status is: {app.Status}");
+        }
+
+        app.Status = "Interview Accepted";
+        app.InterviewAcceptedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+
+        return Ok(new { Message = "Interview accepted successfully" });
+    }
+
+    // POST: api/applications/{id}/hire
+    [HttpPost("{id}/hire")]
+    [Authorize]
+    public async Task<IActionResult> HireCandidate(Guid id)
+    {
+        var app = await _context.JobApplications
+            .Include(a => a.Applicant)
+            .FirstOrDefaultAsync(a => a.ApplicationId == id);
+
+        if (app == null) return NotFound("Application not found");
+
+        // Check if candidate is already hired for ANY active role
+        var existingHiredApp = await _context.JobApplications
+            .Where(a => a.ApplicantId == app.ApplicantId && a.Status == "Hired")
+            .FirstOrDefaultAsync();
+
+        if (existingHiredApp != null)
+        {
+            return BadRequest("Candidate is already hired for another role. Cannot hire for multiple roles simultaneously.");
+        }
+
+        // Check Job Openings & Status
+        var job = await _context.JobDescriptions.FindAsync(app.JobId);
+        if (job == null) return NotFound("Job not found");
+
+        if (job.Status == "Closed" || job.Status == "Completed")
+        {
+            return BadRequest($"This job is already closed. No further hiring is allowed.");
+        }
+
+        // Count existing hires for this job
+        var currentHires = await _context.JobApplications
+            .CountAsync(a => a.JobId == app.JobId && a.Status == "Hired");
+
+        if (currentHires >= job.NumberOfOpenings)
+        {
+            // Should not happen if status was correct, but double check
+            return BadRequest($"Vacancy full. {currentHires}/{job.NumberOfOpenings} positions are already filled.");
+        }
+
+        app.Status = "Hired";
+        app.HiredAt = DateTime.UtcNow;
+
+        // Auto-Close Job if this was the last opening
+        if (currentHires + 1 >= job.NumberOfOpenings)
+        {
+            job.Status = "Closed";
+        }
+
+        await _context.SaveChangesAsync();
+
+        return Ok(new { Message = "Candidate hired successfully" });
     }
 
     public record InterviewDto(DateTime Date, string Mode, string? Link, int? Duration, string? Notes);

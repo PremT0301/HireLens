@@ -282,6 +282,9 @@ namespace SmartHireAI.Backend.Data
         [Column("location_type")]
         public string? LocationType { get; set; } // Remote, On-site, Hybrid
 
+        [Column("number_of_openings")]
+        public int NumberOfOpenings { get; set; } = 1;
+
         public JobEmbedding? Embedding { get; set; }
 
         public ICollection<MatchResult> Matches { get; set; } = new List<MatchResult>();
@@ -416,6 +419,12 @@ namespace SmartHireAI.Backend.Data
 
         [ForeignKey("ApplicantId")]
         public Applicant Applicant { get; set; } = null!;
+
+        [Column("interview_accepted_at")]
+        public DateTime? InterviewAcceptedAt { get; set; }
+
+        [Column("hired_at")]
+        public DateTime? HiredAt { get; set; }
     }
 
     [Table("application_messages")]

@@ -20,6 +20,8 @@ const CreateJob = () => {
         salaryMin: '',
         salaryMax: '',
         experienceRequired: 0,
+        experienceRequired: 0,
+        numberOfOpenings: 1,
         description: '',
         requirements: []
     });
@@ -44,6 +46,8 @@ const CreateJob = () => {
                         salaryMin: job.salaryMin || '',
                         salaryMax: job.salaryMax || '',
                         experienceRequired: job.experienceRequired,
+                        experienceRequired: job.experienceRequired,
+                        numberOfOpenings: job.numberOfOpenings || 1,
                         description: job.description || '',
                         requirements: job.requiredSkills ? job.requiredSkills.split(',').map(s => s.trim()) : []
                     });
@@ -83,6 +87,7 @@ const CreateJob = () => {
                 title: formData.title,
                 requiredSkills: formData.requirements.join(", "),
                 experienceRequired: Number(formData.experienceRequired),
+                numberOfOpenings: Number(formData.numberOfOpenings),
                 salaryMin: Number(formData.salaryMin),
                 salaryMax: Number(formData.salaryMax),
                 description: formData.description,
@@ -176,6 +181,18 @@ const CreateJob = () => {
                                     placeholder="e.g. 5"
                                     value={formData.experienceRequired}
                                     onChange={e => setFormData({ ...formData, experienceRequired: e.target.value })}
+                                />
+                            </div>
+                            <div>
+                                <label className="label">Openings</label>
+                                <input
+                                    type="number"
+                                    min="1"
+                                    required
+                                    className="input-field"
+                                    placeholder="1"
+                                    value={formData.numberOfOpenings}
+                                    onChange={e => setFormData({ ...formData, numberOfOpenings: e.target.value })}
                                 />
                             </div>
                             <div>

@@ -68,19 +68,19 @@ const Signup = () => {
         setLoading(true);
         try {
             const formData = new FormData();
-            formData.append('fullName', fullName);
-            formData.append('email', email);
-            formData.append('password', password);
-            formData.append('role', role);
-            formData.append('mobileNumber', mobileNumber);
-            formData.append('location', location);
-            if (address) formData.append('address', address);
+            formData.append('FullName', fullName);
+            formData.append('Email', email);
+            formData.append('Password', password);
+            formData.append('Role', role);
+            formData.append('MobileNumber', mobileNumber);
+            formData.append('Location', location);
+            if (address) formData.append('Address', address);
 
             if (role === 'recruiter') {
-                formData.append('companyName', companyName);
-                formData.append('designation', designation);
+                formData.append('CompanyName', companyName);
+                formData.append('Designation', designation);
                 if (logoFile) {
-                    formData.append('logo', logoFile);
+                    formData.append('Logo', logoFile);
                 }
             } else {
                 // Education
@@ -100,7 +100,7 @@ const Signup = () => {
 
                 // Resume
                 if (resumeFile) {
-                    formData.append('resume', resumeFile);
+                    formData.append('Resume', resumeFile);
                 }
             }
 
@@ -109,7 +109,10 @@ const Signup = () => {
             navigate('/login');
         } catch (error) {
             console.error(error);
-            alert("Registration failed. Please try again.");
+            const errorMsg = error.errors
+                ? Object.entries(error.errors).map(([k, v]) => `${k}: ${v.join(', ')}`).join('\n')
+                : (error.message || "Registration failed. Please try again.");
+            alert(`Registration Failed:\n${errorMsg}`);
         } finally {
             setLoading(false);
         }
