@@ -6,6 +6,7 @@ import Navbar from './components/Navbar';
 import Landing from './pages/Landing';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
+import VerifyEmail from './pages/VerifyEmail';
 import ApplicantLayout from './components/ApplicantLayout';
 import ApplicantDashboard from './pages/applicant/ApplicantDashboard';
 import Jobs from './pages/applicant/Jobs';
@@ -35,6 +36,7 @@ const AnimatedRoutes = () => {
           <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
+          <Route path="/verify-email" element={<VerifyEmail />} />
         </Route>
 
         {/* Applicant Routes - PROTECTED */}
@@ -78,26 +80,36 @@ const AnimatedRoutes = () => {
 import Footer from './components/Footer';
 import AnimatedBackground from './components/ui/AnimatedBackground';
 
+const AppContent = () => {
+  const location = useLocation();
+  const hideNavAndFooter = ['/login', '/signup', '/verify-email'];
+  const shouldHide = hideNavAndFooter.includes(location.pathname);
+
+  return (
+    <div className="app" style={{
+      display: 'flex',
+      flexDirection: 'column',
+      minHeight: '100vh',
+      position: 'relative'
+    }}>
+      <AnimatedBackground />
+      {!shouldHide && <Navbar />}
+      {/* Main content wrapper to push footer down */}
+      <div style={{ flex: '1', display: 'flex', flexDirection: 'column' }}>
+        <AnimatedRoutes />
+      </div>
+      {/* Gap before footer handled by margin-top: auto in Footer or here */}
+      {!shouldHide && <div style={{ height: '4rem' }}></div>}
+      {!shouldHide && <Footer />}
+    </div>
+  );
+};
+
 function App() {
   return (
     <Router>
       <ToastProvider>
-        <div className="app" style={{
-          display: 'flex',
-          flexDirection: 'column',
-          minHeight: '100vh',
-          position: 'relative'
-        }}>
-          <AnimatedBackground />
-          <Navbar />
-          {/* Main content wrapper to push footer down */}
-          <div style={{ flex: '1', display: 'flex', flexDirection: 'column' }}>
-            <AnimatedRoutes />
-          </div>
-          {/* Gap before footer handled by margin-top: auto in Footer or here */}
-          <div style={{ height: '4rem' }}></div>
-          <Footer />
-        </div>
+        <AppContent />
       </ToastProvider>
     </Router>
   );

@@ -5,10 +5,9 @@ import { Link } from 'react-router-dom';
 const Footer = () => {
     return (
         <footer style={{
-            marginTop: 'auto', // Pushes footer to bottom if flex spacing is used
+            marginTop: 'auto',
             paddingTop: '3rem',
-            background: 'var(--bg-primary)',
-            borderTop: '1px solid var(--glass-border)',
+            background: 'transparent',
             position: 'relative',
             zIndex: 10
         }}>
@@ -25,15 +24,15 @@ const Footer = () => {
                             <div style={{
                                 width: '28px',
                                 height: '28px',
-                                background: 'linear-gradient(135deg, var(--accent-primary), var(--accent-secondary))',
+                                background: 'linear-gradient(135deg, var(--primary), var(--secondary))',
                                 borderRadius: '6px',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center'
                             }}>
-                                <span style={{ color: 'white', fontWeight: 'bold', fontSize: '0.8rem' }}>AI</span>
+                                <span style={{ color: 'white', fontWeight: 'bold', fontSize: '0.8rem' }}>HL</span>
                             </div>
-                            <span style={{ fontSize: '1.2rem', fontWeight: '700' }}>ResumePro</span>
+                            <span style={{ fontSize: '1.2rem', fontWeight: '700' }}>HireLens AI</span>
                         </div>
                         <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: '1.6' }}>
                             AI-powered functionality for modern recruitment and career advancement. Bridging the gap between talent and opportunity.
@@ -65,7 +64,6 @@ const Footer = () => {
                 </div>
 
                 <div style={{
-                    borderTop: '1px solid var(--glass-border)',
                     paddingTop: '1.5rem',
                     display: 'flex',
                     flexDirection: 'row',
@@ -75,7 +73,7 @@ const Footer = () => {
                     gap: '1rem'
                 }}>
                     <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-                        © {new Date().getFullYear()} ResumePro AI. All rights reserved.
+                        © {new Date().getFullYear()} HireLens AI. All rights reserved.
                     </p>
                 </div>
             </div>

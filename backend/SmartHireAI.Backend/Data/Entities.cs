@@ -44,6 +44,13 @@ namespace SmartHireAI.Backend.Data
         [Column("is_email_verified")]
         public bool IsEmailVerified { get; set; } = false;
 
+        [MaxLength(100)]
+        [Column("verification_token")]
+        public string? VerificationToken { get; set; }
+
+        [Column("verification_token_expiry")]
+        public DateTime? VerificationTokenExpiry { get; set; }
+
         [MaxLength(20)]
         [Column("mobile_number")]
         public string? MobileNumber { get; set; }
@@ -220,6 +227,22 @@ namespace SmartHireAI.Backend.Data
         [MaxLength(20)]
         [Column("mobile_number")]
         public string? MobileNumber { get; set; }
+
+        [MaxLength(255)]
+        [Column("company_website")]
+        public string? CompanyWebsite { get; set; }
+
+        [MaxLength(100)]
+        [Column("industry")]
+        public string? Industry { get; set; }
+
+        [MaxLength(50)]
+        [Column("company_size")]
+        public string? CompanySize { get; set; }
+
+        [MaxLength(50)]
+        [Column("recruiter_type")]
+        public string? RecruiterType { get; set; }
 
         [Column("created_at")]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

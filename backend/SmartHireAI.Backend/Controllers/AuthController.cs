@@ -1,20 +1,22 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using SmartHireAI.Backend.Models;
 using SmartHireAI.Backend.Services;
 
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Google;
 
 [ApiController]
 [Route("api/[controller]")]
 public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
+    private readonly ILogger<AuthController> _logger;
 
-    public AuthController(IAuthService authService)
+    public AuthController(IAuthService authService, ILogger<AuthController> logger)
     {
         _authService = authService;
+        _logger = logger;
     }
+
 
     [HttpPost("register")]
     public async Task<ActionResult<AuthResponseDto>> Register([FromForm] UserRegisterRequest request)
@@ -43,51 +45,59 @@ public class AuthController : ControllerBase
             return BadRequest(new { message = ex.Message });
         }
     }
-    [HttpGet("google-login")]
-    public IActionResult GoogleLogin()
+    [HttpGet("verify-email")]
+    public async Task<IActionResult> VerifyEmail([FromQuery] string userId, [FromQuery] string token)
     {
-        var properties = new AuthenticationProperties { RedirectUri = Url.Action("GoogleCallback") };
-        return Challenge(properties, Microsoft.AspNetCore.Authentication.Google.GoogleDefaults.AuthenticationScheme);
-    }
-
-    [HttpGet("google-callback")]
-    public async Task<ActionResult<AuthResponseDto>> GoogleCallback()
-    {
-        var result = await HttpContext.AuthenticateAsync(Microsoft.AspNetCore.Authentication.Google.GoogleDefaults.AuthenticationScheme);
-
-        if (!result.Succeeded)
-            return BadRequest(new { message = "Google authentication failed" });
-
-        var claims = result.Principal.Identities.FirstOrDefault()?.Claims;
-        var email = claims?.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Email)?.Value;
-        var googleId = claims?.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-        var name = claims?.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Name)?.Value;
-        // email_verified is sometimes a custom claim or "true" string
-        // Google usually returns "email_verified": true in logic, but standard claim might not be there depending on scope.
-        // For simplicity in this step, we trust the AuthenticateAsync result as "Verified" by Google standards, 
-        // but explicit check is better if claim exists.
-
-        if (string.IsNullOrEmpty(email))
-            return BadRequest(new { message = "Email required" });
-
+        _logger.LogInformation("Received VerifyEmail request for user {UserId} with token: {Token}", userId, token);
         try
         {
-            var authResponse = await _authService.GoogleLoginAsync(new GoogleLoginDto
-            {
-                Email = email,
-                GoogleId = googleId ?? string.Empty,
-                FullName = name ?? "Google User",
-                ProfileImage = claims?.FirstOrDefault(c => c.Type == "picture")?.Value
-            });
+            var result = await _authService.VerifyEmailAsync(userId, token);
 
-            // Redirect to frontend Signup page with the token
-            // The frontend will detect the token and enter 'complete' mode
-            var redirectUrl = $"http://localhost:5173/signup?token={authResponse.Token}";
-            return Redirect(redirectUrl);
+            return result switch
+            {
+                VerificationResult.Success => Ok(new { message = "Email verified successfully! You can now login.", status = "success" }),
+                VerificationResult.AlreadyVerified => Ok(new { message = "Email already verified. Please login.", status = "already_verified" }),
+                VerificationResult.TokenExpired => BadRequest(new { message = "Verification link expired.", status = "expired" }),
+                VerificationResult.InvalidToken => BadRequest(new { message = "Invalid verification link.", status = "invalid" }),
+                VerificationResult.UserNotFound => BadRequest(new { message = "Invalid verification link.", status = "invalid" }),
+                _ => BadRequest(new { message = "Verification failed.", status = "error" })
+            };
         }
         catch (Exception ex)
         {
-            // Redirect with error message? Or just bad request
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpPost("resend-verification")]
+    public async Task<IActionResult> ResendVerification([FromQuery] string? email, [FromQuery] string? userId)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(email) && string.IsNullOrEmpty(userId))
+            {
+                return BadRequest(new { message = "Email or UserId is required." });
+            }
+
+            bool result = false;
+
+            if (!string.IsNullOrEmpty(email))
+            {
+                result = await _authService.ResendVerificationEmailAsync(email);
+            }
+            else if (!string.IsNullOrEmpty(userId))
+            {
+                result = await _authService.ResendVerificationEmailByUserIdAsync(userId);
+            }
+
+            if (result)
+            {
+                return Ok(new { message = "Verification email sent successfully." });
+            }
+            return BadRequest(new { message = "User not found or already verified." });
+        }
+        catch (Exception ex)
+        {
             return BadRequest(new { message = ex.Message });
         }
     }

@@ -1,0 +1,1 @@
+{"token":"","fullName":"Test Recruiter","role":"Recruiter","userId":"aa4e4b0f-0a35-4178-8c80-bbfa320c1d64","message":"Registration successful! Please check your email to verify your account.","requiresVerification":true}

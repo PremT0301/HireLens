@@ -20,77 +20,115 @@ const Landing = () => {
         <div className="page-transition aurora-bg" style={{ minHeight: "100vh" }}>
 
             {/* ================= HERO SECTION ================= */}
-            <section className="container" style={{
-                minHeight: "90vh",
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "center",
-                alignItems: "center",
-                textAlign: "center",
-                paddingTop: "6rem",
-                position: "relative",
-                perspective: "1000px" // For 3D context
-            }}>
+            <section className="hero-wrapper">
+                <div className="hero-grid">
+                    {/* Left Content */}
+                    <motion.div
+                        initial={{ opacity: 0, x: -50 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.8, ease: "easeOut" }}
+                        style={{ zIndex: 2 }}
+                    >
+                        <Badge />
 
-                {/* Abstract Floating 3D Shape Behind Text */}
-                <motion.div
-                    animate={{
-                        rotate: [0, 10, -10, 0],
-                        translateY: [0, -20, 0],
-                    }}
-                    transition={{
-                        duration: 12,
-                        repeat: Infinity,
-                        ease: "easeInOut"
-                    }}
-                    style={{
-                        position: "absolute",
-                        top: "20%",
-                        width: "600px",
-                        height: "600px",
-                        background: "radial-gradient(circle, rgba(79, 70, 229, 0.15) 0%, transparent 60%)",
-                        borderRadius: "50%",
-                        zIndex: 0,
-                        filter: "blur(40px)"
-                    }}
-                />
+                        <h1 className="title-lg" style={{ marginBottom: "1.5rem", fontSize: "clamp(3rem, 5vw, 4.5rem)" }}>
+                            Hire Smarter. <br />
+                            <span className="gradient-text">Get Hired Faster.</span>
+                        </h1>
 
-                <motion.div
-                    initial={{ opacity: 0, y: 40 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.8, ease: "easeOut" }}
-                    style={{ maxWidth: "900px", position: "relative", zIndex: 2 }}
-                >
-                    <Badge />
-
-                    <h1 className="title-lg" style={{ marginBottom: "1.5rem", fontSize: "clamp(3rem, 5vw, 4.5rem)" }}>
-                        Hire Smarter. <br />
-                        <span className="gradient-text">Get Hired Faster.</span>
-                    </h1>
-
-                    <p className="text-subtle" style={{
-                        fontSize: "1.25rem",
-                        maxWidth: "700px",
-                        margin: "0 auto 3rem",
-                        lineHeight: "1.7"
-                    }}>
-                        AI-powered resume analysis, skill gap insights, and intelligent recruitment—built for modern hiring.
-                    </p>
-
-                    <div style={{ display: "flex", gap: "1rem", justifyContent: "center", flexWrap: "wrap" }}>
-                        <Link to="/signup" className="btn-primary" style={{ padding: "14px 28px", fontSize: "1rem" }}>
-                            Explore as Applicant <ArrowRight size={18} />
-                        </Link>
-                        <Link to="/signup" className="btn-ghost" style={{
-                            padding: "14px 28px",
-                            fontSize: "1rem",
-                            border: "1px solid var(--border-color)",
-                            background: "var(--bg-secondary)"
+                        <p className="text-subtle" style={{
+                            fontSize: "1.25rem",
+                            maxWidth: "600px",
+                            marginBottom: "2.5rem",
+                            lineHeight: "1.7"
                         }}>
-                            Explore as Recruiter
-                        </Link>
+                            The AI-powered recruitment platform that bridges the gap between talent and opportunity.
+                            <b> Instant analysis, real skills, zero bias.</b>
+                        </p>
+
+                        <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", justifyContent: "flex-start" }}>
+                            <Link to="/login" className="btn-primary" style={{ padding: "14px 28px", fontSize: "1.1rem", textDecoration: 'none' }}>
+                                Get Started Free <ArrowRight size={20} />
+                            </Link>
+                        </div>
+                    </motion.div>
+
+                    {/* Right Visuals (3D Composition) */}
+                    <div style={{ position: "relative", height: "500px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        {/* Background Abstract Blur */}
+                        <div style={{
+                            position: "absolute",
+                            width: "120%",
+                            height: "120%",
+                            background: "radial-gradient(circle, rgba(37, 99, 235, 0.15) 0%, transparent 70%)",
+                            filter: "blur(60px)",
+                            zIndex: 0
+                        }}></div>
+
+                        {/* Floating Card 1: Match Score */}
+                        <motion.div
+                            className="floating-card float-slow"
+                            style={{ top: "10%", right: "10%", width: "220px" }}
+                        >
+                            <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "8px" }}>
+                                <div style={{ background: "rgba(34, 197, 94, 0.1)", padding: "8px", borderRadius: "8px", color: "var(--success)" }}>
+                                    <Brain size={20} />
+                                </div>
+                                <div>
+                                    <h4 style={{ fontSize: "0.9rem", fontWeight: 700 }}>AI Match</h4>
+                                    <span className="text-subtle" style={{ fontSize: "0.75rem" }}>Frontend Developer</span>
+                                </div>
+                            </div>
+                            <div style={{ height: "6px", background: "var(--border-color)", borderRadius: "3px", overflow: "hidden" }}>
+                                <div style={{ width: "95%", height: "100%", background: "var(--success)" }}></div>
+                            </div>
+                            <div style={{ display: "flex", justifyContent: "space-between", marginTop: "8px" }}>
+                                <span style={{ fontSize: "0.9rem", fontWeight: 700 }}>95%</span>
+                                <span className="text-subtle" style={{ fontSize: "0.8rem" }}>Highly Relevant</span>
+                            </div>
+                        </motion.div>
+
+                        {/* Floating Card 2: Main Profile */}
+                        <motion.div
+                            className="floating-card float-medium"
+                            style={{ width: "280px", zIndex: 3 }}
+                        >
+                            <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginBottom: "1rem" }}>
+                                <div style={{ width: "48px", height: "48px", borderRadius: "50%", background: "linear-gradient(135deg, #FF6B6B, #FF8E53)" }}></div>
+                                <div>
+                                    <h3 style={{ fontSize: "1.1rem", fontWeight: 700 }}>Sarah Jenkins</h3>
+                                    <p className="text-subtle" style={{ fontSize: "0.85rem" }}>Senior UX Designer</p>
+                                </div>
+                            </div>
+                            <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+                                <span className="badge badge-success">React</span>
+                                <span className="badge badge-warning">Figma</span>
+                                <span className="badge">TypeScript</span>
+                            </div>
+                        </motion.div>
+
+                        {/* Floating Card 3: ATS Score */}
+                        <motion.div
+                            className="floating-card float-fast"
+                            style={{ bottom: "15%", left: "5%", width: "200px" }}
+                        >
+                            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                                <div style={{
+                                    width: "40px", height: "40px", borderRadius: "50%",
+                                    border: "3px solid var(--primary)",
+                                    display: "flex", alignItems: "center", justifyContent: "center",
+                                    fontSize: "0.9rem", fontWeight: 700
+                                }}>
+                                    88
+                                </div>
+                                <div>
+                                    <h4 style={{ fontSize: "0.9rem", fontWeight: 700 }}>ATS Score</h4>
+                                    <p className="text-subtle" style={{ fontSize: "0.75rem" }}>Resume Optimized</p>
+                                </div>
+                            </div>
+                        </motion.div>
                     </div>
-                </motion.div>
+                </div>
             </section>
 
             {/* ================= VALUE PROPOSITION ================= */}
@@ -133,30 +171,7 @@ const Landing = () => {
                 </div>
             </Section>
 
-            {/* ================= TRUST SECTION ================= */}
-            <section className="container" style={{ padding: "4rem 0", textAlign: "center", opacity: 0.8 }}>
-                <p className="text-subtle" style={{ marginBottom: "2rem", fontWeight: 600, letterSpacing: "1px" }}>
-                    TRUSTED TECHNOLOGY STACK
-                </p>
-                <div style={{
-                    display: "flex",
-                    justifyContent: "center",
-                    gap: "2rem",
-                    flexWrap: "wrap",
-                    fontSize: "1.1rem",
-                    fontWeight: 700,
-                    color: "var(--text-secondary)"
-                }}>
-                    <span>React 18</span>
-                    <span>.NET 8 Web API</span>
-                    <span>Python (SpaCy/BERT)</span>
-                    <span>SQL Server</span>
-                </div>
-                <div style={{ marginTop: "3rem", display: "inline-flex", alignItems: "center", gap: "10px", padding: "10px 20px", background: "rgba(34,197,94,0.1)", borderRadius: "30px", color: "var(--success)" }}>
-                    <Shield size={18} />
-                    <span style={{ fontSize: "0.9rem", fontWeight: 600 }}>Enterprise-Grade Privacy & Explainability</span>
-                </div>
-            </section>
+
 
             {/* ================= CTA ================= */}
             <motion.section

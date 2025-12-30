@@ -20,6 +20,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 // Register Auth Service
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IResumeParserService, ResumeParserService>();
 builder.Services.AddHttpClient<IAIService, AIService>();
 
@@ -31,9 +32,7 @@ builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultSignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
 })
-.AddCookie()
 .AddJwtBearer(options =>
 {
     options.RequireHttpsMetadata = false;
@@ -47,11 +46,6 @@ builder.Services.AddAuthentication(options =>
         ValidIssuer = jwtSettings["Issuer"],
         ValidAudience = jwtSettings["Audience"]
     };
-})
-.AddGoogle(options =>
-{
-    options.ClientId = builder.Configuration["Authentication:Google:ClientId"] ?? "placeholder-client-id";
-    options.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"] ?? "placeholder-client-secret";
 });
 
 // Configure CORS

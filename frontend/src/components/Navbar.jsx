@@ -11,12 +11,39 @@ const Navbar = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [userRole, setUserRole] = useState(sessionStorage.getItem('userRole'));
 
+    // Scroll & Visibility State
+    const [isScrolled, setIsScrolled] = useState(false);
+    const [isVisible, setIsVisible] = useState(true);
+    const [lastScrollY, setLastScrollY] = useState(0);
+
     // Profile Editor State
     const [isProfileEditorOpen, setIsProfileEditorOpen] = useState(false);
     const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
 
     const location = useLocation();
     const navigate = useNavigate();
+
+    // Scroll Effect (Smart Hide)
+    useEffect(() => {
+        const handleScroll = () => {
+            const currentScrollY = window.scrollY;
+
+            // Determine if scrolled (for glass effect)
+            setIsScrolled(currentScrollY > 10);
+
+            // Determine visibility (Hide on down, Show on up)
+            if (currentScrollY > lastScrollY && currentScrollY > 70) {
+                setIsVisible(false); // Scrolling Down
+            } else {
+                setIsVisible(true);  // Scrolling Up
+            }
+
+            setLastScrollY(currentScrollY);
+        };
+
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, [lastScrollY]);
 
     // Initialize theme
     useEffect(() => {
@@ -73,15 +100,18 @@ const Navbar = () => {
 
     return (
         <nav style={{
-            position: 'sticky',
+            position: 'fixed', // Fixed to allow hiding/showing
             top: 0,
             width: '100%',
             zIndex: 1000,
-            backgroundColor: 'var(--glass-bg)',
-            backdropFilter: 'blur(var(--glass-blur))',
-            WebkitBackdropFilter: 'blur(var(--glass-blur))',
-            borderBottom: '1px solid var(--border-color)',
-            transition: 'background-color 0.3s ease, border-color 0.3s ease'
+            // Styling
+            backgroundColor: isScrolled ? 'var(--glass-bg)' : 'transparent',
+            backdropFilter: isScrolled ? 'blur(var(--glass-blur))' : 'none',
+            WebkitBackdropFilter: isScrolled ? 'blur(var(--glass-blur))' : 'none',
+            borderBottom: isScrolled ? '1px solid var(--border-color)' : '1px solid transparent',
+            // Smart Hide Animation
+            transform: isVisible ? 'translateY(0)' : 'translateY(-100%)',
+            transition: 'background-color 0.3s ease, border-color 0.3s ease, backdrop-filter 0.3s ease, transform 0.3s ease-in-out'
         }}>
             <div className="container" style={{
                 height: '70px',

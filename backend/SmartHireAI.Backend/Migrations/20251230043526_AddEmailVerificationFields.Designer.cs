@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SmartHireAI.Backend.Data;
 
@@ -10,9 +11,11 @@ using SmartHireAI.Backend.Data;
 namespace SmartHireAI.Backend.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251230043526_AddEmailVerificationFields")]
+    partial class AddEmailVerificationFields
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -378,16 +381,6 @@ namespace SmartHireAI.Backend.Migrations
                         .HasColumnType("varchar(150)")
                         .HasColumnName("company_name");
 
-                    b.Property<string>("CompanySize")
-                        .HasMaxLength(50)
-                        .HasColumnType("varchar(50)")
-                        .HasColumnName("company_size");
-
-                    b.Property<string>("CompanyWebsite")
-                        .HasMaxLength(255)
-                        .HasColumnType("varchar(255)")
-                        .HasColumnName("company_website");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)")
                         .HasColumnName("created_at");
@@ -396,11 +389,6 @@ namespace SmartHireAI.Backend.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("varchar(100)")
                         .HasColumnName("designation");
-
-                    b.Property<string>("Industry")
-                        .HasMaxLength(100)
-                        .HasColumnType("varchar(100)")
-                        .HasColumnName("industry");
 
                     b.Property<string>("Location")
                         .HasMaxLength(100)
@@ -411,11 +399,6 @@ namespace SmartHireAI.Backend.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("varchar(20)")
                         .HasColumnName("mobile_number");
-
-                    b.Property<string>("RecruiterType")
-                        .HasMaxLength(50)
-                        .HasColumnType("varchar(50)")
-                        .HasColumnName("recruiter_type");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime(6)")
