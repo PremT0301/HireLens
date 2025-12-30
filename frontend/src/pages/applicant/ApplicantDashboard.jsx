@@ -139,7 +139,7 @@ const ApplicantDashboard = () => {
     ];
 
     return (
-        <div>
+        <div className="container" style={{ paddingTop: '100px', paddingBottom: '4rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
                 <div>
                     <h1 className="title-lg" style={{ marginBottom: '0.5rem' }}>

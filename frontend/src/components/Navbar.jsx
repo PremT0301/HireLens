@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate, NavLink } from 'react-router-dom';
 import { Sun, Moon, Briefcase, LayoutDashboard, FileText, MessageSquare, Users, PlusCircle, TrendingUp, Menu, X, User, LogOut } from 'lucide-react';
 import AuthService from '../api/authService';
+import ProfileService from '../api/profileService';
 
 import ProfileEditor from './profile/ProfileEditor';
 
@@ -10,6 +11,7 @@ const Navbar = () => {
     const [isDark, setIsDark] = useState(true);
     const [isOpen, setIsOpen] = useState(false);
     const [userRole, setUserRole] = useState(sessionStorage.getItem('userRole'));
+    const [userProfile, setUserProfile] = useState(null);
 
     // Scroll & Visibility State
     const [isScrolled, setIsScrolled] = useState(false);
@@ -61,9 +63,25 @@ const Navbar = () => {
 
     // Auth check
     useEffect(() => {
-        const checkAuth = () => {
+        const checkAuth = async () => {
             const role = sessionStorage.getItem('userRole');
             setUserRole(role);
+
+            if (role) {
+                try {
+                    let profileData = null;
+                    if (role === 'recruiter') {
+                        profileData = await ProfileService.getRecruiterProfile();
+                    } else if (role === 'applicant') {
+                        profileData = await ProfileService.getMyProfile();
+                    }
+                    if (profileData) {
+                        setUserProfile(profileData);
+                    }
+                } catch (error) {
+                    console.error("Failed to fetch navbar profile", error);
+                }
+            }
         };
         window.addEventListener('storage', checkAuth);
         checkAuth();
@@ -79,6 +97,7 @@ const Navbar = () => {
 
     const handleLogout = () => {
         setIsProfileMenuOpen(false);
+        setUserProfile(null);
         AuthService.logout();
     };
 
@@ -97,6 +116,16 @@ const Navbar = () => {
         { label: 'Post Job', path: '/recruiter/create-job', icon: PlusCircle },
         { label: 'Jobs', path: '/recruiter/jobs', icon: FileText },
     ];
+
+    // Helper to constructing full image URL
+    const getProfileImageUrl = (path) => {
+        if (!path) return null;
+        if (path.startsWith('http')) return path;
+        // API_BASE_URL is "http://localhost:5033/api"
+        // We need "http://localhost:5033"
+        const baseUrl = "http://localhost:5033";
+        return `${baseUrl}${path}`;
+    };
 
     return (
         <nav style={{
@@ -179,31 +208,53 @@ const Navbar = () => {
                                     display: 'flex',
                                     alignItems: 'center',
                                     gap: '10px',
-                                    background: 'var(--bg-secondary)',
-                                    border: '1px solid var(--border-color)',
-                                    padding: '6px 12px',
+                                    background: 'transparent',
+                                    border: 'none',
+                                    padding: '4px 8px',
                                     borderRadius: '30px',
                                     cursor: 'pointer',
-                                    transition: 'all 0.2s'
+                                    transition: 'all 0.2s',
+                                    boxShadow: isProfileMenuOpen ? '0 0 0 2px var(--primary-light)' : 'none'
                                 }}
+                                onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-secondary)'}
+                                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                             >
-                                <div style={{
-                                    width: '28px',
-                                    height: '28px',
-                                    borderRadius: '50%',
-                                    background: 'var(--primary)',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    color: 'white',
-                                    fontSize: '0.85rem',
-                                    fontWeight: '600'
-                                }}>
-                                    {userRole[0].toUpperCase()}
+                                {userProfile && (userProfile.profileImage || userProfile.companyLogo) ? (
+                                    <img
+                                        src={getProfileImageUrl(userProfile.profileImage || userProfile.companyLogo)}
+                                        alt="Profile"
+                                        style={{
+                                            width: '32px',
+                                            height: '32px',
+                                            borderRadius: '50%',
+                                            objectFit: 'cover',
+                                            border: '2px solid var(--border-color)'
+                                        }}
+                                        onError={(e) => { e.target.style.display = 'none'; }}
+                                    />
+                                ) : (
+                                    <div style={{
+                                        width: '32px',
+                                        height: '32px',
+                                        borderRadius: '50%',
+                                        background: 'linear-gradient(135deg, var(--primary), var(--secondary))',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        color: 'white',
+                                        fontSize: '0.9rem',
+                                        fontWeight: '600',
+                                        boxShadow: '0 2px 5px rgba(0,0,0,0.1)'
+                                    }}>
+                                        {userProfile ? userProfile.fullName?.charAt(0) : userRole[0].toUpperCase()}
+                                    </div>
+                                )}
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', lineHeight: 1.2 }}>
+                                    <span style={{ fontSize: '0.9rem', color: 'var(--text-primary)', fontWeight: 600, maxWidth: '120px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                        {userProfile ? userProfile.fullName.split(' ')[0] : (userRole === 'applicant' ? 'Applicant' : 'Recruiter')}
+                                    </span>
                                 </div>
-                                <span style={{ fontSize: '0.9rem', color: 'var(--text-primary)', fontWeight: 500 }}>
-                                    {userRole === 'applicant' ? 'Applicant' : 'Recruiter'}
-                                </span>
+                                <User size={16} color="var(--text-secondary)" />
                             </button>
 
                             {/* Dropdown Menu */}

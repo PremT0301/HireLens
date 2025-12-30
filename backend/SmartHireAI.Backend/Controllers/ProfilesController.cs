@@ -56,7 +56,14 @@ public class ProfilesController : ControllerBase
             CollegeName = edu?.CollegeName,
             CompletionYear = edu?.CompletionYear,
             Grade = edu?.Grade,
-            MobileNumber = applicant.MobileNumber ?? applicant.User.MobileNumber
+            MobileNumber = applicant.MobileNumber ?? applicant.User.MobileNumber,
+            ProfileImage = applicant.User.ProfileImage,
+            Skills = applicant.Skills,
+            LinkedInUrl = applicant.LinkedInUrl,
+            PreferredRole = applicant.PreferredRole,
+            PreferredWorkLocation = applicant.PreferredWorkLocation,
+            Gender = applicant.Gender,
+            DateOfBirth = applicant.DateOfBirth
         };
     }
 

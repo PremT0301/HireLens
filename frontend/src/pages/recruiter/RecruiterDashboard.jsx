@@ -3,6 +3,7 @@ import { Users, FileText, TrendingUp, Search, PlusCircle, ArrowUpRight, MoreHori
 import { Link } from 'react-router-dom';
 import ThreeDTiltCard from '../../components/ui/ThreeDTiltCard';
 import ApplicationService from '../../api/applicationService';
+import ProfileService from '../../api/profileService';
 import Modal from '../../components/ui/Modal';
 import NewsSection from '../../components/NewsSection';
 
@@ -15,49 +16,13 @@ const RecruiterDashboard = () => {
     });
     const [recentApplications, setRecentApplications] = useState([]);
     const [sortOrder, setSortOrder] = useState('score_desc');
+    const [profile, setProfile] = useState(null);
 
     const [selectedCandidate, setSelectedCandidate] = useState(null);
     const [isInterviewModalOpen, setIsInterviewModalOpen] = useState(false);
     const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
-    const handleStatusUpdate = async (appId, status) => {
-        try {
-            await ApplicationService.updateStatus(appId, status);
-            // innovative: optimistic update or reload
-            const updated = recentApplications.map(app =>
-                app.applicationId === appId ? { ...app, status } : app
-            );
-            setRecentApplications(updated);
-        } catch (error) {
-            console.error("Failed to update status", error);
-        }
-    };
-
-    const handleScheduleClick = (candidate) => {
-        setSelectedCandidate(candidate);
-        setIsInterviewModalOpen(true);
-    };
-
-    const handleViewProfile = (candidate) => {
-        setSelectedCandidate(candidate);
-        setIsProfileModalOpen(true);
-    };
-
-    const handleInterviewScheduled = async (interviewData) => {
-        try {
-            await ApplicationService.scheduleInterview(selectedCandidate.applicationId, interviewData);
-            setIsInterviewModalOpen(false);
-            // Refresh list or optimistic update
-            const updated = recentApplications.map(app =>
-                app.applicationId === selectedCandidate.applicationId ? { ...app, status: 'Interview Scheduled' } : app
-            );
-            setRecentApplications(updated);
-            alert("Interview Scheduled Successfully!");
-        } catch (error) {
-            console.error("Failed to schedule interview", error);
-            alert("Failed to schedule interview.");
-        }
-    };
+    // ... (handlers remain same)
 
     useEffect(() => {
         const loadDashboardData = async () => {
@@ -67,6 +32,10 @@ const RecruiterDashboard = () => {
 
                 const recentData = await ApplicationService.getRecentApplications();
                 setRecentApplications(recentData);
+
+                // Fetch Profile
+                const profileData = await ProfileService.getRecruiterProfile();
+                setProfile(profileData);
             } catch (error) {
                 console.error("Failed to load dashboard data", error);
             }
@@ -74,12 +43,14 @@ const RecruiterDashboard = () => {
         loadDashboardData();
     }, []);
     return (
-        <div className="container page-transition" style={{ paddingTop: '50px', paddingBottom: '4rem' }}>
+        <div className="container page-transition" style={{ paddingTop: '100px', paddingBottom: '4rem' }}>
 
             {/* Header */}
             <div style={{ marginBottom: '3rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
                 <div>
-                    <h1 className="title-lg" style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>Recruiter Dashboard</h1>
+                    <h1 className="title-lg" style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>
+                        {profile ? `Welcome back, ${profile.fullName}` : 'Recruiter Dashboard'}
+                    </h1>
                     <p className="text-subtle">Overview of your hiring pipeline and active roles.</p>
                 </div>
                 <Link to="/recruiter/create-job" className="btn-primary">

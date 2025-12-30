@@ -78,6 +78,14 @@ const ProfileEditor = ({ isOpen, onClose, userRole }) => {
                 data.collegeName = profile.CollegeName || profile.collegeName || '';
                 data.completionYear = profile.CompletionYear || profile.completionYear || '';
                 data.grade = profile.Grade || profile.grade || '';
+                data.profileImage = profile.ProfileImage || profile.profileImage || '';
+                data.skills = profile.Skills || profile.skills || '';
+                data.linkedInUrl = profile.LinkedInUrl || profile.linkedInUrl || '';
+                data.preferredRole = profile.PreferredRole || profile.preferredRole || '';
+                data.preferredWorkLocation = profile.PreferredWorkLocation || profile.preferredWorkLocation || '';
+                data.gender = profile.Gender || profile.gender || '';
+                data.dateOfBirth = profile.DateOfBirth || profile.dateOfBirth || '';
+
             }
             setFormData(data);
         } catch (error) {
@@ -181,15 +189,20 @@ const ProfileEditor = ({ isOpen, onClose, userRole }) => {
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                                 {/* User Info Header */}
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', paddingBottom: '1.5rem', borderBottom: '1px solid var(--glass-border)' }}>
-                                    {userRole === 'recruiter' && formData.companyLogo ? (
+                                    {/* Handle Photo Display */}
+                                    {(userRole === 'recruiter' && formData.companyLogo) || (userRole === 'applicant' && formData.profileImage) ? (
                                         <img
-                                            src={formData.companyLogo.startsWith('/') ? `http://localhost:5033${formData.companyLogo}` : formData.companyLogo}
-                                            alt="Logo"
-                                            style={{ width: '80px', height: '80px', borderRadius: '12px', objectFit: 'cover' }}
+                                            src={
+                                                (userRole === 'recruiter' ? formData.companyLogo : formData.profileImage).startsWith('/')
+                                                    ? `http://localhost:5033${userRole === 'recruiter' ? formData.companyLogo : formData.profileImage}`
+                                                    : (userRole === 'recruiter' ? formData.companyLogo : formData.profileImage)
+                                            }
+                                            alt="Profile"
+                                            style={{ width: '80px', height: '80px', borderRadius: '50%', objectFit: 'cover' }}
                                         />
                                     ) : (
                                         <div style={{
-                                            width: '80px', height: '80px', borderRadius: '12px',
+                                            width: '80px', height: '80px', borderRadius: '50%',
                                             background: 'var(--accent-primary)', color: 'white',
                                             display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem'
                                         }}>
@@ -220,14 +233,21 @@ const ProfileEditor = ({ isOpen, onClose, userRole }) => {
                                         ) : (
                                             <>
                                                 <ViewField icon={<Briefcase size={18} />} label="Current Role" value={formData.currentRole || '-'} />
-                                                <ViewField icon={<Calendar size={18} />} label="Experience" value={`${formData.experienceYears} Years`} />
+                                                <ViewField icon={<Calendar size={18} />} label="Experience" value={formData.experienceYears > 0 ? `${formData.experienceYears} Years` : '0 Years'} />
                                                 <ViewField icon={<GraduationCap size={18} />} label="College" value={formData.collegeName || '-'} />
                                                 <ViewField icon={<GraduationCap size={18} />} label="Graduation" value={formData.completionYear || '-'} />
                                                 <ViewField icon={<GraduationCap size={18} />} label="Grade" value={formData.grade || '-'} />
+                                                {/* New Fields */}
+                                                <ViewField icon={<User size={18} />} label="Gender" value={formData.gender || '-'} />
+                                                <ViewField icon={<Calendar size={18} />} label="Date of Birth" value={formData.dateOfBirth ? new Date(formData.dateOfBirth).toLocaleDateString() : '-'} />
+                                                <ViewField icon={<MapPin size={18} />} label="Preferred Location" value={formData.preferredWorkLocation || '-'} />
+                                                <div style={{ gridColumn: '1 / -1' }}>
+                                                    <ViewField icon={<Briefcase size={18} />} label="Skills" value={formData.skills || '-'} />
+                                                </div>
                                             </>
                                         )
                                     }
-                                </div >
+                                </div>
 
                                 <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
                                     <button
@@ -320,24 +340,110 @@ const ProfileEditor = ({ isOpen, onClose, userRole }) => {
                                     </>
                                 ) : (
                                     <>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
+                                            {(logoPreview || formData.profileImage) ? (
+                                                <img
+                                                    src={logoPreview || (formData.profileImage && formData.profileImage.startsWith('/') ? `http://localhost:5033${formData.profileImage}` : formData.profileImage)}
+                                                    alt="Profile"
+                                                    style={{ width: '60px', height: '60px', borderRadius: '50%', objectFit: 'cover' }}
+                                                />
+                                            ) : (
+                                                <div style={{
+                                                    width: '60px', height: '60px', borderRadius: '50%',
+                                                    background: 'var(--primary)', color: 'white',
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem'
+                                                }}>
+                                                    {formData.fullName.charAt(0)}
+                                                </div>
+                                            )}
+                                            <label style={{
+                                                cursor: 'pointer', padding: '6px 12px', background: 'var(--bg-secondary)',
+                                                border: '1px solid var(--glass-border)', borderRadius: '6px', fontSize: '0.9rem',
+                                                display: 'flex', alignItems: 'center', gap: '6px'
+                                            }}>
+                                                <Upload size={16} /> Change Photo
+                                                <input type="file" accept="image/*" onChange={handleLogoChange} style={{ display: 'none' }} />
+                                            </label>
+                                        </div>
+
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                            <div>
+                                                <label style={labelStyle}>Current Role</label>
+                                                <input
+                                                    type="text"
+                                                    value={formData.currentRole}
+                                                    onChange={e => setFormData({ ...formData, currentRole: e.target.value })}
+                                                    style={inputStyle}
+                                                />
+                                            </div>
+                                            <div>
+                                                <label style={labelStyle}>Experience (Years)</label>
+                                                <input
+                                                    type="number"
+                                                    value={formData.experienceYears}
+                                                    onChange={e => setFormData({ ...formData, experienceYears: e.target.value })}
+                                                    style={inputStyle}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                            <div>
+                                                <label style={labelStyle}>Preferred Role</label>
+                                                <input
+                                                    type="text"
+                                                    value={formData.preferredRole}
+                                                    onChange={e => setFormData({ ...formData, preferredRole: e.target.value })}
+                                                    style={inputStyle}
+                                                />
+                                            </div>
+                                            <div>
+                                                <label style={labelStyle}>Preferred Location</label>
+                                                <input
+                                                    type="text"
+                                                    value={formData.preferredWorkLocation}
+                                                    onChange={e => setFormData({ ...formData, preferredWorkLocation: e.target.value })}
+                                                    style={inputStyle}
+                                                />
+                                            </div>
+                                        </div>
+
                                         <div>
-                                            <label style={labelStyle}>Current Role</label>
+                                            <label style={labelStyle}>Skills (Comma separated)</label>
                                             <input
                                                 type="text"
-                                                value={formData.currentRole}
-                                                onChange={e => setFormData({ ...formData, currentRole: e.target.value })}
+                                                value={formData.skills}
+                                                onChange={e => setFormData({ ...formData, skills: e.target.value })}
+                                                placeholder="e.g. React, Node.js, Python"
                                                 style={inputStyle}
                                             />
                                         </div>
-                                        <div>
-                                            <label style={labelStyle}>Experience (Years)</label>
-                                            <input
-                                                type="number"
-                                                value={formData.experienceYears}
-                                                onChange={e => setFormData({ ...formData, experienceYears: e.target.value })}
-                                                style={inputStyle}
-                                            />
+
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                            <div>
+                                                <label style={labelStyle}>Gender</label>
+                                                <select
+                                                    value={formData.gender}
+                                                    onChange={e => setFormData({ ...formData, gender: e.target.value })}
+                                                    style={inputStyle}
+                                                >
+                                                    <option value="">Select Gender</option>
+                                                    <option value="Male">Male</option>
+                                                    <option value="Female">Female</option>
+                                                    <option value="Other">Other</option>
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label style={labelStyle}>Date of Birth</label>
+                                                <input
+                                                    type="date"
+                                                    value={formData.dateOfBirth ? formData.dateOfBirth.split('T')[0] : ''}
+                                                    onChange={e => setFormData({ ...formData, dateOfBirth: e.target.value })}
+                                                    style={inputStyle}
+                                                />
+                                            </div>
                                         </div>
+
                                         <div>
                                             <label style={labelStyle}>College Name</label>
                                             <input
