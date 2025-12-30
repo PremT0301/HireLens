@@ -52,21 +52,20 @@ The application operates as a cohesive trio of services:
 1.  **Frontend (React)**: The user interface layer.
 2.  **Backend (.NET API)**: The business logic and data management layer.
 3.  **AI Service (Python)**: The intelligence layer for NLP and analysis.
-
-```mermaid
+'''
 graph TD
     User((User))
-    Frontend[Frontend - React/Vite]
-    Backend[Backend - .NET Core WebAPI]
-    DB[(Database - MySQL)]
-    AI[AI Service - Python/FastAPI]
+    Frontend[Frontend React Vite]
+    Backend[Backend DotNet Core WebAPI]
+    DB[(Database MySQL)]
+    AI[AI Service Python FastAPI]
 
     User -->|Interacts| Frontend
-    Frontend -->|API Calls (HTTP)| Backend
-    Backend -->|Queries/Updates| DB
+    Frontend -->|API Calls| Backend
+    Backend -->|Read Write| DB
     Backend -->|Analysis Request| AI
     AI -->|Analysis Result| Backend
-```
+'''
 
 ### Key Controllers
 | Controller | Responsibility |
