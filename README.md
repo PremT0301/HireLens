@@ -14,11 +14,12 @@ This document serves as the **complete manual** for the project, covering its ar
     - [Applicant Portal Features](#2-applicant-portal)
     - [Recruiter Portal Features](#3-recruiter-portal)
 4. [Machine Learning Pipeline](#-machine-learning-pipeline)
-5. [Technical Stack](#-technical-stack)
-6. [Installation & Setup](#-installation--setup)
-7. [Project Structure](#-project-directory-structure)
-10. [Project Progress](#-project-progress)
-11. [Troubleshooting](#-troubleshooting)
+5. [Data Strategy & Datasets](#-data-strategy--datasets)
+6. [Technical Stack](#-technical-stack)
+7. [Installation & Setup](#-installation--setup)
+8. [Project Structure](#-project-directory-structure)
+9. [Project Progress](#-project-progress)
+10. [Troubleshooting](#-troubleshooting)
 
 ---
 
@@ -33,15 +34,49 @@ Stay up to date with our current development status and timeline:
 
 ## 🚀 Project Overview
 
-**HireLens AI** solves the "black box" problem of hiring. 
-- **For Candidates**: It doesn't just say "rejected"; it explains *why* (Gap Analysis) and *how* to improve (Recommendations).
-- **For Recruiters**: It replaces keyword matching with semantic understanding, identifying candidates who have the *right skills* even if they use different terminology.
+**The Hiring "Black Box" Problem**: Traditional hiring processes are opaque and inefficient. 
+- **For Candidates**: It involves submitting resumes into a void with no feedback. Rejection often comes without improved understanding of *why* or *how* to improve.
+- **For Recruiters**: Keyword-based screening misses qualified candidates who use different terminology. High volumes of applications lead to fatigue and oversight.
+
+**The HireLens Solution**: An intelligent recruitment ecosystem that bridges this gap.
+- **Transparency**: Provides candidates with "Gap Analysis" — knowing exactly why they were not a 100% match and what skills they are missing.
+- **Intelligence**: Uses NLP (Named Entity Recognition and BERT) to understand the *meaning* of resumes, not just keyword matching.
+- **Efficiency**: Automates initial screening and scoring, allowing recruiters to focus on the best candidates.
 
 ---
 
 ## 🏗️ System Architecture
 
 The application operates as a cohesive trio of services:
+
+1.  **Frontend (React)**: The user interface layer.
+2.  **Backend (.NET API)**: The business logic and data management layer.
+3.  **AI Service (Python)**: The intelligence layer for NLP and analysis.
+
+```mermaid
+graph TD
+    User((User))
+    Frontend[Frontend - React/Vite]
+    Backend[Backend - .NET Core WebAPI]
+    DB[(Database - MySQL)]
+    AI[AI Service - Python/FastAPI]
+
+    User -->|Interacts| Frontend
+    Frontend -->|API Calls (HTTP)| Backend
+    Backend -->|Queries/Updates| DB
+    Backend -->|Analysis Request| AI
+    AI -->|Analysis Result| Backend
+```
+
+### Key Controllers
+| Controller | Responsibility |
+| :--- | :--- |
+| `AuthController` | Login, Signup, Token Generation. |
+| `ProfilesController` | Management of Applicant & Recruiter profiles. |
+| `JobsController` | Creating, editing, and listing job postings. |
+| `ApplicationsController` | Handling the act of applying and tracking status. |
+| `ResumesController` | Uploading and parsing resume files. |
+| `AnalysisController` | Bridge between .NET and Python AI Service. |
 ## 🌟 User Functionalities (The Product)
 
 This section details every feature available in the application.
@@ -130,6 +165,29 @@ The "Brain" of HireLens AI is a custom-built Python service.
 *   **Technology**: BERT (Bidirectional Encoder Representations from Transformers) - `bert-base-uncased`.
 *   **Capabilities**: Classifies text into 20+ roles (Data Science, HR, Engineering, Sales, etc.).
 *   **Training Data**: `datasets/Resume/Resume.csv`.
+
+---
+
+## 🗄️ Data Strategy & Datasets
+
+### A. Datasets (`/datasets`)
+1.  **Resume Entities (`Entity Recognition in Resumes.json`)**:
+    -   **Source**: Kaggle / Open Source.
+    -   **Size**: ~220 labelled resumes.
+    -   **Labels**: `Skills`, `Designation`, `BoE`, `Experience`, `Location`, `Companies worked at`.
+    -   **Usage**: Training the custom Spacy NER model.
+
+2.  **Job Market Data (`jobs_main.csv`)**:
+    -   **Source**: Scraped from LinkedIn / Indeed.
+    -   **Size**: 680+ records.
+    -   **Experience**: Populates the "Jobs" feed.
+
+### B. Database Schema (MySQL)
+-   **Users**: `Id`, `Email`, `PasswordHash`, `Role`, `ProfileParams`
+-   **Resumes**: `Id`, `UserId`, `FilePath`, `ParsedText`, `UploadedAt`
+-   **Jobs**: `Id`, `RecruiterId`, `Title`, `Description`, `RequiredSkills`, `Status`
+-   **Applications**: `Id`, `JobId`, `candidateId`, `Status`, `RankingScore`
+-   **CandidateRankings**: `Id`, `JobId`, `CandidateId`, `TotalScore`, `SkillScore`, `RoleConfidence`, `MissingSkills`
 
 ---
 
