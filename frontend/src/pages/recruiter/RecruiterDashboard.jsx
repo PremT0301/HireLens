@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import ThreeDTiltCard from '../../components/ui/ThreeDTiltCard';
 import ApplicationService from '../../api/applicationService';
 import Modal from '../../components/ui/Modal';
+import NewsSection from '../../components/NewsSection';
 
 const RecruiterDashboard = () => {
     const [stats, setStats] = useState({
@@ -15,7 +16,6 @@ const RecruiterDashboard = () => {
     const [recentApplications, setRecentApplications] = useState([]);
     const [sortOrder, setSortOrder] = useState('score_desc');
 
-    const [pipeline, setPipeline] = useState({ Screening: 0, Interview: 0, Offer: 0 });
     const [selectedCandidate, setSelectedCandidate] = useState(null);
     const [isInterviewModalOpen, setIsInterviewModalOpen] = useState(false);
     const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
@@ -67,9 +67,6 @@ const RecruiterDashboard = () => {
 
                 const recentData = await ApplicationService.getRecentApplications();
                 setRecentApplications(recentData);
-
-                const pipelineData = await ApplicationService.getPipelineHealth();
-                setPipeline(pipelineData);
             } catch (error) {
                 console.error("Failed to load dashboard data", error);
             }
@@ -124,8 +121,9 @@ const RecruiterDashboard = () => {
                 </ThreeDTiltCard>
             </div>
 
+
             {/* Main Content Layout */}
-            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '2rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
 
                 {/* Recent Applications Column */}
                 <div className="glass-panel" style={{ padding: '2rem', minHeight: '500px' }}>
@@ -193,50 +191,12 @@ const RecruiterDashboard = () => {
                     </div>
                 </div>
 
-                {/* Sidebar / Quick Actions */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-
-                    {/* Quick Actions Card */}
-                    <div className="glass-panel" style={{ padding: '2rem' }}>
-                        <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '1.5rem' }}>Quick Actions</h3>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                            <Link to="/recruiter/create-job" className="btn-primary" style={{ width: '100%', justifyContent: 'center' }}>
-                                Post New Job
-                            </Link>
-                            <button className="btn-ghost" style={{ width: '100%', border: '1px solid var(--border-color)', justifyContent: 'center' }}>
-                                Search Database
-                            </button>
-                            <button className="btn-ghost" style={{ width: '100%', border: '1px solid var(--border-color)', justifyContent: 'center' }}>
-                                Invite Candidate
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* Pipeline Health (Dynamic) */}
-                    <div className="glass-panel" style={{ padding: '2rem' }}>
-                        <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '1.5rem' }}>Pipeline Health</h3>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                            <span className="text-subtle" style={{ fontSize: '0.9rem' }}>Screening</span>
-                            <span style={{ fontWeight: 600 }}>{pipeline.Screening}</span>
-                        </div>
-                        <ProgressBar value={pipeline.Screening > 0 ? (pipeline.Screening / (pipeline.Screening + pipeline.Interview + pipeline.Offer) * 100) : 0} color="var(--primary)" />
-
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1.5rem', marginBottom: '0.5rem' }}>
-                            <span className="text-subtle" style={{ fontSize: '0.9rem' }}>Interview</span>
-                            <span style={{ fontWeight: 600 }}>{pipeline.Interview}</span>
-                        </div>
-                        <ProgressBar value={pipeline.Interview > 0 ? (pipeline.Interview / (pipeline.Screening + pipeline.Interview + pipeline.Offer) * 100) : 0} color="var(--secondary)" />
-
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1.5rem', marginBottom: '0.5rem' }}>
-                            <span className="text-subtle" style={{ fontSize: '0.9rem' }}>Offer</span>
-                            <span style={{ fontWeight: 600 }}>{pipeline.Offer}</span>
-                        </div>
-                        <ProgressBar value={pipeline.Offer > 0 ? (pipeline.Offer / (pipeline.Screening + pipeline.Interview + pipeline.Offer) * 100) : 0} color="var(--success)" />
-                    </div>
-
-                </div>
-
             </div>
+
+            {/* News Feed */}
+            <NewsSection query="technology recruitment hiring talent acquisition" title="Recruitment Insights & News" />
+
+            <div style={{ height: '2rem' }}></div>
 
             {isInterviewModalOpen && (
                 <ScheduleInterviewModal
@@ -430,10 +390,6 @@ const CandidateRow = ({ candidate, onSchedule, onStatusUpdate, onViewProfile }) 
     );
 };
 
-const ProgressBar = ({ value, color }) => (
-    <div style={{ width: '100%', height: '6px', background: 'var(--border-color)', borderRadius: '3px', overflow: 'hidden' }}>
-        <div style={{ width: `${value}%`, height: '100%', background: color, borderRadius: '3px' }}></div>
-    </div>
-);
+
 
 export default RecruiterDashboard;
