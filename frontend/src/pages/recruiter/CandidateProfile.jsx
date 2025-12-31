@@ -195,7 +195,7 @@ const CandidateProfile = () => {
                                 {candidate.linkedInUrl && (
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)' }}>
                                         <div style={{ background: 'var(--bg-secondary)', padding: '8px', borderRadius: '50%' }}><Briefcase size={16} /></div>
-                                        <a href={candidate.linkedInUrl} target="_blank" rel="noopener noreferrer" style={{ fontWeight: 500, color: 'var(--primary)', textDecoration: 'none' }}>LinkedIn Profile</a>
+                                        <a href={candidate.linkedInUrl.startsWith('http') ? candidate.linkedInUrl : `https://${candidate.linkedInUrl}`} target="_blank" rel="noopener noreferrer" style={{ fontWeight: 500, color: 'var(--primary)', textDecoration: 'none' }}>LinkedIn Profile</a>
                                     </div>
                                 )}
                             </div>
@@ -310,7 +310,7 @@ const CandidateProfile = () => {
                             </div>
                             {/* Detailed Education List if available */}
                             {candidate.education && candidate.education.length > 0 && (
-                                <div style={{ gridColumn: '1 / -1', marginTop: '1rem', borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
+                                <div style={{ marginTop: '1rem', borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
                                     <span style={{ display: 'block', color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '8px' }}>Education History</span>
                                     {candidate.education.map((edu, idx) => (
                                         <div key={idx} style={{ marginBottom: '8px' }}>
@@ -326,7 +326,7 @@ const CandidateProfile = () => {
 
                             {/* Work Experience List if available */}
                             {candidate.workExperience && candidate.workExperience.length > 0 && (
-                                <div style={{ gridColumn: '1 / -1', marginTop: '0.5rem', borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
+                                <div style={{ marginTop: '1rem', borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
                                     <span style={{ display: 'block', color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '8px' }}>Work History</span>
                                     {candidate.workExperience.map((work, idx) => (
                                         <div key={idx} style={{ marginBottom: '12px' }}>
