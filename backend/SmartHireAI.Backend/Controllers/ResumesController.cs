@@ -246,6 +246,12 @@ public class ResumesController : ControllerBase
             var contentType = filePath.EndsWith(".pdf") ? "application/pdf" : "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
             var fileName = filePath.EndsWith(".pdf") ? $"Resume_{id}.pdf" : $"Resume_{id}.docx";
 
+            if (Request.Query.ContainsKey("inline") && bool.TryParse(Request.Query["inline"], out bool isInline) && isInline)
+            {
+                Response.Headers["Content-Disposition"] = "inline; filename=" + fileName;
+                return File(memory, contentType);
+            }
+
             return File(memory, contentType, fileName);
         }
         catch (Exception ex)

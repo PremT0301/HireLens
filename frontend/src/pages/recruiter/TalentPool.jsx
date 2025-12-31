@@ -185,6 +185,7 @@ const TalentPool = () => {
                                 if (status === 'Interview Scheduled') return { bg: 'rgba(139, 92, 246, 0.1)', color: 'var(--accent-primary)', border: 'var(--accent-primary)', text: 'Interview Scheduled' };
                                 if (status === 'Interview Accepted') return { bg: 'rgba(16, 185, 129, 0.1)', color: 'var(--success)', border: 'var(--success)', text: 'Interview Accepted' };
                                 if (status === 'Hired') return { bg: 'rgba(37, 99, 235, 0.2)', color: '#1e40af', border: '#1e40af', text: 'Hired 🎉' };
+                                if (label === 'Poor') return { bg: 'rgba(239, 68, 68, 0.1)', color: 'var(--error)', border: 'var(--error)', text: label }; // Red for Poor
 
                                 if (label === 'Highly Suitable') return { bg: 'rgba(34, 197, 94, 0.1)', color: 'var(--success)', border: 'var(--success)', text: label };
                                 if (label === 'Suitable') return { bg: 'rgba(59, 130, 246, 0.1)', color: 'var(--primary)', border: 'var(--primary)', text: label };
@@ -333,7 +334,7 @@ const TalentPool = () => {
                                                                         e.target.style.background = 'transparent';
                                                                         e.target.style.color = 'var(--text-primary)';
                                                                     }}
-                                                                    onClick={() => { setOpenMenuId(null); setSelectedCandidate(candidate); setModalView('profile'); }}
+                                                                    onClick={() => { setOpenMenuId(null); navigate(`/recruiter/candidate/${candidate.id}`); }}
                                                                 >
                                                                     <User size={18} /> View Profile
                                                                 </button>
@@ -532,87 +533,8 @@ const TalentPool = () => {
                 {selectedCandidate && (
                     <div>
                         {modalView === 'profile' && (
-                            <>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', marginBottom: '2rem' }}>
-                                    <div style={{
-                                        width: '80px', height: '80px', borderRadius: '50%',
-                                        background: 'linear-gradient(135deg, var(--accent-primary), var(--accent-secondary))',
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                        fontSize: '2rem', color: 'white', fontWeight: 'bold'
-                                    }}>
-                                        {selectedCandidate.name[0]}
-                                    </div>
-                                    <div>
-                                        <h2 style={{ fontSize: '1.8rem', marginBottom: '0.5rem' }}>{selectedCandidate.name}</h2>
-                                        <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>{selectedCandidate.role}</p>
-                                    </div>
-                                    <span style={{
-                                        marginLeft: 'auto',
-                                        padding: '6px 12px',
-                                        borderRadius: '20px',
-                                        background: 'var(--primary-light)',
-                                        color: 'var(--primary)',
-                                        fontSize: '0.9rem',
-                                        fontWeight: '600'
-                                    }}>
-                                        {selectedCandidate.status}
-                                    </span>
-                                </div>
-
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
-                                    <div className="glass-panel" style={{ padding: '1rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                        <Mail size={18} className="text-gray-400" />
-                                        <span>{selectedCandidate.email}</span>
-                                    </div>
-                                    <div className="glass-panel" style={{ padding: '1rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                        <Phone size={18} className="text-gray-400" />
-                                        <span>{selectedCandidate.phone || 'N/A'}</span>
-                                    </div>
-                                    <div className="glass-panel" style={{ padding: '1rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                        <Briefcase size={18} className="text-gray-400" />
-                                        <span>{selectedCandidate.experience} Years Experience</span>
-                                    </div>
-                                    <div className="glass-panel" style={{ padding: '1rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                        <Calendar size={18} className="text-gray-400" />
-                                        <span>Applied {selectedCandidate.time || 'Recently'}</span>
-                                    </div>
-                                    <div className="glass-panel" style={{ padding: '1rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                        <MapPin size={18} className="text-gray-400" />
-                                        <span>{selectedCandidate.location || 'Location N/A'}</span>
-                                    </div>
-                                    <div className="glass-panel" style={{ padding: '1rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                        <Building size={18} className="text-gray-400" />
-                                        <span>{selectedCandidate.college || 'Education N/A'}</span>
-                                    </div>
-                                </div>
-
-                                {/* Skills Section in Modal */}
-                                <div className="glass-panel" style={{ padding: '1.5rem', marginBottom: '2rem' }}>
-                                    <h3 style={{ marginBottom: '1rem', fontSize: '1.1rem' }}>Key Skills & Match Score</h3>
-                                    <div style={{ height: '300px', width: '100%' }}>
-                                        <ResponsiveContainer width="100%" height="100%">
-                                            <RadarChart cx="50%" cy="50%" outerRadius="70%" data={getData(selectedCandidate)}>
-                                                <PolarGrid stroke="var(--glass-border)" />
-                                                <PolarAngleAxis dataKey="subject" tick={{ fill: 'var(--text-secondary)', fontSize: 12 }} />
-                                                <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
-                                                <Radar
-                                                    name="Skills"
-                                                    dataKey="A"
-                                                    stroke="var(--primary)"
-                                                    strokeWidth={3}
-                                                    fill="var(--primary)"
-                                                    fillOpacity={0.3}
-                                                />
-                                            </RadarChart>
-                                        </ResponsiveContainer>
-                                    </div>
-                                </div>
-
-                                <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
-                                    <button className="btn-ghost" onClick={() => setModalView('message')}>Message Candidate</button>
-                                    <button className="btn-primary" onClick={() => setModalView('schedule')}>Schedule Interview</button>
-                                </div>
-                            </>
+                            /* Profile view moved to dedicated page */
+                            null
                         )}
 
                         {modalView === 'schedule' && (

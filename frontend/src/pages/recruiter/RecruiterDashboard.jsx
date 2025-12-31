@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Users, FileText, TrendingUp, Search, PlusCircle, ArrowUpRight, MoreHorizontal, Calendar, Mail, FileText as FileIcon, X, Phone, Briefcase } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import ThreeDTiltCard from '../../components/ui/ThreeDTiltCard';
 import ApplicationService from '../../api/applicationService';
 import ProfileService from '../../api/profileService';
@@ -8,6 +8,7 @@ import Modal from '../../components/ui/Modal';
 import NewsSection from '../../components/NewsSection';
 
 const RecruiterDashboard = () => {
+    const navigate = useNavigate();
     const [stats, setStats] = useState({
         totalCandidates: 0,
         activeJobs: 0,
@@ -20,9 +21,29 @@ const RecruiterDashboard = () => {
 
     const [selectedCandidate, setSelectedCandidate] = useState(null);
     const [isInterviewModalOpen, setIsInterviewModalOpen] = useState(false);
-    const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+    // const [isProfileModalOpen, setIsProfileModalOpen] = useState(false); // Removed modal state
 
     // ... (handlers remain same)
+
+    const handleScheduleClick = (candidate) => {
+        setSelectedCandidate(candidate);
+        setIsInterviewModalOpen(true);
+    };
+
+    const handleViewProfile = (candidate) => {
+        navigate(`/recruiter/candidate/${candidate.id}`);
+    };
+
+    const handleStatusUpdate = (candidateId, newStatus) => {
+        console.log(`Update status for ${candidateId} to ${newStatus}`);
+        // In a real app, make API call here and update local state
+    };
+
+    const handleInterviewScheduled = async (interviewData) => {
+        console.log("Interview scheduled", interviewData);
+        // Could enable a toast notification here
+        setIsInterviewModalOpen(false);
+    };
 
     useEffect(() => {
         const loadDashboardData = async () => {
@@ -176,64 +197,6 @@ const RecruiterDashboard = () => {
                     onSubmit={handleInterviewScheduled}
                 />
             )}
-
-            {isProfileModalOpen && selectedCandidate && (
-                <Modal
-                    isOpen={isProfileModalOpen}
-                    onClose={() => setIsProfileModalOpen(false)}
-                    title="Candidate Profile"
-                >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', marginBottom: '2rem' }}>
-                        <div style={{
-                            width: '80px', height: '80px', borderRadius: '50%',
-                            background: 'linear-gradient(135deg, var(--primary), var(--secondary))',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            fontSize: '2rem', color: 'white', fontWeight: 'bold'
-                        }}>
-                            {selectedCandidate.name.charAt(0)}
-                        </div>
-                        <div>
-                            <h2 style={{ fontSize: '1.8rem', marginBottom: '0.5rem' }}>{selectedCandidate.name}</h2>
-                            <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>{selectedCandidate.role}</p>
-                        </div>
-                        <span style={{
-                            marginLeft: 'auto',
-                            padding: '6px 12px',
-                            borderRadius: '20px',
-                            background: 'var(--primary-light)', // Fallback if badge style function not accessible here
-                            color: 'var(--primary)',
-                            fontSize: '0.9rem',
-                            fontWeight: '600'
-                        }}>
-                            {selectedCandidate.label || 'Candidate'}
-                        </span>
-                    </div>
-
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
-                        <div className="glass-panel" style={{ padding: '1rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                            <Mail size={18} className="text-gray-400" />
-                            <span>{selectedCandidate.email || 'No email provided'}</span>
-                        </div>
-                        <div className="glass-panel" style={{ padding: '1rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                            <Phone size={18} className="text-gray-400" />
-                            <span>{selectedCandidate.phone || 'N/A'}</span>
-                        </div>
-                        <div className="glass-panel" style={{ padding: '1rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                            <Briefcase size={18} className="text-gray-400" />
-                            <span>{selectedCandidate.experience || '0'} Years Experience</span>
-                        </div>
-                        <div className="glass-panel" style={{ padding: '1rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                            <Calendar size={18} className="text-gray-400" />
-                            <span>{selectedCandidate.time}</span>
-                        </div>
-                    </div>
-
-                    <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
-                        <button className="btn-ghost" onClick={() => setIsProfileModalOpen(false)}>Close</button>
-                        <button className="btn-primary" onClick={() => { setIsProfileModalOpen(false); setIsInterviewModalOpen(true); }}>Schedule Interview</button>
-                    </div>
-                </Modal>
-            )}
         </div>
     );
 };
@@ -283,7 +246,8 @@ const CandidateRow = ({ candidate, onSchedule, onStatusUpdate, onViewProfile }) 
         if (label === 'Hired') return { bg: 'rgba(34, 197, 94, 0.1)', color: 'var(--success)', border: 'var(--success)' };
         if (label === 'Highly Suitable') return { bg: 'rgba(34, 197, 94, 0.1)', color: 'var(--success)', border: 'var(--success)' };
         if (label === 'Suitable') return { bg: 'rgba(59, 130, 246, 0.1)', color: 'var(--primary)', border: 'var(--primary)' };
-        return { bg: 'rgba(251, 191, 36, 0.1)', color: 'var(--warning)', border: 'var(--warning)' };
+        if (label === 'Poor') return { bg: 'rgba(239, 68, 68, 0.1)', color: 'var(--error)', border: 'var(--error)' }; // Red for Poor
+        return { bg: 'rgba(251, 191, 36, 0.1)', color: 'var(--warning)', border: 'var(--warning)' }; // Default Average
     };
 
     const badgeStyle = getBadgeStyle(candidate.label);
@@ -355,6 +319,77 @@ const CandidateRow = ({ candidate, onSchedule, onStatusUpdate, onViewProfile }) 
             {/* Time */}
             <div style={{ textAlign: 'right', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
                 {candidate.time}
+            </div>
+
+            {/* Actions */}
+            <div style={{ position: 'relative', display: 'flex', justifyContent: 'flex-end' }}>
+                <button
+                    className="btn-ghost icon-only"
+                    onClick={() => setShowMenu(!showMenu)}
+                    onBlur={() => setTimeout(() => setShowMenu(false), 200)}
+                >
+                    <MoreHorizontal size={18} />
+                </button>
+                {showMenu && (
+                    <div style={{
+                        position: 'absolute',
+                        right: 0,
+                        top: '100%',
+                        background: 'var(--bg-secondary)',
+                        border: '1px solid var(--border-color)',
+                        borderRadius: '8px',
+                        boxShadow: 'var(--shadow-md)',
+                        zIndex: 10,
+                        minWidth: '160px',
+                        overflow: 'hidden'
+                    }}>
+                        <button
+                            style={{
+                                display: 'flex', alignItems: 'center', gap: '8px',
+                                width: '100%', padding: '10px 16px',
+                                background: 'transparent', border: 'none',
+                                cursor: 'pointer', textAlign: 'left',
+                                color: 'var(--text-primary)',
+                                fontSize: '0.9rem',
+                                transition: 'background 0.2s'
+                            }}
+                            className="hover:bg-gray-100 dark:hover:bg-gray-800"
+                            onClick={() => { onViewProfile(candidate); setShowMenu(false); }}
+                        >
+                            <FileIcon size={16} /> View Profile
+                        </button>
+                        <button
+                            style={{
+                                display: 'flex', alignItems: 'center', gap: '8px',
+                                width: '100%', padding: '10px 16px',
+                                background: 'transparent', border: 'none',
+                                cursor: 'pointer', textAlign: 'left',
+                                color: 'var(--text-primary)',
+                                fontSize: '0.9rem',
+                                transition: 'background 0.2s'
+                            }}
+                            className="hover:bg-gray-100 dark:hover:bg-gray-800"
+                            onClick={() => { onSchedule(candidate); setShowMenu(false); }}
+                        >
+                            <Calendar size={16} /> Schedule Interview
+                        </button>
+                        <button
+                            style={{
+                                display: 'flex', alignItems: 'center', gap: '8px',
+                                width: '100%', padding: '10px 16px',
+                                background: 'transparent', border: 'none',
+                                cursor: 'pointer', textAlign: 'left',
+                                color: 'var(--text-primary)',
+                                fontSize: '0.9rem',
+                                transition: 'background 0.2s'
+                            }}
+                            className="hover:bg-gray-100 dark:hover:bg-gray-800"
+                            onClick={() => { alert('Contact feature coming soon'); setShowMenu(false); }}
+                        >
+                            <Mail size={16} /> Contact
+                        </button>
+                    </div>
+                )}
             </div>
 
         </div>

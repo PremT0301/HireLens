@@ -122,7 +122,7 @@ public class ApplicationsController : ControllerBase
             a.Name,
             a.Role,
             a.Score,
-            Label = a.Status == "Hired" ? "Hired" : (a.Score >= 90 ? "Highly Suitable" : a.Score >= 70 ? "Suitable" : "Needs Improvement"),
+            Label = a.Status == "Hired" ? "Hired" : (a.Score >= 90 ? "Highly Suitable" : a.Score >= 70 ? "Suitable" : a.Score < 30 ? "Poor" : "Needs Improvement"),
             Time = (DateTime.UtcNow - a.AppliedAt).TotalHours < 24
                     ? $"{(int)(DateTime.UtcNow - a.AppliedAt).TotalHours}h ago"
                     : $"{(int)(DateTime.UtcNow - a.AppliedAt).TotalDays}d ago",
@@ -325,7 +325,7 @@ public class ApplicationsController : ControllerBase
             c.Experience,
             c.Location,
             c.College,
-            Label = c.Score >= 90 ? "Highly Suitable" : c.Score >= 70 ? "Suitable" : "Average",
+            Label = c.Score >= 90 ? "Highly Suitable" : c.Score >= 70 ? "Suitable" : c.Score < 30 ? "Poor" : "Average",
             Time = c.AppliedAt.ToString("MMM dd"), // Simple format for frontend
             c.InterviewDate,
             c.InterviewMode,
