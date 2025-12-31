@@ -22,3 +22,13 @@ QUICKSTART.md
 project_details.md
 project_flow.md
 SYNOPSIS.docx
+# Images
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.bmp
+*.svg
+*.webp
+*.tiff
+*.ico
