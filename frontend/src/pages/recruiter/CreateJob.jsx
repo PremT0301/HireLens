@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Briefcase, MapPin, IndianRupee, FileText, CheckCircle, Plus, X, ChevronLeft } from 'lucide-react';
+import { Briefcase, MapPin, IndianRupee, FileText, CheckCircle, Plus, X } from 'lucide-react';
 import { useToast } from '../../context/ToastContext';
 import JobService from '../../api/jobService';
 
@@ -186,13 +186,7 @@ const CreateJob = () => {
     return (
         <div className="container page-transition" style={{ maxWidth: '900px', margin: '0 auto', paddingBottom: '4rem', paddingTop: '2rem' }}>
 
-            <button
-                onClick={() => navigate('/recruiter/dashboard')}
-                className="btn-ghost"
-                style={{ marginBottom: '2rem', paddingLeft: 0 }}
-            >
-                <ChevronLeft size={20} /> Back to Dashboard
-            </button>
+
 
             <div style={{ marginBottom: '3rem' }}>
                 <h1 className="title-lg" style={{ marginBottom: '0.5rem' }}>{isEditMode ? 'Edit Job Posting' : 'Post a New Job'}</h1>

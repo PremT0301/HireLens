@@ -13,11 +13,13 @@ public class ApplicationsController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
     private readonly Services.IAIService _aiService;
+    private readonly Services.IEmailService _emailService;
 
-    public ApplicationsController(ApplicationDbContext context, Services.IAIService aiService)
+    public ApplicationsController(ApplicationDbContext context, Services.IAIService aiService, Services.IEmailService emailService)
     {
         _context = context;
         _aiService = aiService;
+        _emailService = emailService;
     }
 
     // GET: api/applications/my
@@ -219,11 +221,57 @@ public class ApplicationsController : ControllerBase
                 .ThenInclude(app => app.User)
                 .Include(a => a.Applicant.Education) // Include Education
                 .Include(a => a.JobDescription)
+                .ThenInclude(j => j.Recruiter)
                 .Include(a => a.Applicant.WorkExperience)
                 .Include(a => a.Applicant.Resumes)
                 .FirstOrDefaultAsync(a => a.ApplicationId == id);
 
             if (application == null) return NotFound("Application not found");
+
+            // Track First View & Send Email
+            if (!application.IsViewedByRecruiter)
+            {
+                application.IsViewedByRecruiter = true;
+                _context.Entry(application).Property(x => x.IsViewedByRecruiter).IsModified = true;
+                await _context.SaveChangesAsync();
+
+                var applicantUser = application.Applicant?.User;
+                if (!string.IsNullOrEmpty(applicantUser?.Email))
+                {
+                    try
+                    {
+                        string subject = "Your application is under review";
+                        string body = $@"
+                            <div style='font-family: Arial, sans-serif;'>
+                                <h2>Application Update</h2>
+                                <p>Dear {applicantUser.FullName},</p>
+                                <p>We are writing to let you know that your application for the position of <strong>{application.JobDescription?.Title}</strong> at <strong>{application.JobDescription?.Recruiter?.CompanyName ?? "the company"}</strong> is now being reviewed by our recruitment team.</p>
+                                <p>We will get back to you with further updates.</p>
+                                <br/>
+                                <p>Best Regards,</p>
+                                <p><strong>HireLens Team</strong></p>
+                            </div>";
+
+                        // Run in background to not block response
+                        _ = Task.Run(async () =>
+                        {
+                            try
+                            {
+                                await _emailService.SendEmailAsync(applicantUser.Email, subject, body);
+                                Console.WriteLine($"[Notification] First-view email sent to {applicantUser.Email}");
+                            }
+                            catch (Exception emailEx)
+                            {
+                                Console.WriteLine($"[Error] Failed to send email: {emailEx.Message}");
+                            }
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"[Error] Email logic failed: {ex.Message}");
+                    }
+                }
+            }
 
             // Safe navigation for Applicant
             var applicant = application.Applicant;

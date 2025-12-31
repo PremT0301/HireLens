@@ -50,7 +50,7 @@ const JobDetails = () => {
                 className="btn-ghost"
                 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '8px', paddingLeft: 0 }}
             >
-                <ArrowLeft size={18} /> Back '
+                <ArrowLeft size={18} /> Previous
             </button>
 
             <div className="glass-panel" style={{ padding: '2.5rem', position: 'relative', overflow: 'hidden' }}>

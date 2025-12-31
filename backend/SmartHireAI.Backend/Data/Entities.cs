@@ -551,6 +551,9 @@ namespace SmartHireAI.Backend.Data
 
         [Column("hired_at")]
         public DateTime? HiredAt { get; set; }
+
+        [Column("is_viewed_by_recruiter")]
+        public bool IsViewedByRecruiter { get; set; } = false;
     }
 
     [Table("application_messages")]

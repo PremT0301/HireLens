@@ -20,6 +20,8 @@ import TalentPool from './pages/recruiter/TalentPool';
 import Analytics from './pages/recruiter/Analytics';
 import CreateJob from './pages/recruiter/CreateJob';
 import CandidateProfile from './pages/recruiter/CandidateProfile';
+import ScheduleMeeting from './pages/recruiter/ScheduleMeeting';
+import ContactCandidate from './pages/recruiter/ContactCandidate';
 import JobDetails from './pages/JobDetails';
 import ProtectedRoute from './components/ProtectedRoute';
 import PublicOnlyRoute from './components/PublicOnlyRoute';
@@ -68,6 +70,8 @@ const AnimatedRoutes = () => {
           <Route path="edit-job/:jobId" element={<CreateJob />} />
           <Route path="talent-pool" element={<TalentPool />} />
           <Route path="candidate/:applicationId" element={<CandidateProfile />} />
+          <Route path="schedule/:applicationId" element={<ScheduleMeeting />} />
+          <Route path="contact/:applicationId" element={<ContactCandidate />} />
           <Route path="analytics" element={<Analytics />} />
         </Route>
 
