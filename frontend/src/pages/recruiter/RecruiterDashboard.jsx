@@ -6,6 +6,7 @@ import ApplicationService from '../../api/applicationService';
 import ProfileService from '../../api/profileService';
 import Modal from '../../components/ui/Modal';
 import NewsSection from '../../components/NewsSection';
+import ScheduleInterviewModal from '../../components/ScheduleInterviewModal';
 
 const RecruiterDashboard = () => {
     const navigate = useNavigate();
@@ -321,76 +322,8 @@ const CandidateRow = ({ candidate, onSchedule, onStatusUpdate, onViewProfile }) 
                 {candidate.time}
             </div>
 
-            {/* Actions */}
-            <div style={{ position: 'relative', display: 'flex', justifyContent: 'flex-end' }}>
-                <button
-                    className="btn-ghost icon-only"
-                    onClick={() => setShowMenu(!showMenu)}
-                    onBlur={() => setTimeout(() => setShowMenu(false), 200)}
-                >
-                    <MoreHorizontal size={18} />
-                </button>
-                {showMenu && (
-                    <div style={{
-                        position: 'absolute',
-                        right: 0,
-                        top: '100%',
-                        background: 'var(--bg-secondary)',
-                        border: '1px solid var(--border-color)',
-                        borderRadius: '8px',
-                        boxShadow: 'var(--shadow-md)',
-                        zIndex: 10,
-                        minWidth: '160px',
-                        overflow: 'hidden'
-                    }}>
-                        <button
-                            style={{
-                                display: 'flex', alignItems: 'center', gap: '8px',
-                                width: '100%', padding: '10px 16px',
-                                background: 'transparent', border: 'none',
-                                cursor: 'pointer', textAlign: 'left',
-                                color: 'var(--text-primary)',
-                                fontSize: '0.9rem',
-                                transition: 'background 0.2s'
-                            }}
-                            className="hover:bg-gray-100 dark:hover:bg-gray-800"
-                            onClick={() => { onViewProfile(candidate); setShowMenu(false); }}
-                        >
-                            <FileIcon size={16} /> View Profile
-                        </button>
-                        <button
-                            style={{
-                                display: 'flex', alignItems: 'center', gap: '8px',
-                                width: '100%', padding: '10px 16px',
-                                background: 'transparent', border: 'none',
-                                cursor: 'pointer', textAlign: 'left',
-                                color: 'var(--text-primary)',
-                                fontSize: '0.9rem',
-                                transition: 'background 0.2s'
-                            }}
-                            className="hover:bg-gray-100 dark:hover:bg-gray-800"
-                            onClick={() => { onSchedule(candidate); setShowMenu(false); }}
-                        >
-                            <Calendar size={16} /> Schedule Interview
-                        </button>
-                        <button
-                            style={{
-                                display: 'flex', alignItems: 'center', gap: '8px',
-                                width: '100%', padding: '10px 16px',
-                                background: 'transparent', border: 'none',
-                                cursor: 'pointer', textAlign: 'left',
-                                color: 'var(--text-primary)',
-                                fontSize: '0.9rem',
-                                transition: 'background 0.2s'
-                            }}
-                            className="hover:bg-gray-100 dark:hover:bg-gray-800"
-                            onClick={() => { alert('Contact feature coming soon'); setShowMenu(false); }}
-                        >
-                            <Mail size={16} /> Contact
-                        </button>
-                    </div>
-                )}
-            </div>
+            {/* Actions removed from Dashboard view */}
+            {/* <div style={{ position: 'relative', display: 'flex', justifyContent: 'flex-end' }}> ... </div> */}
 
         </div>
     );

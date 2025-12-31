@@ -113,12 +113,15 @@ public class ApplicationsController : ControllerBase
                 Role = a.JobDescription.Title,
                 Score = (int)a.AtsScore,
                 a.AppliedAt,
-                a.Status
+                a.Status,
+                a.ApplicationId,
+                Email = a.Applicant.User.Email
             })
             .ToListAsync();
 
         var recentApps = rawApps.Select(a => new
         {
+            Id = a.ApplicationId,
             a.Name,
             a.Role,
             a.Score,
@@ -126,7 +129,8 @@ public class ApplicationsController : ControllerBase
             Time = (DateTime.UtcNow - a.AppliedAt).TotalHours < 24
                     ? $"{(int)(DateTime.UtcNow - a.AppliedAt).TotalHours}h ago"
                     : $"{(int)(DateTime.UtcNow - a.AppliedAt).TotalDays}d ago",
-            a.Status
+            a.Status,
+            a.Email
         });
 
         return Ok(recentApps);
@@ -215,6 +219,7 @@ public class ApplicationsController : ControllerBase
                 .ThenInclude(app => app.User)
                 .Include(a => a.Applicant.Education) // Include Education
                 .Include(a => a.JobDescription)
+                .Include(a => a.Applicant.WorkExperience)
                 .Include(a => a.Applicant.Resumes)
                 .FirstOrDefaultAsync(a => a.ApplicationId == id);
 
