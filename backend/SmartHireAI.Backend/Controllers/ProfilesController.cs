@@ -254,7 +254,13 @@ public class ProfilesController : ControllerBase
             CompanyLogo = recruiter.CompanyLogo,
             Designation = recruiter.Designation,
             Location = recruiter.Location,
-            MobileNumber = recruiter.MobileNumber ?? recruiter.User.MobileNumber
+            MobileNumber = recruiter.MobileNumber ?? recruiter.User.MobileNumber,
+
+            // New Fields
+            CompanyWebsite = recruiter.CompanyWebsite,
+            Industry = recruiter.Industry,
+            CompanySize = recruiter.CompanySize,
+            RecruiterType = recruiter.RecruiterType
         };
     }
 
@@ -287,6 +293,13 @@ public class ProfilesController : ControllerBase
                 Designation = request.Designation,
                 Location = request.Location,
                 MobileNumber = request.MobileNumber,
+
+                // New Fields
+                CompanyWebsite = request.CompanyWebsite,
+                Industry = request.Industry,
+                CompanySize = request.CompanySize,
+                RecruiterType = request.RecruiterType,
+
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
@@ -299,6 +312,13 @@ public class ProfilesController : ControllerBase
             recruiter.Designation = request.Designation;
             recruiter.Location = request.Location;
             recruiter.MobileNumber = request.MobileNumber;
+
+            // New Fields update
+            if (!string.IsNullOrEmpty(request.CompanyWebsite)) recruiter.CompanyWebsite = request.CompanyWebsite;
+            if (!string.IsNullOrEmpty(request.Industry)) recruiter.Industry = request.Industry;
+            if (!string.IsNullOrEmpty(request.CompanySize)) recruiter.CompanySize = request.CompanySize;
+            if (!string.IsNullOrEmpty(request.RecruiterType)) recruiter.RecruiterType = request.RecruiterType;
+
             recruiter.UpdatedAt = DateTime.UtcNow;
         }
 

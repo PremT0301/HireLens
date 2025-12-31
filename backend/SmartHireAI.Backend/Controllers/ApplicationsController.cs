@@ -243,11 +243,34 @@ public class ApplicationsController : ControllerBase
                 Phone = applicant.MobileNumber ?? user?.MobileNumber ?? "N/A",
                 Experience = applicant.ExperienceYears,
                 Location = applicant.Location ?? user?.Location ?? "Unknown",
-                College = edu?.CollegeName,
-                CompletionYear = edu?.CompletionYear,
-                Grade = edu?.Grade,
+                // CurrentRole moved to be next to Experience for consistency
                 CurrentRole = applicant.CurrentRole,
                 ProfileImage = user?.ProfileImage,
+
+                // Enhanced details
+                LinkedInUrl = applicant.LinkedInUrl,
+                Gender = applicant.Gender,
+                DateOfBirth = applicant.DateOfBirth,
+                PreferredRole = applicant.PreferredRole,
+
+                // Full lists
+                Education = applicant.Education.Select(e => new
+                {
+                    e.CollegeName,
+                    e.Degree,
+                    e.Specialization,
+                    e.CompletionYear,
+                    e.Grade
+                }).ToList(),
+
+                WorkExperience = applicant.WorkExperience.Select(w => new
+                {
+                    w.CompanyName,
+                    w.Role,
+                    w.Duration,
+                    w.Description
+                }).ToList(),
+
                 application.InterviewDate,
                 application.InterviewMode,
                 application.MeetingLink,

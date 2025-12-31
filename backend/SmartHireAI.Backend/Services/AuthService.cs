@@ -177,7 +177,12 @@ public class AuthService : IAuthService
                 ResumeUrl = resumeUrl,
                 Location = request.Location,
                 MobileNumber = request.MobileNumber,
-                ExperienceYears = 0,
+
+                // Enhanced fields
+                DateOfBirth = request.DateOfBirth,
+                Gender = request.Gender,
+                CurrentRole = request.CurrentRole,
+                ExperienceYears = request.ExperienceYears ?? 0,
 
                 Skills = request.Skills != null ? string.Join(",", request.Skills) : null,
                 LinkedInUrl = request.LinkedInUrl,

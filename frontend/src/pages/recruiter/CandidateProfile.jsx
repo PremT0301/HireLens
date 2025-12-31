@@ -107,6 +107,19 @@ const CandidateProfile = () => {
         }));
     };
 
+    const derivedSkills = React.useMemo(() => {
+        let skills = [];
+        if (candidate?.skills && candidate.skills.length > 0) {
+            skills = candidate.skills;
+        } else if (gapAnalysis?.skillAnalysis) {
+            skills = [
+                ...(gapAnalysis.skillAnalysis.matchedSkills || []),
+                ...(gapAnalysis.skillAnalysis.additionalSkills || [])
+            ];
+        }
+        return [...new Set(skills)];
+    }, [candidate, gapAnalysis]);
+
     if (loading) return <HireLensLoader text="Loading Profile..." />;
     if (!candidate) return null;
 
@@ -179,6 +192,12 @@ const CandidateProfile = () => {
                                     <div style={{ background: 'var(--bg-secondary)', padding: '8px', borderRadius: '50%' }}><MapPin size={16} /></div>
                                     <span style={{ fontWeight: 500 }}>{candidate.location || 'Location not specified'}</span>
                                 </div>
+                                {candidate.linkedInUrl && (
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)' }}>
+                                        <div style={{ background: 'var(--bg-secondary)', padding: '8px', borderRadius: '50%' }}><Briefcase size={16} /></div>
+                                        <a href={candidate.linkedInUrl} target="_blank" rel="noopener noreferrer" style={{ fontWeight: 500, color: 'var(--primary)', textDecoration: 'none' }}>LinkedIn Profile</a>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -212,11 +231,11 @@ const CandidateProfile = () => {
                 </div>
             </div>
 
-            {/* Layout Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: '55% 45%', gap: '1.5rem', alignItems: 'start', height: 'calc(100vh - 250px)', minHeight: '600px' }}>
+            {/* Layout Grid - Removed fixed height */}
+            <div style={{ display: 'grid', gridTemplateColumns: '55% 45%', gap: '1.5rem', alignItems: 'start', minHeight: '600px' }}>
 
                 {/* Left Column: PDF Viewer */}
-                <div className="glass-panel" style={{ padding: '0', overflow: 'hidden', height: '100%' }}>
+                <div className="glass-panel" style={{ padding: '0', overflow: 'hidden', height: '800px', position: 'sticky', top: '100px' }}>
                     {candidate.resumeId ? (
                         <iframe
                             src={`${API_BASE_URL}/resumes/download/${candidate.resumeId}?inline=true`}
@@ -232,8 +251,8 @@ const CandidateProfile = () => {
                     )}
                 </div>
 
-                {/* Right Column: AI Insights & Details */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', height: '100%', overflowY: 'auto', paddingRight: '0.5rem' }}>
+                {/* Right Column: AI Insights & Details - Removed overflow/height to allow scroll */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', paddingRight: '0.5rem' }}>
 
                     {/* Match Score Card */}
                     <div className="glass-panel" style={{ padding: '1.5rem 2rem', display: 'flex', alignItems: 'center', gap: '2rem' }}>
@@ -265,7 +284,7 @@ const CandidateProfile = () => {
                         </div>
                     </div>
 
-                    {/* Professional Summary */}
+                    {/* Education Summary */}
                     <div className="glass-panel" style={{ padding: '1.5rem 2rem' }}>
                         <h3 className="title-sm" style={{ marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
                             <Briefcase size={20} className="text-primary" /> Professional Summary
@@ -276,15 +295,54 @@ const CandidateProfile = () => {
                                 <span style={{ fontWeight: '600', fontSize: '1.1rem' }}>{candidate.experience} Years</span>
                             </div>
                             <div>
-                                <span style={{ display: 'block', color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '4px' }}>Education</span>
-                                <span style={{ fontWeight: '600' }}>{candidate.college || 'Not specified'}</span>
+                                <span style={{ display: 'block', color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '4px' }}>Highest Education</span>
+                                <span style={{ fontWeight: '600' }}>{candidate.education && candidate.education.length > 0 ? candidate.education[0].collegeName : (candidate.college || 'Not specified')}</span>
                             </div>
                             <div>
                                 <span style={{ display: 'block', color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '4px' }}>Applied On</span>
                                 <span style={{ fontWeight: '600' }}>{new Date(candidate.appliedAt).toLocaleDateString()}</span>
                             </div>
+                            <div>
+                                <span style={{ display: 'block', color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '4px' }}>Preferred Role</span>
+                                <span style={{ fontWeight: '600', color: candidate.preferredRole === candidate.role ? 'var(--success)' : 'var(--text-primary)' }}>
+                                    {candidate.preferredRole || 'Not specified'}
+                                </span>
+                            </div>
+                            {/* Detailed Education List if available */}
+                            {candidate.education && candidate.education.length > 0 && (
+                                <div style={{ gridColumn: '1 / -1', marginTop: '1rem', borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
+                                    <span style={{ display: 'block', color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '8px' }}>Education History</span>
+                                    {candidate.education.map((edu, idx) => (
+                                        <div key={idx} style={{ marginBottom: '8px' }}>
+                                            <div style={{ fontWeight: '600' }}>{edu.degree} {edu.specialization ? `- ${edu.specialization}` : ''}</div>
+                                            <div style={{ fontSize: '0.9rem', color: 'var(--primary)' }}>{edu.collegeName}</div>
+                                            <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                                                {edu.completionYear} {edu.grade ? `• Grade: ${edu.grade}` : ''}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            {/* Work Experience List if available */}
+                            {candidate.workExperience && candidate.workExperience.length > 0 && (
+                                <div style={{ gridColumn: '1 / -1', marginTop: '0.5rem', borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
+                                    <span style={{ display: 'block', color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '8px' }}>Work History</span>
+                                    {candidate.workExperience.map((work, idx) => (
+                                        <div key={idx} style={{ marginBottom: '12px' }}>
+                                            <div style={{ fontWeight: '600' }}>{work.role}</div>
+                                            <div style={{ fontSize: '0.9rem', color: 'var(--primary)' }}>{work.companyName}</div>
+                                            <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                                                {work.duration}
+                                            </div>
+                                            {work.description && <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '4px' }}>{work.description}</div>}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
                             {candidate.resumeId && (
-                                <div style={{ display: 'flex', alignItems: 'end' }}>
+                                <div style={{ display: 'flex', alignItems: 'end', marginTop: '1rem' }}>
                                     <a
                                         href={`${API_BASE_URL}/resumes/download/${candidate.resumeId}`}
                                         target="_blank"
@@ -304,7 +362,7 @@ const CandidateProfile = () => {
 
                         <div style={{ height: '220px', width: '100%', minWidth: '0', marginBottom: '1.5rem' }}>
                             <ResponsiveContainer width="100%" height="100%">
-                                <RadarChart cx="50%" cy="50%" outerRadius="70%" data={getChartData(candidate.skills)}>
+                                <RadarChart cx="50%" cy="50%" outerRadius="70%" data={getChartData(derivedSkills)}>
                                     <PolarGrid stroke="var(--glass-border)" />
                                     <PolarAngleAxis dataKey="subject" tick={{ fill: 'var(--text-secondary)', fontSize: 11 }} />
                                     <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
@@ -325,7 +383,7 @@ const CandidateProfile = () => {
                                 Detected Skills
                             </h4>
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-                                {candidate.skills && candidate.skills.length > 0 ? candidate.skills.map((skill, index) => (
+                                {derivedSkills.length > 0 ? derivedSkills.map((skill, index) => (
                                     <span key={index} style={{
                                         padding: '4px 10px',
                                         borderRadius: '6px',
