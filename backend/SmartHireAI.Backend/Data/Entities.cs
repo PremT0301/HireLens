@@ -347,6 +347,73 @@ namespace SmartHireAI.Backend.Data
         public JobEmbedding? Embedding { get; set; }
 
         public ICollection<MatchResult> Matches { get; set; } = new List<MatchResult>();
+        public ICollection<JobSkill> JobSkills { get; set; } = new List<JobSkill>();
+
+        // --- New Fields ---
+        [Column("role_overview")]
+        public string? RoleOverview { get; set; }
+
+        [Column("key_responsibilities")]
+        public string? KeyResponsibilities { get; set; }
+
+        [Column("technologies")]
+        public string? Technologies { get; set; }
+
+        [Column("experience_min")]
+        public int ExperienceMin { get; set; } // Can default to ExperienceRequired
+
+        [Column("experience_max")]
+        public int ExperienceMax { get; set; }
+
+        [Column("perks_benefits")]
+        public string? PerksAndBenefits { get; set; }
+
+        [Column("growth_opportunities")]
+        public string? GrowthOpportunities { get; set; }
+
+        [Column("assessment_required")]
+        public bool AssessmentRequired { get; set; }
+
+        [MaxLength(50)]
+        [Column("assessment_type")]
+        public string? AssessmentType { get; set; }
+
+        [Column("interview_rounds")]
+        public string? InterviewRounds { get; set; } // JSON or CSV
+
+        [MaxLength(50)]
+        [Column("interview_mode")]
+        public string? InterviewMode { get; set; }
+    }
+
+    [Table("job_skills")]
+    public class JobSkill
+    {
+        [Key]
+        [Column("skill_id")]
+        public Guid SkillId { get; set; }
+
+        [Column("job_id")]
+        public Guid JobId { get; set; }
+
+        [Required]
+        [MaxLength(100)]
+        [Column("skill_name")]
+        public string SkillName { get; set; } = string.Empty;
+
+        [MaxLength(50)]
+        [Column("category")]
+        public string? Category { get; set; } // Technical, Domain, Soft
+
+        [MaxLength(50)]
+        [Column("proficiency_level")]
+        public string? ProficiencyLevel { get; set; } // Beginner, Intermediate, Advanced
+
+        [Column("weight")]
+        public int Weight { get; set; } // Percentage
+
+        [ForeignKey("JobId")]
+        public JobDescription JobDescription { get; set; } = null!;
     }
 
     [Table("resume_embeddings")]

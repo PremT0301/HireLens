@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MapPin, DollarSign, Building, Calendar } from 'lucide-react';
+import { MapPin, IndianRupee, Building, Calendar } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import JobService from '../../api/jobService';
 import ApplicationService from '../../api/applicationService';
@@ -209,7 +209,7 @@ const Jobs = () => {
                                 <div style={{ display: 'flex', gap: '1.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
                                     <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Building size={16} /> {job.companyName}</span>
                                     <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><MapPin size={16} /> Remote</span>
-                                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><DollarSign size={16} /> ${job.salaryMin.toLocaleString()} - ${job.salaryMax.toLocaleString()}</span>
+                                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><IndianRupee size={16} /> ₹{job.salaryMin.toLocaleString()} - ₹{job.salaryMax.toLocaleString()}</span>
                                 </div>
 
 

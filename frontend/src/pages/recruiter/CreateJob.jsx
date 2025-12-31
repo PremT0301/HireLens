@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Briefcase, MapPin, DollarSign, FileText, CheckCircle, Plus, X, ChevronLeft } from 'lucide-react';
+import { Briefcase, MapPin, IndianRupee, FileText, CheckCircle, Plus, X, ChevronLeft } from 'lucide-react';
 import { useToast } from '../../context/ToastContext';
 import JobService from '../../api/jobService';
 
@@ -23,12 +23,25 @@ const CreateJob = () => {
 
         numberOfOpenings: 1,
         description: '',
-        requirements: []
+
+        // New Fields
+        roleOverview: '',
+        keyResponsibilities: '',
+        technologies: '',
+        experienceMin: 0,
+        experienceMax: 0,
+        perksAndBenefits: '',
+        growthOpportunities: '',
+        assessmentRequired: false,
+        assessmentType: 'Test',
+        interviewRounds: ['HR Round'],
+        interviewMode: 'Online',
+        mandatorySkills: [] // { skillName, category, proficiencyLevel, weight }
     });
 
 
 
-    const [newRequirement, setNewRequirement] = useState('');
+    const [newSkill, setNewSkill] = useState({ skillName: '', category: 'Technical', proficiencyLevel: 'Intermediate', weight: 0 });
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
@@ -49,7 +62,19 @@ const CreateJob = () => {
 
                         numberOfOpenings: job.numberOfOpenings || 1,
                         description: job.description || '',
-                        requirements: job.requiredSkills ? job.requiredSkills.split(',').map(s => s.trim()) : []
+
+                        roleOverview: job.roleOverview || '',
+                        keyResponsibilities: job.keyResponsibilities || '',
+                        technologies: job.technologies || '',
+                        experienceMin: job.experienceMin || 0,
+                        experienceMax: job.experienceMax || 0,
+                        perksAndBenefits: job.perksAndBenefits || '',
+                        growthOpportunities: job.growthOpportunities || '',
+                        assessmentRequired: job.assessmentRequired || false,
+                        assessmentType: job.assessmentType || 'Test',
+                        interviewRounds: job.interviewRounds ? JSON.parse(job.interviewRounds) : ['HR Round'],
+                        interviewMode: job.interviewMode || 'Online',
+                        mandatorySkills: job.mandatorySkills || []
                     });
                 } catch (error) {
                     console.error("Failed to load job", error);
@@ -62,20 +87,40 @@ const CreateJob = () => {
         }
     }, [isEditMode, jobId]);
 
-    const handleAddRequirement = (e) => {
+    const handleAddSkill = (e) => {
         e.preventDefault();
-        if (newRequirement.trim()) {
+        if (newSkill.skillName.trim() && newSkill.weight > 0) {
             setFormData({
                 ...formData,
-                requirements: [...formData.requirements, newRequirement.trim()]
+                mandatorySkills: [...formData.mandatorySkills, { ...newSkill, weight: Number(newSkill.weight) }]
             });
-            setNewRequirement('');
+            setNewSkill({ skillName: '', category: 'Technical', proficiencyLevel: 'Intermediate', weight: 0 });
+        } else {
+            addToast('Please enter a skill name and a valid weight > 0', 'error');
         }
     };
 
-    const handleRemoveRequirement = (index) => {
-        const updatedReqs = formData.requirements.filter((_, i) => i !== index);
-        setFormData({ ...formData, requirements: updatedReqs });
+    const handleRemoveSkill = (index) => {
+        const updatedSkills = formData.mandatorySkills.filter((_, i) => i !== index);
+        setFormData({ ...formData, mandatorySkills: updatedSkills });
+    };
+
+    const handleAddRound = () => {
+        setFormData({
+            ...formData,
+            interviewRounds: [...formData.interviewRounds, 'New Round']
+        });
+    }
+
+    const handleRoundChange = (index, value) => {
+        const updatedRounds = [...formData.interviewRounds];
+        updatedRounds[index] = value;
+        setFormData({ ...formData, interviewRounds: updatedRounds });
+    };
+
+    const handleRemoveRound = (index) => {
+        const updatedRounds = formData.interviewRounds.filter((_, i) => i !== index);
+        setFormData({ ...formData, interviewRounds: updatedRounds });
     };
 
     const handleSubmit = async (e) => {
@@ -83,10 +128,17 @@ const CreateJob = () => {
         setIsSubmitting(true);
 
         try {
+            // Validate Weights
+            const totalWeight = formData.mandatorySkills.reduce((acc, curr) => acc + curr.weight, 0);
+            if (formData.mandatorySkills.length > 0 && totalWeight !== 100) {
+                addToast(`Total skill weight must be 100%. Current: ${totalWeight}%`, 'error');
+                setIsSubmitting(false);
+                return;
+            }
+
             const jobDto = {
                 title: formData.title,
-                requiredSkills: formData.requirements.join(", "),
-                experienceRequired: Number(formData.experienceRequired),
+                experienceRequired: Number(formData.experienceMin), // Legacy support
                 numberOfOpenings: Number(formData.numberOfOpenings),
                 salaryMin: Number(formData.salaryMin),
                 salaryMax: Number(formData.salaryMax),
@@ -94,7 +146,21 @@ const CreateJob = () => {
                 department: formData.department,
                 employmentType: formData.type,
                 location: formData.location,
-                locationType: formData.locationType
+                locationType: formData.locationType,
+
+                // New Fields
+                roleOverview: formData.roleOverview,
+                keyResponsibilities: formData.keyResponsibilities,
+                technologies: formData.technologies,
+                experienceMin: Number(formData.experienceMin),
+                experienceMax: Number(formData.experienceMax),
+                perksAndBenefits: formData.perksAndBenefits,
+                growthOpportunities: formData.growthOpportunities,
+                assessmentRequired: formData.assessmentRequired,
+                assessmentType: formData.assessmentType,
+                interviewRounds: JSON.stringify(formData.interviewRounds),
+                interviewMode: formData.interviewMode,
+                mandatorySkills: formData.mandatorySkills
             };
 
 
@@ -171,17 +237,29 @@ const CreateJob = () => {
                                 />
                             </div>
                             <div>
-                                <label className="label">Experience (Years)</label>
-                                <input
-                                    type="number"
-                                    min="0"
-                                    max="50"
-                                    required
-                                    className="input-field"
-                                    placeholder="e.g. 5"
-                                    value={formData.experienceRequired}
-                                    onChange={e => setFormData({ ...formData, experienceRequired: e.target.value })}
-                                />
+                                <label className="label">Experience Range (Years)</label>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        max="50"
+                                        required
+                                        className="input-field"
+                                        placeholder="Min"
+                                        value={formData.experienceMin}
+                                        onChange={e => setFormData({ ...formData, experienceMin: e.target.value })}
+                                    />
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        max="50"
+                                        required
+                                        className="input-field"
+                                        placeholder="Max"
+                                        value={formData.experienceMax}
+                                        onChange={e => setFormData({ ...formData, experienceMax: e.target.value })}
+                                    />
+                                </div>
                             </div>
                             <div>
                                 <label className="label">Openings</label>
@@ -212,80 +290,258 @@ const CreateJob = () => {
                     </div>
                 </section>
 
-                {/* Location & Comp Section */}
+                {/* New Section: Role Details */}
                 <section className="glass-panel" style={{ padding: '2.5rem' }}>
                     <h3 style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '12px', fontSize: '1.25rem' }}>
-                        <div style={{ padding: '8px', background: 'rgba(14, 165, 233, 0.1)', borderRadius: '8px', color: 'var(--secondary)' }}>
-                            <MapPin size={20} />
+                        <div style={{ padding: '8px', background: 'rgba(236, 72, 153, 0.1)', borderRadius: '8px', color: 'var(--accent)' }}>
+                            <FileText size={20} />
                         </div>
-                        Location & Compensation
+                        Role Details
                     </h3>
-
                     <div style={{ display: 'grid', gap: '1.5rem' }}>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '1.5rem' }}>
-                            <div>
-                                <label className="label">Workplace Type</label>
-                                <select
-                                    className="input-field"
-                                    value={formData.locationType}
-                                    onChange={e => setFormData({ ...formData, locationType: e.target.value })}
-                                >
-                                    <option value="Remote">Remote</option>
-                                    <option value="Hybrid">Hybrid</option>
-                                    <option value="On-site">On-site</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label className="label">Location</label>
-                                <input
-                                    type="text"
-                                    required={formData.locationType !== 'Remote'}
-                                    className="input-field"
-                                    placeholder={formData.locationType === 'Remote' ? "Remote (or 'Global')" : "e.g. San Francisco, CA"}
-                                    value={formData.location}
-                                    onChange={e => setFormData({ ...formData, location: e.target.value })}
-                                />
-                            </div>
-                        </div>
-
                         <div>
-                            <label className="label">Salary Range (Annual)</label>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', alignItems: 'center' }}>
-                                <div style={{ position: 'relative' }}>
-                                    <DollarSign size={16} style={{ position: 'absolute', left: '12px', top: '12px', color: 'var(--text-secondary)' }} />
-                                    <input
-                                        type="number"
-                                        className="input-field"
-                                        style={{ paddingLeft: '35px' }}
-                                        placeholder="Min"
-                                        value={formData.salaryMin}
-                                        onChange={e => setFormData({ ...formData, salaryMin: e.target.value })}
-                                    />
-                                </div>
-                                <div style={{ position: 'relative' }}>
-                                    <DollarSign size={16} style={{ position: 'absolute', left: '12px', top: '12px', color: 'var(--text-secondary)' }} />
-                                    <input
-                                        type="number"
-                                        className="input-field"
-                                        style={{ paddingLeft: '35px' }}
-                                        placeholder="Max"
-                                        value={formData.salaryMax}
-                                        onChange={e => setFormData({ ...formData, salaryMax: e.target.value })}
-                                    />
-                                </div>
-                            </div>
-                            <p className="helper-text">Leave blank if you prefer not to disclose salary upfront.</p>
+                            <label className="label">Role Overview</label>
+                            <textarea
+                                required
+                                rows="3"
+                                className="input-field"
+                                placeholder="Short 2-3 line summary of the role..."
+                                value={formData.roleOverview}
+                                onChange={e => setFormData({ ...formData, roleOverview: e.target.value })}
+                            />
+                        </div>
+                        <div>
+                            <label className="label">Key Responsibilities (Detailed)</label>
+                            <textarea
+                                required
+                                rows="4"
+                                className="input-field"
+                                placeholder="List user duties..."
+                                value={formData.keyResponsibilities}
+                                onChange={e => setFormData({ ...formData, keyResponsibilities: e.target.value })}
+                            />
+                        </div>
+                        <div>
+                            <label className="label">Technologies / Tools</label>
+                            <input
+                                type="text"
+                                className="input-field"
+                                placeholder="React, Node.js, AWS..."
+                                value={formData.technologies}
+                                onChange={e => setFormData({ ...formData, technologies: e.target.value })}
+                            />
                         </div>
                     </div>
                 </section>
 
-                {/* Details Section */}
+                {/* New Section: Skills & Matching */}
+                <section className="glass-panel" style={{ padding: '2.5rem' }}>
+                    <h3 style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '12px', fontSize: '1.25rem' }}>
+                        <div style={{ padding: '8px', background: 'rgba(124, 58, 237, 0.1)', borderRadius: '8px', color: 'var(--primary)' }}>
+                            <CheckCircle size={20} />
+                        </div>
+                        Skills & Matching (Total Weight must be 100%)
+                    </h3>
+
+                    <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-end', marginBottom: '1.5rem' }}>
+                        <div style={{ flex: 2 }}>
+                            <label className="label">Skill Name</label>
+                            <input
+                                type="text"
+                                className="input-field"
+                                placeholder="Python"
+                                value={newSkill.skillName}
+                                onChange={e => setNewSkill({ ...newSkill, skillName: e.target.value })}
+                            />
+                        </div>
+                        <div style={{ flex: 1 }}>
+                            <label className="label">Category</label>
+                            <select
+                                className="input-field"
+                                value={newSkill.category}
+                                onChange={e => setNewSkill({ ...newSkill, category: e.target.value })}
+                            >
+                                <option>Technical</option>
+                                <option>Domain</option>
+                                <option>Soft</option>
+                            </select>
+                        </div>
+                        <div style={{ flex: 1 }}>
+                            <label className="label">Level</label>
+                            <select
+                                className="input-field"
+                                value={newSkill.proficiencyLevel}
+                                onChange={e => setNewSkill({ ...newSkill, proficiencyLevel: e.target.value })}
+                            >
+                                <option>Beginner</option>
+                                <option>Intermediate</option>
+                                <option>Advanced</option>
+                            </select>
+                        </div>
+                        <div style={{ flex: 0.5 }}>
+                            <label className="label">Wt (%)</label>
+                            <input
+                                type="number"
+                                className="input-field"
+                                placeholder="20"
+                                value={newSkill.weight}
+                                onChange={e => setNewSkill({ ...newSkill, weight: e.target.value })}
+                            />
+                        </div>
+                        <button type="button" className="btn-primary" onClick={handleAddSkill} style={{ height: '46px' }}>
+                            <Plus size={20} />
+                        </button>
+                    </div>
+
+                    {/* Skills Table */}
+                    {formData.mandatorySkills.length > 0 && (
+                        <div style={{ overflowX: 'auto' }}>
+                            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.95rem' }}>
+                                <thead>
+                                    <tr style={{ background: 'var(--bg-secondary)', borderBottom: '2px solid var(--border-color)' }}>
+                                        <th style={{ padding: '12px' }}>Skill</th>
+                                        <th style={{ padding: '12px' }}>Category</th>
+                                        <th style={{ padding: '12px' }}>Level</th>
+                                        <th style={{ padding: '12px' }}>Weight</th>
+                                        <th style={{ padding: '12px' }}>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {formData.mandatorySkills.map((skill, idx) => (
+                                        <tr key={idx} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                                            <td style={{ padding: '12px' }}>{skill.skillName}</td>
+                                            <td style={{ padding: '12px' }}>{skill.category}</td>
+                                            <td style={{ padding: '12px' }}>{skill.proficiencyLevel}</td>
+                                            <td style={{ padding: '12px' }}>{skill.weight}%</td>
+                                            <td style={{ padding: '12px' }}>
+                                                <button type="button" onClick={() => handleRemoveSkill(idx)} style={{ color: 'var(--error)', background: 'none', border: 'none', cursor: 'pointer' }}>
+                                                    <X size={18} />
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                    <tr style={{ background: 'var(--bg-secondary)', fontWeight: 'bold' }}>
+                                        <td colSpan="3" style={{ padding: '12px', textAlign: 'right' }}>Total Weight:</td>
+                                        <td style={{ padding: '12px', color: formData.mandatorySkills.reduce((a, b) => a + b.weight, 0) === 100 ? 'var(--success)' : 'var(--error)' }}>
+                                            {formData.mandatorySkills.reduce((a, b) => a + b.weight, 0)}%
+                                        </td>
+                                        <td></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+                </section>
+
+                {/* New Section: Compensation & Benefits */}
+                <section className="glass-panel" style={{ padding: '2.5rem' }}>
+                    <h3 style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '12px', fontSize: '1.25rem' }}>
+                        <div style={{ padding: '8px', background: 'rgba(16, 185, 129, 0.1)', borderRadius: '8px', color: 'var(--success)' }}>
+                            <IndianRupee size={20} />
+                        </div>
+                        Compensation & Benefits
+                    </h3>
+                    <div style={{ display: 'grid', gap: '1.5rem' }}>
+                        <div>
+                            <label className="label">Perks & Benefits</label>
+                            <textarea
+                                className="input-field"
+                                rows="3"
+                                placeholder="Health Insurance, Remote Work, Gym..."
+                                value={formData.perksAndBenefits}
+                                onChange={e => setFormData({ ...formData, perksAndBenefits: e.target.value })}
+                            />
+                        </div>
+                        <div>
+                            <label className="label">Growth Opportunities</label>
+                            <textarea
+                                className="input-field"
+                                rows="3"
+                                placeholder="Mentorship, career path..."
+                                value={formData.growthOpportunities}
+                                onChange={e => setFormData({ ...formData, growthOpportunities: e.target.value })}
+                            />
+                        </div>
+                    </div>
+                </section>
+
+                {/* New Section: Hiring Process */}
+                <section className="glass-panel" style={{ padding: '2.5rem' }}>
+                    <h3 style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '12px', fontSize: '1.25rem' }}>
+                        <div style={{ padding: '8px', background: 'rgba(59, 130, 246, 0.1)', borderRadius: '8px', color: 'var(--info)' }}>
+                            <Briefcase size={20} />
+                        </div>
+                        Hiring Process
+                    </h3>
+                    <div style={{ display: 'grid', gap: '1.5rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <input
+                                type="checkbox"
+                                id="assessment"
+                                checked={formData.assessmentRequired}
+                                onChange={e => setFormData({ ...formData, assessmentRequired: e.target.checked })}
+                                style={{ width: '20px', height: '20px' }}
+                            />
+                            <label htmlFor="assessment" className="label" style={{ marginBottom: 0 }}>Assessment Required?</label>
+                        </div>
+
+                        {formData.assessmentRequired && (
+                            <div>
+                                <label className="label">Assessment Type</label>
+                                <select
+                                    className="input-field"
+                                    value={formData.assessmentType}
+                                    onChange={e => setFormData({ ...formData, assessmentType: e.target.value })}
+                                >
+                                    <option>Test</option>
+                                    <option>Assignment</option>
+                                    <option>Task</option>
+                                </select>
+                            </div>
+                        )}
+
+                        <div>
+                            <label className="label">Interview Mode</label>
+                            <select
+                                className="input-field"
+                                value={formData.interviewMode}
+                                onChange={e => setFormData({ ...formData, interviewMode: e.target.value })}
+                            >
+                                <option>Online</option>
+                                <option>In-person</option>
+                                <option>Hybrid</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label className="label">Interview Rounds</label>
+                            {formData.interviewRounds.map((round, idx) => (
+                                <div key={idx} style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
+                                    <input
+                                        type="text"
+                                        className="input-field"
+                                        value={round}
+                                        onChange={e => handleRoundChange(idx, e.target.value)}
+                                    />
+                                    <button type="button" onClick={() => handleRemoveRound(idx)} style={{ color: 'var(--error)', background: 'none', border: 'none', cursor: 'pointer' }}>
+                                        <X size={18} />
+                                    </button>
+                                </div>
+                            ))}
+                            <button type="button" className="btn-secondary" onClick={handleAddRound} style={{ marginTop: '0.5rem', fontSize: '0.9rem' }}>
+                                + Add Round
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+                {/* Details Section (Updated Layout) */}
                 <section className="glass-panel" style={{ padding: '2.5rem' }}>
                     <h3 style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '12px', fontSize: '1.25rem' }}>
                         <div style={{ padding: '8px', background: 'rgba(34, 197, 94, 0.1)', borderRadius: '8px', color: 'var(--success)' }}>
                             <FileText size={20} />
                         </div>
-                        Job Details
+                        Job Description (Formatting)
                     </h3>
 
                     <div style={{ display: 'grid', gap: '1.5rem' }}>
@@ -300,64 +556,6 @@ const CreateJob = () => {
                                 value={formData.description}
                                 onChange={e => setFormData({ ...formData, description: e.target.value })}
                             />
-                        </div>
-
-                        <div>
-                            <label className="label">Key Requirements / Skills</label>
-                            <div style={{ display: 'flex', gap: '10px', marginBottom: '1rem' }}>
-                                <input
-                                    type="text"
-                                    className="input-field"
-                                    placeholder="Add a requirement (e.g. 5+ years React experience)"
-                                    value={newRequirement}
-                                    onChange={e => setNewRequirement(e.target.value)}
-                                    onKeyPress={e => e.key === 'Enter' && handleAddRequirement(e)}
-                                />
-                                <button
-                                    type="button"
-                                    className="btn-primary"
-                                    onClick={handleAddRequirement}
-                                    style={{ padding: '0 1.2rem' }}
-                                >
-                                    <Plus size={20} />
-                                </button>
-                            </div>
-
-                            {formData.requirements.length > 0 ? (
-                                <ul style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', padding: 0 }}>
-                                    {formData.requirements.map((req, index) => (
-                                        <li
-                                            key={index}
-                                            style={{
-                                                background: 'var(--bg-secondary)',
-                                                padding: '0.8rem 1rem',
-                                                borderRadius: '8px',
-                                                border: '1px solid var(--border-color)',
-                                                display: 'flex',
-                                                justifyContent: 'space-between',
-                                                alignItems: 'center',
-                                                fontSize: '0.95rem'
-                                            }}
-                                        >
-                                            <span style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                                                <CheckCircle size={18} className="text-success" />
-                                                {req}
-                                            </span>
-                                            <button
-                                                type="button"
-                                                onClick={() => handleRemoveRequirement(index)}
-                                                style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex' }}
-                                            >
-                                                <X size={18} />
-                                            </button>
-                                        </li>
-                                    ))}
-                                </ul>
-                            ) : (
-                                <div style={{ padding: '2rem', textAlign: 'center', border: '1px dashed var(--border-color)', borderRadius: '8px', color: 'var(--text-secondary)' }}>
-                                    No requirements added yet. Add skills to help with matching.
-                                </div>
-                            )}
                         </div>
                     </div>
                 </section>

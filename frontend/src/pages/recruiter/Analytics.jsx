@@ -64,7 +64,7 @@ const Analytics = () => {
 
                 {/* Salary Trends */}
                 <div className="glass-panel" style={{ padding: '2rem' }}>
-                    <h3 style={{ marginBottom: '2rem' }}>Salary Benchmarks ($k/yr)</h3>
+                    <h3 style={{ marginBottom: '2rem' }}>Salary Benchmarks (₹k/yr)</h3>
                     <div style={{ height: '300px', width: '100%' }}>
                         <ResponsiveContainer>
                             <LineChart data={salaryData}>

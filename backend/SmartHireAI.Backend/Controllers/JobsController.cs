@@ -42,7 +42,25 @@ public class JobsController : ControllerBase
                 EmploymentType = j.EmploymentType,
                 Location = j.Location,
                 LocationType = j.LocationType,
-                NumberOfOpenings = j.NumberOfOpenings
+                NumberOfOpenings = j.NumberOfOpenings,
+                RoleOverview = j.RoleOverview,
+                KeyResponsibilities = j.KeyResponsibilities,
+                Technologies = j.Technologies,
+                ExperienceMin = j.ExperienceMin,
+                ExperienceMax = j.ExperienceMax,
+                PerksAndBenefits = j.PerksAndBenefits,
+                GrowthOpportunities = j.GrowthOpportunities,
+                AssessmentRequired = j.AssessmentRequired,
+                AssessmentType = j.AssessmentType,
+                InterviewRounds = j.InterviewRounds,
+                InterviewMode = j.InterviewMode,
+                MandatorySkills = j.JobSkills.Select(s => new JobSkillDto
+                {
+                    SkillName = s.SkillName,
+                    Category = s.Category,
+                    ProficiencyLevel = s.ProficiencyLevel,
+                    Weight = s.Weight
+                }).ToList()
             })
             .ToListAsync();
 
@@ -80,7 +98,25 @@ public class JobsController : ControllerBase
                 EmploymentType = j.EmploymentType,
                 Location = j.Location,
                 LocationType = j.LocationType,
-                NumberOfOpenings = j.NumberOfOpenings
+                NumberOfOpenings = j.NumberOfOpenings,
+                RoleOverview = j.RoleOverview,
+                KeyResponsibilities = j.KeyResponsibilities,
+                Technologies = j.Technologies,
+                ExperienceMin = j.ExperienceMin,
+                ExperienceMax = j.ExperienceMax,
+                PerksAndBenefits = j.PerksAndBenefits,
+                GrowthOpportunities = j.GrowthOpportunities,
+                AssessmentRequired = j.AssessmentRequired,
+                AssessmentType = j.AssessmentType,
+                InterviewRounds = j.InterviewRounds,
+                InterviewMode = j.InterviewMode,
+                MandatorySkills = j.JobSkills.Select(s => new JobSkillDto
+                {
+                    SkillName = s.SkillName,
+                    Category = s.Category,
+                    ProficiencyLevel = s.ProficiencyLevel,
+                    Weight = s.Weight
+                }).ToList()
             })
             .ToListAsync();
 
@@ -94,6 +130,7 @@ public class JobsController : ControllerBase
         var job = await _context.JobDescriptions
             .Include(j => j.Recruiter)
             .ThenInclude(r => r.User)
+            .Include(j => j.JobSkills)
             .FirstOrDefaultAsync(j => j.JobId == id);
 
         if (job == null)
@@ -118,7 +155,25 @@ public class JobsController : ControllerBase
             EmploymentType = job.EmploymentType,
             Location = job.Location,
             LocationType = job.LocationType,
-            NumberOfOpenings = job.NumberOfOpenings
+            NumberOfOpenings = job.NumberOfOpenings,
+            RoleOverview = job.RoleOverview,
+            KeyResponsibilities = job.KeyResponsibilities,
+            Technologies = job.Technologies,
+            ExperienceMin = job.ExperienceMin,
+            ExperienceMax = job.ExperienceMax,
+            PerksAndBenefits = job.PerksAndBenefits,
+            GrowthOpportunities = job.GrowthOpportunities,
+            AssessmentRequired = job.AssessmentRequired,
+            AssessmentType = job.AssessmentType,
+            InterviewRounds = job.InterviewRounds,
+            InterviewMode = job.InterviewMode,
+            MandatorySkills = job.JobSkills.Select(s => new JobSkillDto
+            {
+                SkillName = s.SkillName,
+                Category = s.Category,
+                ProficiencyLevel = s.ProficiencyLevel,
+                Weight = s.Weight
+            }).ToList()
         };
     }
 
@@ -164,8 +219,36 @@ public class JobsController : ControllerBase
             EmploymentType = request.EmploymentType,
             Location = request.Location,
             LocationType = request.LocationType,
-            NumberOfOpenings = request.NumberOfOpenings
+            NumberOfOpenings = request.NumberOfOpenings,
+
+            // New Fields
+            RoleOverview = request.RoleOverview,
+            KeyResponsibilities = request.KeyResponsibilities,
+            Technologies = request.Technologies,
+            ExperienceMin = request.ExperienceMin,
+            ExperienceMax = request.ExperienceMax,
+            PerksAndBenefits = request.PerksAndBenefits,
+            GrowthOpportunities = request.GrowthOpportunities,
+            AssessmentRequired = request.AssessmentRequired,
+            AssessmentType = request.AssessmentType,
+            InterviewRounds = request.InterviewRounds,
+            InterviewMode = request.InterviewMode
         };
+
+        if (request.MandatorySkills != null && request.MandatorySkills.Any())
+        {
+            foreach (var skillDto in request.MandatorySkills)
+            {
+                job.JobSkills.Add(new JobSkill
+                {
+                    SkillId = Guid.NewGuid(),
+                    SkillName = skillDto.SkillName,
+                    Category = skillDto.Category,
+                    ProficiencyLevel = skillDto.ProficiencyLevel,
+                    Weight = skillDto.Weight
+                });
+            }
+        }
 
         _context.JobDescriptions.Add(job);
         await _context.SaveChangesAsync();
@@ -211,6 +294,40 @@ public class JobsController : ControllerBase
         job.Location = request.Location;
         job.LocationType = request.LocationType;
         job.NumberOfOpenings = request.NumberOfOpenings;
+
+        job.RoleOverview = request.RoleOverview;
+        job.KeyResponsibilities = request.KeyResponsibilities;
+        job.Technologies = request.Technologies;
+        job.ExperienceMin = request.ExperienceMin;
+        job.ExperienceMax = request.ExperienceMax;
+        job.PerksAndBenefits = request.PerksAndBenefits;
+        job.GrowthOpportunities = request.GrowthOpportunities;
+        job.AssessmentRequired = request.AssessmentRequired;
+        job.AssessmentType = request.AssessmentType;
+        job.InterviewRounds = request.InterviewRounds;
+        job.InterviewMode = request.InterviewMode;
+
+        // Update Skills (Clear and Replace for simplicity)
+        var existingSkills = _context.Database.ExecuteSqlRaw("DELETE FROM job_skills WHERE job_id = {0}", id);
+
+        if (request.MandatorySkills != null)
+        {
+            foreach (var skillDto in request.MandatorySkills)
+            {
+                var newSkill = new JobSkill
+                {
+                    SkillId = Guid.NewGuid(),
+                    JobId = id,
+                    SkillName = skillDto.SkillName,
+                    Category = skillDto.Category,
+                    ProficiencyLevel = skillDto.ProficiencyLevel,
+                    Weight = skillDto.Weight
+                };
+                // We can't just Add to job.JobSkills if we deleted via SQL Raw and EF context isn't fully aware or if we want to add directly.
+                // Better approach:
+                _context.Add(newSkill);
+            }
+        }
 
         await _context.SaveChangesAsync();
 

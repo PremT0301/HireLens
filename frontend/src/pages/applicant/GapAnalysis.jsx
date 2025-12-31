@@ -58,11 +58,18 @@ const GapAnalysis = () => {
 
     const { matchSummary, skillAnalysis, recommendations, fitScore } = analysisResult || {};
 
+    const matchPercentage = matchSummary ? Math.round(matchSummary.matchPercentage) : 0;
+    const isLowScore = matchPercentage < 40;
+
     const getFitColor = (score) => {
+        if (isLowScore) return 'var(--error)';
         if (score === 'Excellent') return 'var(--success)';
         if (score === 'Good') return 'var(--primary)';
         return 'var(--warning)';
     };
+
+    const currentFitColor = getFitColor(fitScore);
+    const fitLabel = isLowScore ? 'Low Score' : `${fitScore} Fit`;
 
     const getRecommendationIcon = (text) => {
         const lower = text.toLowerCase();
@@ -87,7 +94,7 @@ const GapAnalysis = () => {
             <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
                 <h1 className="title-lg" style={{ marginBottom: '0.5rem' }}>Gap Analysis & Prediction</h1>
                 <p className="text-subtle" style={{ maxWidth: '600px', margin: '0 auto' }}>
-                    AI-driven insights comparing your profile against the job market.
+                    AI-driven insights comparing your profile against the job description.
                 </p>
             </div>
 
@@ -118,7 +125,7 @@ const GapAnalysis = () => {
                                         <circle cx="50" cy="50" r="45" stroke="var(--border-color)" strokeWidth="8" fill="none" opacity="0.3" />
                                         <motion.circle
                                             cx="50" cy="50" r="45"
-                                            stroke={getFitColor(fitScore)}
+                                            stroke={currentFitColor}
                                             strokeWidth="8"
                                             fill="none"
                                             strokeLinecap="round"
@@ -130,7 +137,7 @@ const GapAnalysis = () => {
                                     </svg>
                                     <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
                                         <span style={{ fontSize: '3.5rem', fontWeight: '800', color: 'var(--text-primary)', lineHeight: 1 }}>
-                                            {Math.round(matchSummary.matchPercentage)}%
+                                            {matchPercentage}%
                                         </span>
                                         <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', fontWeight: 500, marginTop: '4px' }}>Match Score</span>
                                     </div>
@@ -141,16 +148,18 @@ const GapAnalysis = () => {
                                         display: 'inline-block',
                                         padding: '0.5rem 1.5rem',
                                         borderRadius: '50px',
-                                        background: `color-mix(in srgb, ${getFitColor(fitScore)} 15%, transparent)`,
-                                        color: getFitColor(fitScore),
+                                        background: `color-mix(in srgb, ${currentFitColor} 15%, transparent)`,
+                                        color: currentFitColor,
                                         fontWeight: '700',
                                         fontSize: '1.2rem',
-                                        border: `1px solid color-mix(in srgb, ${getFitColor(fitScore)} 30%, transparent)`
+                                        border: `1px solid color-mix(in srgb, ${currentFitColor} 30%, transparent)`
                                     }}>
-                                        {fitScore} Fit
+                                        {fitLabel}
                                     </div>
                                     <p className="text-subtle" style={{ marginTop: '1.5rem', fontSize: '0.95rem' }}>
-                                        Your profile strongly aligns with the {matchSummary.total_matched_skills} matched skills found in this job description.
+                                        {isLowScore
+                                            ? "Your profile has a low match score against the job requirements."
+                                            : `Your profile strongly aligns with the ${matchSummary.total_matched_skills} matched skills found in this job description.`}
                                     </p>
                                 </div>
                             </div>
@@ -159,61 +168,87 @@ const GapAnalysis = () => {
                         {/* Skill Analysis Grid */}
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1.5rem' }}>
 
-                            {/* Strengths */}
-                            <div className="glass-panel" style={{ padding: '2rem', borderTop: '4px solid var(--success)' }}>
-                                <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '1.1rem', fontWeight: 600 }}>
-                                    <div style={{ padding: '6px', background: 'rgba(34, 197, 94, 0.1)', borderRadius: '6px', color: 'var(--success)' }}>
-                                        <CheckCircle size={18} />
+                            {isLowScore ? (
+                                <div className="glass-panel" style={{ padding: '3rem', borderTop: '4px solid var(--error)', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
+                                    <div style={{
+                                        width: '80px',
+                                        height: '80px',
+                                        borderRadius: '50%',
+                                        background: 'rgba(239, 68, 68, 0.1)',
+                                        color: 'var(--error)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        marginBottom: '1.5rem'
+                                    }}>
+                                        <XCircle size={40} />
                                     </div>
-                                    Matched Skills (Strengths)
-                                </h3>
-                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                                    {skillAnalysis.matchedSkills.length > 0 ? skillAnalysis.matchedSkills.map(skill => (
-                                        <span key={skill} style={{
-                                            background: 'rgba(34, 197, 94, 0.1)',
-                                            color: 'var(--success)',
-                                            padding: '8px 16px',
-                                            borderRadius: '20px',
-                                            fontSize: '0.9rem',
-                                            fontWeight: 500,
-                                            border: '1px solid rgba(34, 197, 94, 0.2)'
-                                        }}>
-                                            {skill}
-                                        </span>
-                                    )) : <span className="text-subtle" style={{ fontStyle: 'italic' }}>No direct matches found.</span>}
+                                    <h3 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.75rem' }}>
+                                        Not Eligible for the Role
+                                    </h3>
+                                    <p className="text-subtle" style={{ maxWidth: '300px', lineHeight: '1.6' }}>
+                                        Based on our analysis, your profile does not meet the minimum requirements for this position at this time.
+                                    </p>
                                 </div>
-                                <p className="text-subtle" style={{ marginTop: '1rem', fontSize: '0.85rem' }}>
-                                    These skills match the job requirements perfectly.
-                                </p>
-                            </div>
+                            ) : (
+                                <>
+                                    {/* Strengths */}
+                                    <div className="glass-panel" style={{ padding: '2rem', borderTop: '4px solid var(--success)' }}>
+                                        <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '1.1rem', fontWeight: 600 }}>
+                                            <div style={{ padding: '6px', background: 'rgba(34, 197, 94, 0.1)', borderRadius: '6px', color: 'var(--success)' }}>
+                                                <CheckCircle size={18} />
+                                            </div>
+                                            Matched Skills (Strengths)
+                                        </h3>
+                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                                            {skillAnalysis.matchedSkills.length > 0 ? skillAnalysis.matchedSkills.map(skill => (
+                                                <span key={skill} style={{
+                                                    background: 'rgba(34, 197, 94, 0.1)',
+                                                    color: 'var(--success)',
+                                                    padding: '8px 16px',
+                                                    borderRadius: '20px',
+                                                    fontSize: '0.9rem',
+                                                    fontWeight: 500,
+                                                    border: '1px solid rgba(34, 197, 94, 0.2)'
+                                                }}>
+                                                    {skill}
+                                                </span>
+                                            )) : <span className="text-subtle" style={{ fontStyle: 'italic' }}>No direct matches found.</span>}
+                                        </div>
+                                        <p className="text-subtle" style={{ marginTop: '1rem', fontSize: '0.85rem' }}>
+                                            These skills match the job requirements perfectly.
+                                        </p>
+                                    </div>
 
-                            {/* Gaps */}
-                            <div className="glass-panel" style={{ padding: '2rem', borderTop: '4px solid var(--error)' }}>
-                                <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '1.1rem', fontWeight: 600 }}>
-                                    <div style={{ padding: '6px', background: 'rgba(239, 68, 68, 0.1)', borderRadius: '6px', color: 'var(--error)' }}>
-                                        <XCircle size={18} />
+                                    {/* Gaps */}
+                                    <div className="glass-panel" style={{ padding: '2rem', borderTop: '4px solid var(--error)' }}>
+                                        <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '1.1rem', fontWeight: 600 }}>
+                                            <div style={{ padding: '6px', background: 'rgba(239, 68, 68, 0.1)', borderRadius: '6px', color: 'var(--error)' }}>
+                                                <XCircle size={18} />
+                                            </div>
+                                            Missing Skills (Gaps)
+                                        </h3>
+                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                                            {skillAnalysis.missingSkills.length > 0 ? skillAnalysis.missingSkills.map(skill => (
+                                                <span key={skill} style={{
+                                                    background: 'rgba(239, 68, 68, 0.08)',
+                                                    color: 'var(--error)',
+                                                    padding: '8px 16px',
+                                                    borderRadius: '20px',
+                                                    fontSize: '0.9rem',
+                                                    fontWeight: 500,
+                                                    border: '1px solid rgba(239, 68, 68, 0.2)'
+                                                }}>
+                                                    {skill}
+                                                </span>
+                                            )) : <span className="text-subtle">No gaps detected! Great job.</span>}
+                                        </div>
+                                        <p className="text-subtle" style={{ marginTop: '1rem', fontSize: '0.85rem' }}>
+                                            Consider adding projects with these technologies to improve your score.
+                                        </p>
                                     </div>
-                                    Missing Skills (Gaps)
-                                </h3>
-                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                                    {skillAnalysis.missingSkills.length > 0 ? skillAnalysis.missingSkills.map(skill => (
-                                        <span key={skill} style={{
-                                            background: 'rgba(239, 68, 68, 0.08)',
-                                            color: 'var(--error)',
-                                            padding: '8px 16px',
-                                            borderRadius: '20px',
-                                            fontSize: '0.9rem',
-                                            fontWeight: 500,
-                                            border: '1px solid rgba(239, 68, 68, 0.2)'
-                                        }}>
-                                            {skill}
-                                        </span>
-                                    )) : <span className="text-subtle">No gaps detected! Great job.</span>}
-                                </div>
-                                <p className="text-subtle" style={{ marginTop: '1rem', fontSize: '0.85rem' }}>
-                                    Consider adding projects with these technologies to improve your score.
-                                </p>
-                            </div>
+                                </>
+                            )}
 
                         </div>
                     </div>
