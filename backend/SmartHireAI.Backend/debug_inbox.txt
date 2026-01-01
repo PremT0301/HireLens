@@ -160,3 +160,83 @@
 01-01-2026 11:42:23: [Inbox] Recruiter found: ea300ce6-8175-4dc0-a5eb-da7a6f96b580
 01-01-2026 11:42:23: [Inbox] Query matched 1 threads.
 01-01-2026 11:42:23: [Inbox] Mapped 1 threads successfully.
+01-01-2026 11:49:15: [Inbox] GetThreads called. UserIdString: 15f36491-2375-435f-a4b3-ae15cc04123d
+01-01-2026 11:49:15: [Inbox] User Role: applicant
+01-01-2026 11:49:15: [Inbox] Applicant found: 15f36491-2375-435f-a4b3-ae15cc04123d
+01-01-2026 11:49:15: [Inbox] Query matched 1 threads.
+01-01-2026 11:49:15: [Inbox] Mapped 1 threads successfully.
+01-01-2026 11:49:15: [Inbox] GetThreads called. UserIdString: 15f36491-2375-435f-a4b3-ae15cc04123d
+01-01-2026 11:49:15: [Inbox] User Role: applicant
+01-01-2026 11:49:15: [Inbox] Applicant found: 15f36491-2375-435f-a4b3-ae15cc04123d
+01-01-2026 11:49:15: [Inbox] Query matched 1 threads.
+01-01-2026 11:49:15: [Inbox] Mapped 1 threads successfully.
+01-01-2026 11:49:44: [Inbox] GetThreads called. UserIdString: ea300ce6-8175-4dc0-a5eb-da7a6f96b580
+01-01-2026 11:49:44: [Inbox] User Role: recruiter
+01-01-2026 11:49:44: [Inbox] Recruiter found: ea300ce6-8175-4dc0-a5eb-da7a6f96b580
+01-01-2026 11:49:44: [Inbox] Query matched 1 threads.
+01-01-2026 11:49:44: [Inbox] Mapped 1 threads successfully.
+01-01-2026 11:49:44: [Inbox] GetThreads called. UserIdString: ea300ce6-8175-4dc0-a5eb-da7a6f96b580
+01-01-2026 11:49:44: [Inbox] User Role: recruiter
+01-01-2026 11:49:44: [Inbox] Recruiter found: ea300ce6-8175-4dc0-a5eb-da7a6f96b580
+01-01-2026 11:49:44: [Inbox] Query matched 1 threads.
+01-01-2026 11:49:44: [Inbox] Mapped 1 threads successfully.
+01-01-2026 11:49:54: [Inbox] GetThreads called. UserIdString: ea300ce6-8175-4dc0-a5eb-da7a6f96b580
+01-01-2026 11:49:54: [Inbox] User Role: recruiter
+01-01-2026 11:49:54: [Inbox] Recruiter found: ea300ce6-8175-4dc0-a5eb-da7a6f96b580
+01-01-2026 11:49:54: [Inbox] Query matched 1 threads.
+01-01-2026 11:49:54: [Inbox] Mapped 1 threads successfully.
+01-01-2026 11:49:54: [Inbox] GetThreads called. UserIdString: ea300ce6-8175-4dc0-a5eb-da7a6f96b580
+01-01-2026 11:49:54: [Inbox] User Role: recruiter
+01-01-2026 11:49:54: [Inbox] Recruiter found: ea300ce6-8175-4dc0-a5eb-da7a6f96b580
+01-01-2026 11:49:54: [Inbox] Query matched 1 threads.
+01-01-2026 11:49:54: [Inbox] Mapped 1 threads successfully.
+01-01-2026 12:44:52: [Inbox] GetThreads called. UserIdString: 15f36491-2375-435f-a4b3-ae15cc04123d
+01-01-2026 12:44:52: [Inbox] User Role: applicant
+01-01-2026 12:44:52: [Inbox] Applicant found: 15f36491-2375-435f-a4b3-ae15cc04123d
+01-01-2026 12:44:52: [Inbox] Query matched 1 threads.
+01-01-2026 12:44:52: [Inbox] Mapped 1 threads successfully.
+01-01-2026 12:44:52: [Inbox] GetThreads called. UserIdString: 15f36491-2375-435f-a4b3-ae15cc04123d
+01-01-2026 12:44:52: [Inbox] User Role: applicant
+01-01-2026 12:44:52: [Inbox] Applicant found: 15f36491-2375-435f-a4b3-ae15cc04123d
+01-01-2026 12:44:52: [Inbox] Query matched 1 threads.
+01-01-2026 12:44:52: [Inbox] Mapped 1 threads successfully.
+01-01-2026 12:45:17: [Inbox] GetThreads called. UserIdString: 15f36491-2375-435f-a4b3-ae15cc04123d
+01-01-2026 12:45:17: [Inbox] User Role: applicant
+01-01-2026 12:45:17: [Inbox] Applicant found: 15f36491-2375-435f-a4b3-ae15cc04123d
+01-01-2026 12:45:17: [Inbox] Query matched 1 threads.
+01-01-2026 12:45:17: [Inbox] Mapped 1 threads successfully.
+01-01-2026 12:45:17: [Inbox] GetThreads called. UserIdString: 15f36491-2375-435f-a4b3-ae15cc04123d
+01-01-2026 12:45:17: [Inbox] User Role: applicant
+01-01-2026 12:45:17: [Inbox] Applicant found: 15f36491-2375-435f-a4b3-ae15cc04123d
+01-01-2026 12:45:17: [Inbox] Query matched 1 threads.
+01-01-2026 12:45:17: [Inbox] Mapped 1 threads successfully.
+01-01-2026 12:47:02: [Inbox] GetThreads called. UserIdString: 15f36491-2375-435f-a4b3-ae15cc04123d
+01-01-2026 12:47:02: [Inbox] User Role: applicant
+01-01-2026 12:47:02: [Inbox] Applicant found: 15f36491-2375-435f-a4b3-ae15cc04123d
+01-01-2026 12:47:02: [Inbox] Query matched 2 threads.
+01-01-2026 12:47:02: [Inbox] Mapped 2 threads successfully.
+01-01-2026 12:47:02: [Inbox] GetThreads called. UserIdString: 15f36491-2375-435f-a4b3-ae15cc04123d
+01-01-2026 12:47:02: [Inbox] User Role: applicant
+01-01-2026 12:47:02: [Inbox] Applicant found: 15f36491-2375-435f-a4b3-ae15cc04123d
+01-01-2026 12:47:02: [Inbox] Query matched 2 threads.
+01-01-2026 12:47:02: [Inbox] Mapped 2 threads successfully.
+01-01-2026 13:11:17: [Inbox] GetThreads called. UserIdString: 6056c3aa-451c-4a3c-94ad-4ad388d38484
+01-01-2026 13:11:17: [Inbox] User Role: applicant
+01-01-2026 13:11:17: [Inbox] Applicant found: 6056c3aa-451c-4a3c-94ad-4ad388d38484
+01-01-2026 13:11:17: [Inbox] Query matched 1 threads.
+01-01-2026 13:11:17: [Inbox] Mapped 1 threads successfully.
+01-01-2026 13:11:17: [Inbox] GetThreads called. UserIdString: 6056c3aa-451c-4a3c-94ad-4ad388d38484
+01-01-2026 13:11:17: [Inbox] User Role: applicant
+01-01-2026 13:11:17: [Inbox] Applicant found: 6056c3aa-451c-4a3c-94ad-4ad388d38484
+01-01-2026 13:11:17: [Inbox] Query matched 1 threads.
+01-01-2026 13:11:17: [Inbox] Mapped 1 threads successfully.
+01-01-2026 13:12:46: [Inbox] GetThreads called. UserIdString: 6056c3aa-451c-4a3c-94ad-4ad388d38484
+01-01-2026 13:12:46: [Inbox] User Role: applicant
+01-01-2026 13:12:46: [Inbox] Applicant found: 6056c3aa-451c-4a3c-94ad-4ad388d38484
+01-01-2026 13:12:46: [Inbox] Query matched 1 threads.
+01-01-2026 13:12:46: [Inbox] Mapped 1 threads successfully.
+01-01-2026 13:12:46: [Inbox] GetThreads called. UserIdString: 6056c3aa-451c-4a3c-94ad-4ad388d38484
+01-01-2026 13:12:46: [Inbox] User Role: applicant
+01-01-2026 13:12:46: [Inbox] Applicant found: 6056c3aa-451c-4a3c-94ad-4ad388d38484
+01-01-2026 13:12:46: [Inbox] Query matched 1 threads.
+01-01-2026 13:12:46: [Inbox] Mapped 1 threads successfully.
