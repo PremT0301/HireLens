@@ -8,12 +8,11 @@ from typing import List, Dict, Set
 import re
 from pathlib import Path
 
-# Add scripts directory to path if needed, or assume relative import works if package structure is correct
-# For this script run standalone, we might need sys path hacking, but within API it's fine.
+
 try:
     from common_utils import extract_skills_keywords
 except ImportError:
-    # Fallback if running from different directory
+ 
     import sys
     sys.path.append(str(Path(__file__).parent))
     from common_utils import extract_skills_keywords
@@ -25,14 +24,14 @@ def extract_skills_from_text(text: str, ner_model) -> Set[str]:
     """
     skills = set()
     
-    # 1. NER Extraction
+
     if ner_model:
         doc = ner_model(text)
         for ent in doc.ents:
             if ent.label_ == "SKILLS":
                 skills.add(ent.text.strip().lower())
 
-    # 2. Keyword Extraction (Hybrid)
+  
     keyword_skills = extract_skills_keywords(text)
     for ks in keyword_skills:
         skills.add(ks.lower())
@@ -50,12 +49,11 @@ def parse_job_requirements(job_description: str) -> Dict[str, any]:
     Returns:
         Dictionary with parsed requirements
     """
-    # Use shared keyword extraction for consistent skill detection
-    # This replaces the hardcoded list with the central pattern repository in common_utils
+    
     job_text_lower = job_description.lower()
     required_skills = set(extract_skills_keywords(job_text_lower))
     
-    # Extract years of experience if mentioned
+
     experience_pattern = r'(\d+)\+?\s*(?:years?|yrs?)\s*(?:of\s*)?(?:experience|exp)'
     experience_matches = re.findall(experience_pattern, job_text_lower)
     required_experience = int(experience_matches[0]) if experience_matches else 0
@@ -78,16 +76,15 @@ def calculate_skill_match(resume_skills: Set[str], job_skills: Set[str]) -> Dict
     Returns:
         Dictionary with match analysis
     """
-    # Normalize skills for comparison
+
     resume_skills_norm = {skill.lower().strip() for skill in resume_skills}
     job_skills_norm = {skill.lower().strip() for skill in job_skills}
-    
-    # Find matches and gaps
+
     matched_skills = resume_skills_norm.intersection(job_skills_norm)
     missing_skills = job_skills_norm - resume_skills_norm
     extra_skills = resume_skills_norm - job_skills_norm
     
-    # Calculate match percentage
+
     if len(job_skills_norm) > 0:
         match_percentage = (len(matched_skills) / len(job_skills_norm)) * 100
     else:
@@ -110,8 +107,7 @@ def check_missing_sections(resume_text: str) -> List[str]:
     Check for presence of standard resume sections
     """
     text_lower = resume_text.lower()
-    
-    # Common section headers
+   
     sections = {
         'experience': ['experience', 'work history', 'employment'],
         'projects': ['projects', 'personal projects', 'key projects'],
@@ -141,9 +137,9 @@ def generate_smart_suggestions(
     missing_skills = skill_match.get('missing_skills', [])
     match_percentage = skill_match.get('match_percentage', 0)
     
-    # 1. Critical Skill Gaps
+ 
     if missing_skills:
-        # Group missing skills for readability
+        
         top_missing = missing_skills[:3]
         others_count = len(missing_skills) - 3
         
@@ -154,7 +150,7 @@ def generate_smart_suggestions(
         suggestions.append(f"Add projects demonstrating {skills_str}.")
         suggestions.append(f"Consider acquiring certifications related to {top_missing[0]} to validate your expertise.")
     
-    # 2. Section Gaps
+
     for section in resume_section_gaps:
         if section == 'projects':
             suggestions.append("Add a 'Projects' section to showcase practical application of your skills.")
@@ -163,13 +159,12 @@ def generate_smart_suggestions(
         elif section == 'experience' and job_requirements.get('required_experience', 0) > 0:
             suggestions.append("Ensure your 'Experience' section clearly outlines your roles and responsibilities.")
             
-    # 3. Fit-based Suggestions
+
     if match_percentage < 50:
         suggestions.append("Focus on hands-on practice with the required technologies to build a stronger portfolio.")
     elif match_percentage >= 80:
         suggestions.append("Excellent alignment! Ensure your summary highlights your strongest matching skills.")
-        
-    # 4. Keyword Optimization
+
     if missing_skills:
         suggestions.append(f"Ensure your resume explicitly mentions: {', '.join(missing_skills[:5])} to pass ATS filters.")
         
@@ -194,34 +189,28 @@ def perform_gap_analysis(
     Returns:
         Comprehensive gap analysis report
     """
-    # Load NER model if not provided
     if ner_model is None:
         if ner_model_path is None:
             raise ValueError("Either ner_model or ner_model_path must be provided")
         print(f"Loading NER model from {ner_model_path}...")
         ner_model = spacy.load(ner_model_path)
     
-    # Extract skills from resume
     print("Extracting skills from resume...")
     resume_skills = extract_skills_from_text(resume_text, ner_model)
     
-    # Parse job requirements
     print("Parsing job requirements...")
     job_requirements = parse_job_requirements(job_description)
     job_skills = job_requirements['required_skills']
     
-    # Calculate skill match
     print("Calculating skill match...")
     skill_match = calculate_skill_match(resume_skills, job_skills)
     
-    # Check for missing sections
     section_gaps = check_missing_sections(resume_text)
     
-    # Generate smart recommendations
+ 
     print("Generating recommendations...")
     recommendations = generate_smart_suggestions(skill_match, job_requirements, section_gaps)
-    
-    # Compile final report
+
     report = {
         'match_summary': {
             'match_percentage': skill_match['match_percentage'],
@@ -285,7 +274,7 @@ def print_gap_analysis_report(report: Dict[str, any]):
 
 
 if __name__ == "__main__":
-    # Example usage
+  
     sample_resume = """
     Experienced Python developer with 5 years of experience in machine learning and data science.
     Proficient in Python, TensorFlow, PyTorch, scikit-learn, pandas, and NumPy.
@@ -302,11 +291,7 @@ if __name__ == "__main__":
     print("Example Gap Analysis (Smart Suggestions Demo):")
     print("\nNote: For actual usage, load the trained NER model")
     
-    # 1. Mock dependencies for standalone test
-    # We can use the actual functions if imports work, but for safety in this __main__ block 
-    # we can just use the functions defined above if we mock the extraction part.
-    
-    # Mocking parser for the test
+  
     job_reqs = parse_job_requirements(sample_job)
     resume_skills = {'python', 'tensorflow', 'pytorch', 'machine learning', 
                      'deep learning', 'nlp', 'aws', 'docker'}

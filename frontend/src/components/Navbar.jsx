@@ -173,13 +173,7 @@ const Navbar = () => {
                         <NavItem key={link.path} to={link.path} label={link.label} />
                     ))}
 
-                    {/* Landing Page Links */}
-                    {!userRole && isLandingPage && (
-                        <div style={{ display: 'flex', gap: '1rem' }}>
-                            <Link to="/login" className="btn-ghost">Log In</Link>
-                            <Link to="/signup" className="btn-primary">Sign Up</Link>
-                        </div>
-                    )}
+
                 </div>
 
                 {/* Right Actions */}
@@ -194,6 +188,14 @@ const Navbar = () => {
                         >
                             <Bell size={20} />
                         </Link>
+                    )}
+
+                    {/* Landing Page Links */}
+                    {!userRole && isLandingPage && (
+                        <div style={{ display: 'flex', gap: '1rem' }}>
+                            <Link to="/login" className="btn-ghost">Log In</Link>
+                            <Link to="/signup" className="btn-primary">Sign Up</Link>
+                        </div>
                     )}
 
                     {/* Theme Toggle */}
