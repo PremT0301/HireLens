@@ -98,11 +98,7 @@ const Login = () => {
             <div className="auth-brand-panel">
                 <div style={{ position: 'relative', zIndex: 2 }}>
                     <div style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <div style={{ width: 48, height: 48, background: 'rgba(255,255,255,0.2)', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
-                            </svg>
-                        </div>
+                        <img src="/auth_logo.png" alt="HireLens" style={{ width: '120px', height: '120px', objectFit: 'contain' }} />
                         <h1 style={{ fontSize: '2rem', fontWeight: 800 }}>HireLens AI</h1>
                     </div>
 

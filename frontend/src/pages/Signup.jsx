@@ -343,14 +343,7 @@ const Signup = () => {
             <div className="auth-brand-panel" style={{ background: 'linear-gradient(135deg, var(--secondary) 0%, var(--primary) 100%)' }}>
                 <div style={{ position: 'relative', zIndex: 2 }}>
                     <div style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <div style={{ width: 48, height: 48, background: 'rgba(255,255,255,0.2)', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                                <circle cx="8.5" cy="7" r="4"></circle>
-                                <line x1="20" y1="8" x2="20" y2="14"></line>
-                                <line x1="23" y1="11" x2="17" y2="11"></line>
-                            </svg>
-                        </div>
+                        <img src="/auth_logo.png" alt="HireLens" style={{ width: '120px', height: '120px', objectFit: 'contain' }} />
                         <h1 style={{ fontSize: '2rem', fontWeight: 800 }}>HireLens AI</h1>
                     </div>
 

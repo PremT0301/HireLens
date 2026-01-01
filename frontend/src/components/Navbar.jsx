@@ -154,18 +154,7 @@ const Navbar = () => {
                 {/* Logo Section */}
                 <Link to={userRole === 'applicant' ? '/applicant/dashboard' : userRole === 'recruiter' ? '/recruiter/dashboard' : '/'}
                     style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{
-                        width: '36px',
-                        height: '36px',
-                        background: 'linear-gradient(135deg, var(--primary), var(--secondary))',
-                        borderRadius: '10px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        boxShadow: '0 4px 12px rgba(37, 99, 235, 0.2)'
-                    }}>
-                        <Briefcase size={20} color="white" strokeWidth={2.5} />
-                    </div>
+                    <img src="/logo.png" alt="HireLens Logo" style={{ width: '40px', height: '40px', objectFit: 'contain' }} />
                     <span style={{
                         fontSize: '1.25rem',
                         fontWeight: '700',
