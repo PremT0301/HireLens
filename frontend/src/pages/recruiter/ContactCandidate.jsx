@@ -25,7 +25,6 @@ const ContactCandidate = () => {
             try {
                 const data = await ApplicationService.getApplicationDetails(applicationId);
                 setApplication(data);
-                // Pre-fill subject if needed
                 setFormData(prev => ({ ...prev, subject: `Regarding your application for ${data.role}` }));
             } catch (error) {
                 console.error("Failed to load application details", error);
@@ -51,7 +50,6 @@ const ContactCandidate = () => {
             await ApplicationService.sendMessage(applicationId, formData.subject, formData.message);
             addToast('Message sent successfully!', 'success');
 
-            // Navigate back after a short delay
             setTimeout(() => {
                 navigate('/recruiter/talent-pool');
             }, 1000);
