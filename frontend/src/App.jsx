@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
-import { ToastProvider } from './context/ToastContext';
+import { ToastProvider, useToast } from './context/ToastContext';
 import { AnimatePresence } from 'framer-motion';
 import Navbar from './components/Navbar';
 import Landing from './pages/Landing';
@@ -22,6 +22,8 @@ import CreateJob from './pages/recruiter/CreateJob';
 import CandidateProfile from './pages/recruiter/CandidateProfile';
 import ScheduleMeeting from './pages/recruiter/ScheduleMeeting';
 import ContactCandidate from './pages/recruiter/ContactCandidate';
+import Inbox from './pages/Inbox';
+import Notifications from './pages/Notifications';
 import JobDetails from './pages/JobDetails';
 import ProtectedRoute from './components/ProtectedRoute';
 import PublicOnlyRoute from './components/PublicOnlyRoute';
@@ -54,6 +56,8 @@ const AnimatedRoutes = () => {
           <Route path="jobs/:jobId" element={<JobDetails />} />
           <Route path="gap-analysis" element={<GapAnalysis />} />
           <Route path="interview-copilot" element={<InterviewCopilot />} />
+          <Route path="inbox" element={<Inbox />} />
+          <Route path="notifications" element={<Notifications />} />
         </Route>
 
         {/* Recruiter Routes - PROTECTED */}
@@ -73,6 +77,8 @@ const AnimatedRoutes = () => {
           <Route path="schedule/:applicationId" element={<ScheduleMeeting />} />
           <Route path="contact/:applicationId" element={<ContactCandidate />} />
           <Route path="analytics" element={<Analytics />} />
+          <Route path="inbox" element={<Inbox />} />
+          <Route path="notifications" element={<Notifications />} />
         </Route>
 
         <Route path="*" element={<Landing />} />
@@ -88,6 +94,50 @@ const AppContent = () => {
   const location = useLocation();
   const hideNavAndFooter = ['/login', '/signup', '/verify-email'];
   const shouldHide = hideNavAndFooter.includes(location.pathname);
+  const { addToast } = useToast();
+  // Notification Polling
+  useEffect(() => {
+    const token = sessionStorage.getItem('token');
+    const userRole = sessionStorage.getItem('userRole');
+
+    if (!token || userRole !== 'applicant') return;
+
+    // Simple polling for new notifications
+    const checkNotifications = async () => {
+      try {
+        // We use a simple endpoint to get unread count or just latest
+        // Re-using the get notifications endpoint
+        const response = await fetch('http://localhost:5033/api/inbox/notifications', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (response.ok) {
+          const data = await response.json();
+          const unread = data.filter(n => !n.isRead);
+
+          // Logic to detecting *new* unread vs just existing unread
+          // We store the last seen count in session/local storage
+          const lastCount = parseInt(sessionStorage.getItem('lastUnreadCount') || '0');
+
+          if (unread.length > lastCount) {
+            addToast(`You have ${unread.length} unread message(s)`, "info");
+          }
+
+          sessionStorage.setItem('lastUnreadCount', unread.length);
+        }
+      } catch (error) {
+        // Silent fail
+      }
+    };
+
+    const interval = setInterval(checkNotifications, 30000); // 30s
+    // Initial check after 2s
+    const timeout = setTimeout(checkNotifications, 2000);
+
+    return () => {
+      clearInterval(interval);
+      clearTimeout(timeout);
+    }
+  }, [addToast, location.pathname]); // Re-run on route change optional, but interval covers it
 
   return (
     <div className="app" style={{

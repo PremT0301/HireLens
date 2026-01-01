@@ -339,23 +339,7 @@ const ApplicantDashboard = () => {
                                             }}>
                                                 {app.status}
                                             </span>
-                                            {app.status === 'Interview Scheduled' && (
-                                                <button
-                                                    onClick={() => handleAcceptInterview(app.applicationId)}
-                                                    style={{
-                                                        marginLeft: '10px',
-                                                        padding: '4px 12px',
-                                                        borderRadius: '20px',
-                                                        border: '1px solid var(--success)',
-                                                        background: 'rgba(34, 197, 94, 0.1)',
-                                                        color: 'var(--success)',
-                                                        cursor: 'pointer',
-                                                        fontSize: '0.85rem'
-                                                    }}
-                                                >
-                                                    Accept Interview
-                                                </button>
-                                            )}
+
                                         </td>
                                     </tr>
                                 ))

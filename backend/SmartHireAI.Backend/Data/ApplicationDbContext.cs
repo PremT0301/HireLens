@@ -22,6 +22,9 @@ namespace SmartHireAI.Backend.Data
         public DbSet<ResumeEntity> ResumeEntities { get; set; }
         public DbSet<MatchResult> MatchResults { get; set; }
         public DbSet<ApplicationMessage> ApplicationMessages { get; set; }
+        public DbSet<InboxThread> InboxThreads { get; set; }
+        public DbSet<InboxMessage> InboxMessages { get; set; }
+        public DbSet<Notification> Notifications { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

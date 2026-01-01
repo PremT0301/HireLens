@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate, NavLink } from 'react-router-dom';
-import { Sun, Moon, Briefcase, LayoutDashboard, FileText, MessageSquare, Users, PlusCircle, TrendingUp, Menu, X, User, LogOut } from 'lucide-react';
+import { Sun, Moon, Briefcase, LayoutDashboard, FileText, MessageSquare, Users, PlusCircle, TrendingUp, Menu, X, User, LogOut, Bell } from 'lucide-react';
 import AuthService from '../api/authService';
 import ProfileService from '../api/profileService';
 
@@ -108,6 +108,7 @@ const Navbar = () => {
         { label: 'Dashboard', path: '/applicant/dashboard', icon: LayoutDashboard },
         { label: 'Copilot', path: '/applicant/interview-copilot', icon: MessageSquare },
         { label: 'Matches', path: '/applicant/jobs', icon: Briefcase },
+        { label: 'Inbox', path: '/applicant/inbox', icon: MessageSquare },
     ];
 
     const recruiterLinks = [
@@ -115,6 +116,7 @@ const Navbar = () => {
         { label: 'Talent Pool', path: '/recruiter/talent-pool', icon: Users },
         { label: 'Post Job', path: '/recruiter/create-job', icon: PlusCircle },
         { label: 'Jobs', path: '/recruiter/jobs', icon: FileText },
+        { label: 'Inbox', path: '/recruiter/inbox', icon: MessageSquare },
     ];
 
     // Helper to constructing full image URL
@@ -193,6 +195,17 @@ const Navbar = () => {
 
                 {/* Right Actions */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+
+                    {/* Notifications */}
+                    {userRole && (
+                        <Link
+                            to={userRole === 'applicant' ? '/applicant/notifications' : '/recruiter/notifications'}
+                            className="btn-ghost"
+                            style={{ padding: '8px', borderRadius: '50%', color: 'var(--text-secondary)' }}
+                        >
+                            <Bell size={20} />
+                        </Link>
+                    )}
 
                     {/* Theme Toggle */}
                     <button onClick={toggleTheme} className="btn-ghost" style={{ padding: '8px', borderRadius: '50%' }}>

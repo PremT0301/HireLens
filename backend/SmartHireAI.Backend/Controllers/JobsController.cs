@@ -177,6 +177,21 @@ public class JobsController : ControllerBase
         };
     }
 
+    // GET: api/jobs/{jobId}/interview-rounds
+    [HttpGet("{jobId}/interview-rounds")]
+    public async Task<IActionResult> GetInterviewRounds(Guid jobId)
+    {
+        var job = await _context.JobDescriptions.FindAsync(jobId);
+        if (job == null) return NotFound("Job not found");
+
+        if (string.IsNullOrEmpty(job.InterviewRounds))
+        {
+            return Ok(new List<object>());
+        }
+
+        return Content(job.InterviewRounds, "application/json");
+    }
+
     // POST: api/jobs
     [HttpPost]
     [Authorize] // Ideally specific to Recruiter role

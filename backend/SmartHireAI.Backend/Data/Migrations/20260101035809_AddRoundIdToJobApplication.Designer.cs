@@ -2,17 +2,20 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SmartHireAI.Backend.Data;
 
 #nullable disable
 
-namespace SmartHireAI.Backend.Migrations
+namespace SmartHireAI.Backend.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260101035809_AddRoundIdToJobApplication")]
+    partial class AddRoundIdToJobApplication
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -174,87 +177,6 @@ namespace SmartHireAI.Backend.Migrations
                     b.HasIndex("ApplicantId");
 
                     b.ToTable("education");
-                });
-
-            modelBuilder.Entity("SmartHireAI.Backend.Data.InboxMessage", b =>
-                {
-                    b.Property<Guid>("MessageId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)")
-                        .HasColumnName("message_id");
-
-                    b.Property<string>("Content")
-                        .IsRequired()
-                        .HasColumnType("longtext")
-                        .HasColumnName("content");
-
-                    b.Property<bool>("IsRead")
-                        .HasColumnType("tinyint(1)")
-                        .HasColumnName("is_read");
-
-                    b.Property<Guid>("SenderId")
-                        .HasColumnType("char(36)")
-                        .HasColumnName("sender_id");
-
-                    b.Property<string>("SenderRole")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("varchar(50)")
-                        .HasColumnName("sender_role");
-
-                    b.Property<DateTime>("SentAt")
-                        .HasColumnType("datetime(6)")
-                        .HasColumnName("sent_at");
-
-                    b.Property<Guid>("ThreadId")
-                        .HasColumnType("char(36)")
-                        .HasColumnName("thread_id");
-
-                    b.HasKey("MessageId");
-
-                    b.HasIndex("ThreadId");
-
-                    b.ToTable("inbox_messages");
-                });
-
-            modelBuilder.Entity("SmartHireAI.Backend.Data.InboxThread", b =>
-                {
-                    b.Property<Guid>("ThreadId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)")
-                        .HasColumnName("thread_id");
-
-                    b.Property<Guid>("ApplicantId")
-                        .HasColumnType("char(36)")
-                        .HasColumnName("applicant_id");
-
-                    b.Property<Guid>("ApplicationId")
-                        .HasColumnType("char(36)")
-                        .HasColumnName("application_id");
-
-                    b.Property<DateTime>("LastMessageAt")
-                        .HasColumnType("datetime(6)")
-                        .HasColumnName("last_message_at");
-
-                    b.Property<Guid>("RecruiterId")
-                        .HasColumnType("char(36)")
-                        .HasColumnName("recruiter_id");
-
-                    b.Property<string>("Subject")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("varchar(100)")
-                        .HasColumnName("subject");
-
-                    b.HasKey("ThreadId");
-
-                    b.HasIndex("ApplicantId");
-
-                    b.HasIndex("ApplicationId");
-
-                    b.HasIndex("RecruiterId");
-
-                    b.ToTable("inbox_threads");
                 });
 
             modelBuilder.Entity("SmartHireAI.Backend.Data.JobApplication", b =>
@@ -543,53 +465,6 @@ namespace SmartHireAI.Backend.Migrations
                     b.HasIndex("ResumeId");
 
                     b.ToTable("match_results");
-                });
-
-            modelBuilder.Entity("SmartHireAI.Backend.Data.Notification", b =>
-                {
-                    b.Property<Guid>("NotificationId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)")
-                        .HasColumnName("notification_id");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime(6)")
-                        .HasColumnName("created_at");
-
-                    b.Property<bool>("IsRead")
-                        .HasColumnType("tinyint(1)")
-                        .HasColumnName("is_read");
-
-                    b.Property<string>("Message")
-                        .IsRequired()
-                        .HasColumnType("longtext")
-                        .HasColumnName("message");
-
-                    b.Property<Guid?>("ReferenceId")
-                        .HasColumnType("char(36)")
-                        .HasColumnName("reference_id");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("varchar(200)")
-                        .HasColumnName("title");
-
-                    b.Property<string>("Type")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("varchar(50)")
-                        .HasColumnName("type");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("char(36)")
-                        .HasColumnName("user_id");
-
-                    b.HasKey("NotificationId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("notifications");
                 });
 
             modelBuilder.Entity("SmartHireAI.Backend.Data.Recruiter", b =>
@@ -890,44 +765,6 @@ namespace SmartHireAI.Backend.Migrations
                     b.Navigation("Applicant");
                 });
 
-            modelBuilder.Entity("SmartHireAI.Backend.Data.InboxMessage", b =>
-                {
-                    b.HasOne("SmartHireAI.Backend.Data.InboxThread", "Thread")
-                        .WithMany("Messages")
-                        .HasForeignKey("ThreadId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Thread");
-                });
-
-            modelBuilder.Entity("SmartHireAI.Backend.Data.InboxThread", b =>
-                {
-                    b.HasOne("SmartHireAI.Backend.Data.Applicant", "Applicant")
-                        .WithMany()
-                        .HasForeignKey("ApplicantId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("SmartHireAI.Backend.Data.JobApplication", "JobApplication")
-                        .WithMany()
-                        .HasForeignKey("ApplicationId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("SmartHireAI.Backend.Data.Recruiter", "Recruiter")
-                        .WithMany()
-                        .HasForeignKey("RecruiterId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Applicant");
-
-                    b.Navigation("JobApplication");
-
-                    b.Navigation("Recruiter");
-                });
-
             modelBuilder.Entity("SmartHireAI.Backend.Data.JobApplication", b =>
                 {
                     b.HasOne("SmartHireAI.Backend.Data.Applicant", "Applicant")
@@ -999,17 +836,6 @@ namespace SmartHireAI.Backend.Migrations
                     b.Navigation("Resume");
                 });
 
-            modelBuilder.Entity("SmartHireAI.Backend.Data.Notification", b =>
-                {
-                    b.HasOne("SmartHireAI.Backend.Data.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("SmartHireAI.Backend.Data.Recruiter", b =>
                 {
                     b.HasOne("SmartHireAI.Backend.Data.User", "User")
@@ -1072,11 +898,6 @@ namespace SmartHireAI.Backend.Migrations
                     b.Navigation("Resumes");
 
                     b.Navigation("WorkExperience");
-                });
-
-            modelBuilder.Entity("SmartHireAI.Backend.Data.InboxThread", b =>
-                {
-                    b.Navigation("Messages");
                 });
 
             modelBuilder.Entity("SmartHireAI.Backend.Data.JobDescription", b =>

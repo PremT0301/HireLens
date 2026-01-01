@@ -48,12 +48,7 @@ const ContactCandidate = () => {
 
         setSubmitting(true);
         try {
-            const payload = {
-                subject: formData.subject,
-                message: formData.message
-            };
-
-            await ApplicationService.sendMessage(applicationId, payload);
+            await ApplicationService.sendMessage(applicationId, formData.subject, formData.message);
             addToast('Message sent successfully!', 'success');
 
             // Navigate back after a short delay

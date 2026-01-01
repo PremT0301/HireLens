@@ -533,12 +533,17 @@ namespace SmartHireAI.Backend.Data
         [Column("meeting_link")]
         public string? MeetingLink { get; set; } // URL or Location Address
 
-        // [Column("interview_duration")]
-        // public int? InterviewDuration { get; set; } // in minutes
+        [Column("interview_duration")]
+        public int? InterviewDuration { get; set; } // in minutes
 
-        // [MaxLength(1000)]
-        // [Column("interview_notes")]
-        // public string? InterviewNotes { get; set; }
+
+        [MaxLength(50)]
+        [Column("round_id")]
+        public string? RoundId { get; set; }
+
+        [MaxLength(1000)]
+        [Column("interview_notes")]
+        public string? InterviewNotes { get; set; }
 
         [ForeignKey("JobId")]
         public JobDescription JobDescription { get; set; } = null!;
@@ -584,5 +589,109 @@ namespace SmartHireAI.Backend.Data
 
         [ForeignKey("ApplicationId")]
         public JobApplication JobApplication { get; set; } = null!;
+    }
+
+    [Table("inbox_threads")]
+    public class InboxThread
+    {
+        [Key]
+        [Column("thread_id")]
+        public Guid ThreadId { get; set; }
+
+        [Column("application_id")]
+        public Guid ApplicationId { get; set; }
+
+        [Column("recruiter_id")]
+        public Guid RecruiterId { get; set; }
+
+        [Column("applicant_id")]
+        public Guid ApplicantId { get; set; }
+
+        [Required]
+        [MaxLength(100)]
+        [Column("subject")]
+        public string Subject { get; set; } = string.Empty;
+
+        [Column("last_message_at")]
+        public DateTime LastMessageAt { get; set; } = DateTime.UtcNow;
+
+        [ForeignKey("ApplicationId")]
+        public JobApplication JobApplication { get; set; } = null!;
+
+        [ForeignKey("RecruiterId")]
+        public Recruiter Recruiter { get; set; } = null!;
+
+        [ForeignKey("ApplicantId")]
+        public Applicant Applicant { get; set; } = null!;
+
+        public ICollection<InboxMessage> Messages { get; set; } = new List<InboxMessage>();
+    }
+
+    [Table("inbox_messages")]
+    public class InboxMessage
+    {
+        [Key]
+        [Column("message_id")]
+        public Guid MessageId { get; set; }
+
+        [Column("thread_id")]
+        public Guid ThreadId { get; set; }
+
+        [Column("sender_id")]
+        public Guid SenderId { get; set; } // UserId of the sender (or null/special ID for System)
+
+        [Required]
+        [MaxLength(50)]
+        [Column("sender_role")] // Recruiter, Applicant, System
+        public string SenderRole { get; set; } = string.Empty;
+
+        [Required]
+        [Column("content")]
+        public string Content { get; set; } = string.Empty;
+
+        [Column("sent_at")]
+        public DateTime SentAt { get; set; } = DateTime.UtcNow;
+
+        [Column("is_read")]
+        public bool IsRead { get; set; } = false;
+
+        [ForeignKey("ThreadId")]
+        public InboxThread Thread { get; set; } = null!;
+    }
+
+    [Table("notifications")]
+    public class Notification
+    {
+        [Key]
+        [Column("notification_id")]
+        public Guid NotificationId { get; set; }
+
+        [Column("user_id")]
+        public Guid UserId { get; set; } // Recipient User
+
+        [Required]
+        [MaxLength(200)]
+        [Column("title")]
+        public string Title { get; set; } = string.Empty;
+
+        [Required]
+        [Column("message")]
+        public string Message { get; set; } = string.Empty;
+
+        [MaxLength(50)]
+        [Column("type")]
+        public string Type { get; set; } = "General"; // InterviewScheduled, MessageReceived, etc.
+
+        [Column("reference_id")]
+        public Guid? ReferenceId { get; set; } // Link to Application or Thread
+
+        [Column("is_read")]
+        public bool IsRead { get; set; } = false;
+
+        [Column("created_at")]
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        [ForeignKey("UserId")]
+        public User User { get; set; } = null!;
     }
 }

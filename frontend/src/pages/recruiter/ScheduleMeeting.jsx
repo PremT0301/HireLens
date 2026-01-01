@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Calendar, Clock, Video, Phone, AlignLeft, User, Briefcase, ArrowLeft, Link as LinkIcon, CheckCircle } from 'lucide-react';
 import { useToast } from '../../context/ToastContext';
 import ApplicationService from '../../api/applicationService';
+import JobService from '../../api/jobService';
 import HireLensLoader from '../../components/ui/HireLensLoader';
 import { API_BASE_URL } from '../../api/config';
 
@@ -21,14 +22,24 @@ const ScheduleMeeting = () => {
         mode: 'Video', // Video, Phone, In-person
         meetingLink: '',
         duration: '30',
-        notes: ''
+        notes: '',
+        roundId: ''
     });
+
+    const [interviewRounds, setInterviewRounds] = useState([]);
 
     useEffect(() => {
         const fetchDetails = async () => {
             try {
                 const data = await ApplicationService.getApplicationDetails(applicationId);
                 setApplication(data);
+
+                // Fetch Interview Rounds if jobId is available
+                if (data.jobId) {
+                    const rounds = await JobService.getInterviewRounds(data.jobId);
+                    setInterviewRounds(rounds || []);
+                }
+
                 // Pre-fill some data if available or set defaults
                 if (data.meetingLink) {
                     setFormData(prev => ({ ...prev, meetingLink: data.meetingLink }));
@@ -43,6 +54,17 @@ const ScheduleMeeting = () => {
         };
         fetchDetails();
     }, [applicationId, addToast, navigate]);
+
+    const handleRoundChange = (e) => {
+        const roundName = e.target.value;
+        // Since rounds are just strings, we use the name as the ID
+        setFormData(prev => ({
+            ...prev,
+            roundId: roundName
+            // Note: Cannot auto-fill mode/duration if rounds are just strings without metadata
+            // Could potentially use job global defaults if we had them here
+        }));
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -66,7 +88,8 @@ const ScheduleMeeting = () => {
                 mode: formData.mode,
                 link: formData.meetingLink,
                 duration: parseInt(formData.duration, 10),
-                notes: formData.notes
+                notes: formData.notes,
+                roundId: formData.roundId
             };
 
             await ApplicationService.scheduleInterview(applicationId, payload);
@@ -157,6 +180,32 @@ const ScheduleMeeting = () => {
                 </div>
 
                 <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+
+                    {/* Interview Round */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <label style={{ fontSize: '0.95rem', fontWeight: 500, color: 'var(--text-primary)' }}>Interview Round <span style={{ color: 'var(--error)' }}>*</span></label>
+                        <div className="input-group" style={{ display: 'flex', alignItems: 'center', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '0.75rem 1rem' }}>
+                            <Briefcase size={18} style={{ color: 'var(--text-secondary)', marginRight: '10px' }} />
+                            <select
+                                required
+                                style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', width: '100%', outline: 'none', fontSize: '1rem', cursor: 'pointer' }}
+                                value={formData.roundId}
+                                onChange={handleRoundChange}
+                                disabled={interviewRounds.length === 0}
+                            >
+                                <option value="" disabled>Select Interview Round</option>
+                                {interviewRounds.length > 0 ? (
+                                    interviewRounds.map((roundName, index) => (
+                                        <option key={index} value={roundName} style={{ color: 'black' }}>
+                                            {typeof roundName === 'string' ? roundName : roundName.name}
+                                        </option>
+                                    ))
+                                ) : (
+                                    <option value="" disabled>No interview rounds configured for this job</option>
+                                )}
+                            </select>
+                        </div>
+                    </div>
 
                     {/* Date and Time Row */}
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>

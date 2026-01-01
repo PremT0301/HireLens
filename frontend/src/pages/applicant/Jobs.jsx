@@ -130,6 +130,21 @@ const Jobs = () => {
         }
     };
 
+    const handleAcceptInterview = async (application) => {
+        try {
+            await ApplicationService.acceptInterview(application.applicationId);
+            addToast("Interview Accepted!", "success");
+
+            setApplications(prev => ({
+                ...prev,
+                [application.jobId]: { ...application, status: 'Interview Accepted' }
+            }));
+        } catch (error) {
+            console.error("Failed to accept interview", error);
+            addToast("Failed to accept interview.", "error");
+        }
+    };
+
     const handleAnalyze = (job) => {
         if (!job.description || job.description.trim() === '') {
             addToast("Job Description not provided by the recruiter.", "warning");
@@ -236,6 +251,12 @@ const Jobs = () => {
                                                     </a>
                                                 </div>
                                             )}
+                                            {application.roundId && (
+                                                <div>
+                                                    <div className="text-subtle" style={{ fontSize: '0.8rem' }}>Round</div>
+                                                    <div style={{ fontWeight: 500 }}>{application.roundId}</div>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 )}
@@ -273,6 +294,16 @@ const Jobs = () => {
                                             {resumeData ? 'Check Readiness' : 'Analyze Fit'}
                                         </button>
                                     ) : null}
+
+                                    {application && application.status === 'Interview Scheduled' && (
+                                        <button
+                                            onClick={() => handleAcceptInterview(application)}
+                                            className="btn-primary"
+                                            style={{ background: 'var(--success)', border: 'none' }}
+                                        >
+                                            Accept Interview
+                                        </button>
+                                    )}
 
                                     {application && application.status !== 'Rejected' ? (
                                         <button

@@ -50,7 +50,8 @@ public class ApplicationsController : ControllerBase
                 a.AtsScore,
                 a.InterviewDate,
                 a.InterviewMode,
-                a.MeetingLink
+                a.MeetingLink,
+                a.RoundId
             })
             .ToListAsync();
 
@@ -288,6 +289,7 @@ public class ApplicationsController : ControllerBase
             var response = new
             {
                 application.ApplicationId,
+                application.JobId, // Added JobId
                 Name = user?.FullName ?? "Unknown",
                 Role = application.JobDescription?.Title ?? "Unknown Role",
                 Score = (int)application.AtsScore,
@@ -499,12 +501,159 @@ public class ApplicationsController : ControllerBase
         var app = await _context.JobApplications.FindAsync(id);
         if (app == null) return NotFound("Application not found");
 
+        if (!string.IsNullOrEmpty(request.RoundId))
+        {
+            var job = await _context.JobDescriptions.FindAsync(app.JobId);
+            if (job != null && !string.IsNullOrEmpty(job.InterviewRounds))
+            {
+                // Simple string check or proper JSON parsing
+                // Since I don't want to add Newtonsoft.Json dependency if not present, and System.Text.Json requires a typed class, 
+                // I'll do a basic check or assumes the caller (frontend) is correct, BUT the requirement stays "Backend must validate".
+                // I will try to use System.Text.Json.JsonDocument
+                try
+                {
+                    using (var doc = System.Text.Json.JsonDocument.Parse(job.InterviewRounds))
+                    {
+                        bool roundFound = false;
+                        if (doc.RootElement.ValueKind == System.Text.Json.JsonValueKind.Array)
+                        {
+                            foreach (var element in doc.RootElement.EnumerateArray())
+                            {
+                                // Check if the element is a string and matches the request round ID (which is the name)
+                                if (element.ValueKind == System.Text.Json.JsonValueKind.String && element.GetString() == request.RoundId)
+                                {
+                                    roundFound = true;
+                                    break;
+                                }
+                                // Fallback: If it IS an object (legacy/advanced format), look for "id" or "name"
+                                else if (element.ValueKind == System.Text.Json.JsonValueKind.Object)
+                                {
+                                    if ((element.TryGetProperty("id", out var idProp) && idProp.GetString() == request.RoundId) ||
+                                        (element.TryGetProperty("name", out var nameProp) && nameProp.GetString() == request.RoundId))
+                                    {
+                                        roundFound = true;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+
+                        if (!roundFound)
+                        {
+                            return BadRequest($"Invalid Interview Round '{request.RoundId}' for this job.");
+                        }
+                    }
+                }
+                catch
+                {
+                    // Fallback or ignore if JSON is malformed
+                    return BadRequest("Error validating interview round configuration.");
+                }
+            }
+        }
+
+        if (app.JobDescription == null)
+        {
+            await _context.Entry(app).Reference(a => a.JobDescription).Query().Include(j => j.Recruiter).LoadAsync();
+        }
+
+        if (app.Applicant == null)
+        {
+            await _context.Entry(app).Reference(a => a.Applicant).Query().Include(a => a.User).LoadAsync();
+        }
+
+        var jobDesc = app.JobDescription;
+        var applicantUser = app.Applicant.User;
+
         app.Status = "Interview Scheduled";
         app.InterviewDate = request.Date;
         app.InterviewMode = request.Mode;
         app.MeetingLink = request.Link ?? "https://meet.google.com/abc-defg-hij"; // Mock link if not provided
-        // app.InterviewDuration = request.Duration;
-        // app.InterviewNotes = request.Notes;
+        app.InterviewDuration = request.Duration;
+        app.InterviewNotes = request.Notes;
+        app.RoundId = request.RoundId;
+
+        // 1. Send Email to Applicant
+        if (!string.IsNullOrEmpty(applicantUser?.Email))
+        {
+            var roundName = request.RoundId ?? "Interview";
+            var emailSubject = $"Interview Scheduled - {jobDesc.Title}";
+            var emailBody = $@"
+                <div style='font-family: Arial, sans-serif;'>
+                    <h2>Interview Scheduled</h2>
+                    <p>Dear {applicantUser.FullName},</p>
+                    <p>An interview has been scheduled for the position of <strong>{jobDesc.Title}</strong> at <strong>{jobDesc.Recruiter?.CompanyName ?? "the company"}</strong>.</p>
+                    <br/>
+                    <p><strong>Round:</strong> {roundName}</p>
+                    <p><strong>Date & Time:</strong> {request.Date:f}</p>
+                    <p><strong>Mode:</strong> {request.Mode}</p>
+                    <p><strong>Link/Location:</strong> {app.MeetingLink}</p>
+                    <br/>
+                    <p>Please check your applicant portal inbox for more details.</p>
+                    <p>Best Regards,</p>
+                    <p><strong>HireLens Team</strong></p>
+                </div>";
+
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await _emailService.SendEmailAsync(applicantUser.Email, emailSubject, emailBody);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error sending interview email: {ex.Message}");
+                }
+            });
+        }
+
+        // 2 Create or Get Inbox Thread
+        var thread = await _context.InboxThreads
+            .FirstOrDefaultAsync(t => t.ApplicationId == app.ApplicationId);
+
+        if (thread == null)
+        {
+            thread = new InboxThread
+            {
+                ThreadId = Guid.NewGuid(),
+                ApplicationId = app.ApplicationId,
+                RecruiterId = jobDesc.RecruiterId,
+                ApplicantId = app.ApplicantId,
+                Subject = $"Interview - {jobDesc.Title}",
+                LastMessageAt = DateTime.UtcNow
+            };
+            _context.InboxThreads.Add(thread);
+        }
+        else
+        {
+            thread.LastMessageAt = DateTime.UtcNow;
+        }
+
+        // 3. Add System Message
+        var systemMessage = new InboxMessage
+        {
+            MessageId = Guid.NewGuid(),
+            ThreadId = thread.ThreadId,
+            SenderId = Guid.Empty, // System
+            SenderRole = "System",
+            Content = $"Interview Scheduled: {request.RoundId ?? "General Round"} on {request.Date:f}. Mode: {request.Mode}.",
+            SentAt = DateTime.UtcNow,
+            IsRead = false
+        };
+        _context.InboxMessages.Add(systemMessage);
+
+        // 4. Create Notification for Applicant
+        var notification = new Notification
+        {
+            NotificationId = Guid.NewGuid(),
+            UserId = applicantUser.UserId,
+            Title = "Interview Scheduled",
+            Message = $"New interview scheduled for {jobDesc.Title}",
+            Type = "InterviewScheduled",
+            ReferenceId = thread.ThreadId,
+            CreatedAt = DateTime.UtcNow
+        };
+        _context.Notifications.Add(notification);
 
         await _context.SaveChangesAsync();
 
@@ -516,21 +665,101 @@ public class ApplicationsController : ControllerBase
     [Authorize]
     public async Task<IActionResult> SendMessage(Guid id, [FromBody] MessageDto request)
     {
-        var app = await _context.JobApplications.FindAsync(id);
+        var app = await _context.JobApplications
+            .Include(a => a.Applicant).ThenInclude(user => user.User)
+            .Include(a => a.JobDescription).ThenInclude(job => job.Recruiter).ThenInclude(r => r.User)
+            .FirstOrDefaultAsync(a => a.ApplicationId == id);
+
         if (app == null) return NotFound("Application not found");
 
-        var message = new ApplicationMessage
+        var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (!Guid.TryParse(userIdString, out var userId)) return Unauthorized();
+
+        // 1. Create or Get Inbox Thread
+        var thread = await _context.InboxThreads
+            .FirstOrDefaultAsync(t => t.ApplicationId == app.ApplicationId);
+
+        if (thread == null)
+        {
+            thread = new InboxThread
+            {
+                ThreadId = Guid.NewGuid(),
+                ApplicationId = app.ApplicationId,
+                RecruiterId = app.JobDescription.RecruiterId,
+                ApplicantId = app.ApplicantId,
+                Subject = request.Subject ?? $"Message regarding {app.JobDescription.Title}",
+                LastMessageAt = DateTime.UtcNow
+            };
+            _context.InboxThreads.Add(thread);
+        }
+        else
+        {
+            thread.LastMessageAt = DateTime.UtcNow;
+            // Update subject if it's generic? No, keep original subject to keep thread context or append? 
+            // Let's just update the timestamp.
+        }
+
+        // 2. Add Message to Inbox (Unified System)
+        var message = new InboxMessage
         {
             MessageId = Guid.NewGuid(),
-            ApplicationId = id,
-            SenderRole = "Recruiter", // Assuming recruiter context for now
-            Subject = request.Subject,
-            Body = request.Message,
-            SentAt = DateTime.UtcNow
+            ThreadId = thread.ThreadId,
+            SenderId = userId,
+            SenderRole = "Recruiter", // Since this endpoint is for Recruiter->Candidate contact
+            Content = request.Message,
+            SentAt = DateTime.UtcNow,
+            IsRead = false
         };
 
-        _context.ApplicationMessages.Add(message);
+        _context.InboxMessages.Add(message);
+
+        // 3. Create Notification for Applicant
+        var notification = new Notification
+        {
+            NotificationId = Guid.NewGuid(),
+            UserId = app.Applicant.User.UserId,
+            Title = "New Message from Recruiter",
+            Message = $"Recruiter for {app.JobDescription.Title} sent you a message.",
+            Type = "MessageReceived",
+            ReferenceId = thread.ThreadId,
+            CreatedAt = DateTime.UtcNow
+        };
+        _context.Notifications.Add(notification);
+
         await _context.SaveChangesAsync();
+
+        // 4. Send Email to Applicant with Preview
+        var applicantUser = app.Applicant.User;
+        if (!string.IsNullOrEmpty(applicantUser?.Email))
+        {
+            string emailSubject = $"New Message: {request.Subject ?? "Regarding your application"}";
+            string emailBody = $@"
+                <div style='font-family: Arial, sans-serif;'>
+                    <h2>New Message from Recruiter</h2>
+                    <p>Dear {applicantUser.FullName},</p>
+                    <p>You have received a new message regarding your application for <strong>{app.JobDescription.Title}</strong> at <strong>{app.JobDescription.Recruiter.CompanyName}</strong>.</p>
+                    <br/>
+                    <div style='background-color: #f5f5f5; padding: 15px; border-radius: 5px; border-left: 4px solid #2563eb;'>
+                        <p style='margin: 0; font-style: italic;'>""{request.Message}""</p>
+                    </div>
+                    <br/>
+                    <p>Please log in to your dashboard to reply.</p>
+                    <p>Best Regards,</p>
+                    <p><strong>HireLens Team</strong></p>
+                </div>";
+
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await _emailService.SendEmailAsync(applicantUser.Email, emailSubject, emailBody);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error sending message notification email: {ex.Message}");
+                }
+            });
+        }
 
         return Ok(new { Message = "Message sent successfully" });
     }
@@ -610,7 +839,7 @@ public class ApplicationsController : ControllerBase
         return Ok(new { Message = "Candidate hired successfully" });
     }
 
-    public record InterviewDto(DateTime Date, string Mode, string? Link, int? Duration, string? Notes);
+    public record InterviewDto(DateTime Date, string Mode, string? Link, int? Duration, string? Notes, string? RoundId);
     public record MessageDto(string Subject, string Message);
     public record StatusDto(string Status);
 }

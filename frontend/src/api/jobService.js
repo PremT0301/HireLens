@@ -94,6 +94,20 @@ const JobService = {
             console.error(`Error updating job status ${id}`, error);
             throw error.response?.data || { message: "Failed to update job status" };
         }
+    },
+
+    // ======================
+    // GET INTERVIEW ROUNDS
+    // ======================
+    getInterviewRounds: async (jobId) => {
+        try {
+            const response = await api.get(`/jobs/${jobId}/interview-rounds`);
+            return response.data;
+        } catch (error) {
+            console.error(`Error fetching interview rounds for job ${jobId}`, error);
+            // Default to empty array if fails or 404
+            return [];
+        }
     }
 };
 
