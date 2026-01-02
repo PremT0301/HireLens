@@ -69,11 +69,27 @@ const RecruiterDashboard = () => {
 
             {/* Header */}
             <div style={{ marginBottom: '3rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-                <div>
-                    <h1 className="title-lg" style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>
-                        {profile ? `Welcome back, ${profile.fullName}` : 'Recruiter Dashboard'}
-                    </h1>
-                    <p className="text-subtle">Overview of your hiring pipeline and active roles.</p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+                    {profile && profile.companyLogo && (
+                        <div style={{
+                            width: '80px', height: '80px', borderRadius: '12px',
+                            background: 'white', display: 'flex', alignItems: 'center',
+                            justifyContent: 'center', boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
+                            overflow: 'hidden'
+                        }}>
+                            <img
+                                src={profile.companyLogo.startsWith('/') ? `http://localhost:5033${profile.companyLogo}` : profile.companyLogo}
+                                alt="Company"
+                                style={{ width: '100%', height: '100%', objectFit: 'contain', padding: '8px' }}
+                            />
+                        </div>
+                    )}
+                    <div>
+                        <h1 className="title-lg" style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>
+                            {profile ? `Welcome back, ${profile.fullName}` : 'Recruiter Dashboard'}
+                        </h1>
+                        <p className="text-subtle">Overview of your hiring pipeline and active roles.</p>
+                    </div>
                 </div>
                 <Link to="/recruiter/create-job" className="btn-primary">
                     <PlusCircle size={18} /> Post New Job

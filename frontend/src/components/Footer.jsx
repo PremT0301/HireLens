@@ -1,80 +1,66 @@
 import React from 'react';
-import { Github, Twitter, Linkedin, Mail, Heart } from 'lucide-react';
-import { Link } from 'react-router-dom';
 
 const Footer = () => {
     return (
         <footer style={{
             marginTop: 'auto',
-            paddingTop: '3rem',
+            padding: '0.5rem 0',
             background: 'transparent',
             position: 'relative',
-            zIndex: 10
+            zIndex: 10,
+            borderTop: '1px solid rgba(0,0,0,0.05)'
         }}>
-            <div className="container" style={{ paddingBottom: '2rem' }}>
+            <div className="container">
                 <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-                    gap: '2rem',
-                    marginBottom: '2rem'
-                }}>
-                    {/* Brand Section */}
-                    <div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '1rem' }}>
-                            <div style={{
-                                width: '28px',
-                                height: '28px',
-                                background: 'linear-gradient(135deg, var(--primary), var(--secondary))',
-                                borderRadius: '6px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center'
-                            }}>
-                                <span style={{ color: 'white', fontWeight: 'bold', fontSize: '0.8rem' }}>HL</span>
-                            </div>
-                            <span style={{ fontSize: '1.2rem', fontWeight: '700' }}>HireLens AI</span>
-                        </div>
-                        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: '1.6' }}>
-                            AI-powered functionality for modern recruitment and career advancement. Bridging the gap between talent and opportunity.
-                        </p>
-                    </div>
-
-
-
-                    {/* Resources */}
-                    <div>
-                        <h4 style={{ fontSize: '1rem', fontWeight: '600', marginBottom: '1rem' }}>Resources</h4>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
-                            <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', cursor: 'pointer' }} className="hover-text">Blog</span>
-                            <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', cursor: 'pointer' }} className="hover-text">Documentation</span>
-                            <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', cursor: 'pointer' }} className="hover-text">Help Center</span>
-                        </div>
-                    </div>
-
-                    {/* Contact */}
-                    <div>
-                        <h4 style={{ fontSize: '1rem', fontWeight: '600', marginBottom: '1rem' }}>Connect</h4>
-                        <div style={{ display: 'flex', gap: '1rem' }}>
-                            <a href="#" style={{ color: 'var(--text-secondary)', transition: 'color 0.2s' }} className="hover-icon"><Github size={20} /></a>
-                            <a href="#" style={{ color: 'var(--text-secondary)', transition: 'color 0.2s' }} className="hover-icon"><Twitter size={20} /></a>
-                            <a href="#" style={{ color: 'var(--text-secondary)', transition: 'color 0.2s' }} className="hover-icon"><Linkedin size={20} /></a>
-                            <a href="#" style={{ color: 'var(--text-secondary)', transition: 'color 0.2s' }} className="hover-icon"><Mail size={20} /></a>
-                        </div>
-                    </div>
-                </div>
-
-                <div style={{
-                    paddingTop: '1.5rem',
                     display: 'flex',
                     flexDirection: 'row',
                     justifyContent: 'space-between',
                     alignItems: 'center',
-                    flexWrap: 'wrap',
-                    gap: '1rem'
+                    gap: '2rem',
+                    flexWrap: 'wrap'
                 }}>
-                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-                        © {new Date().getFullYear()} HireLens AI. All rights reserved.
-                    </p>
+
+                    <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '1rem',
+                        flex: 1,
+                        minWidth: '300px'
+                    }}>
+                        <div style={{
+                            width: '30px',
+                            height: '30px',
+                            flexShrink: 0
+                        }}>
+                            <img src="/logo.png" alt="HireLens AI" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <p style={{
+                                color: 'var(--text-secondary)',
+                                fontSize: '0.7rem',
+                                lineHeight: '1.3',
+                                margin: 0,
+                                fontWeight: '500'
+                            }}>
+                                AI-powered functionality for modern recruitment and career advancement.
+                            </p>
+                            <p style={{
+                                color: 'var(--text-secondary)',
+                                fontSize: '0.7rem',
+                                lineHeight: '1.3',
+                                margin: 0
+                            }}>
+                                Bridging the gap between talent and opportunity.
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* Right Side: Copyright */}
+                    <div style={{ flexShrink: 0 }}>
+                        <p style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', margin: 0, textAlign: 'right' }}>
+                            © {new Date().getFullYear()} HireLens AI. All rights reserved.
+                        </p>
+                    </div>
                 </div>
             </div>
 

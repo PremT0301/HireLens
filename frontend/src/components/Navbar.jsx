@@ -129,8 +129,43 @@ const Navbar = () => {
         return `${baseUrl}${path}`;
     };
 
+    const refreshProfile = async () => {
+        if (userRole) {
+            try {
+                let profileData = null;
+                if (userRole === 'recruiter') {
+                    profileData = await ProfileService.getRecruiterProfile();
+                } else if (userRole === 'applicant') {
+                    profileData = await ProfileService.getMyProfile();
+                }
+                if (profileData) {
+                    setUserProfile(profileData);
+                }
+            } catch (error) {
+                console.error("Failed to fetch navbar profile", error);
+            }
+        }
+    };
+
+    const getUserImage = () => {
+        if (!userProfile) return null;
+        // Prioritize Personal Profile Image (camelCase or PascalCase)
+        const profileImg = userProfile.profileImage || userProfile.ProfileImage;
+        if (profileImg) return profileImg;
+
+        // Fallback to Company Logo for Recruiter
+        const companyLogo = userProfile.companyLogo || userProfile.CompanyLogo;
+        if (companyLogo) return companyLogo;
+
+        return null;
+    };
+
+    const userImage = getUserImage();
+
+    // ... (rest of component)
     return (
         <nav style={{
+            // ... existing styles ...
             position: 'fixed', // Fixed to allow hiding/showing
             top: 0,
             width: '100%',
@@ -223,9 +258,9 @@ const Navbar = () => {
                                 onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-secondary)'}
                                 onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                             >
-                                {userProfile && (userProfile.profileImage || userProfile.companyLogo) ? (
+                                {userImage ? (
                                     <img
-                                        src={getProfileImageUrl(userProfile.profileImage || userProfile.companyLogo)}
+                                        src={getProfileImageUrl(userImage)}
                                         alt="Profile"
                                         style={{
                                             width: '32px',
@@ -316,6 +351,7 @@ const Navbar = () => {
                 isOpen={isProfileEditorOpen}
                 onClose={() => setIsProfileEditorOpen(false)}
                 userRole={userRole}
+                onProfileUpdate={refreshProfile}
             />
         </nav>
     );

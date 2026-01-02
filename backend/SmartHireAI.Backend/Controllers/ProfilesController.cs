@@ -260,7 +260,8 @@ public class ProfilesController : ControllerBase
             CompanyWebsite = recruiter.CompanyWebsite,
             Industry = recruiter.Industry,
             CompanySize = recruiter.CompanySize,
-            RecruiterType = recruiter.RecruiterType
+            RecruiterType = recruiter.RecruiterType,
+            ProfileImage = recruiter.User.ProfileImage
         };
     }
 
@@ -363,13 +364,50 @@ public class ProfilesController : ControllerBase
 
         // Return relative URL
         var fileUrl = $"/uploads/logos/{fileName}";
-        // Optionally prepend Request.Scheme + "://" + Request.Host if full URL is needed, 
-        // but relative is better for storage usually, can be resolved by frontend.
-        // But backend is 5000/5001 usually, frontend 5173. 
-        // If I return /uploads/..., frontend needs to prepend backend URL.
-        // Let's return just path and let frontend handle or prepend.
+        return Ok(new { url = fileUrl });
+    }
 
-        // Actually best to return object { url: ... }
+    // POST: api/profiles/recruiter/profile-image
+    [HttpPost("recruiter/profile-image")]
+    [Authorize(Roles = "Recruiter,recruiter")]
+    public async Task<ActionResult<string>> UploadRecruiterProfileImage(IFormFile file)
+    {
+        var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
+        {
+            return Unauthorized();
+        }
+
+        if (file == null || file.Length == 0)
+            return BadRequest("No file uploaded.");
+
+        var validExtensions = new[] { ".jpg", ".jpeg", ".png" };
+        var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+        if (!validExtensions.Contains(extension))
+            return BadRequest("Invalid image format. Only JPG, PNG are allowed.");
+
+        var folder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "profiles");
+        if (!Directory.Exists(folder)) Directory.CreateDirectory(folder);
+
+        var fileName = $"{Guid.NewGuid()}{extension}";
+        var filePath = Path.Combine(folder, fileName);
+
+        using (var stream = new FileStream(filePath, FileMode.Create))
+        {
+            await file.CopyToAsync(stream);
+        }
+
+        var fileUrl = $"/uploads/profiles/{fileName}";
+
+        // Update User Profile Image in DB
+        var user = await _context.Users.FindAsync(userId);
+        if (user != null)
+        {
+            user.ProfileImage = fileUrl;
+            user.UpdatedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+        }
+
         return Ok(new { url = fileUrl });
     }
 }

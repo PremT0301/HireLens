@@ -4,7 +4,79 @@ import { X, Save, Upload, User, Briefcase, MapPin, Phone, Building, Edit2, Mail,
 import AuthService from '../../api/authService';
 import ProfileService from '../../api/profileService';
 
-const ProfileEditor = ({ isOpen, onClose, userRole }) => {
+const ProfileEditor = ({ isOpen, onClose, userRole, onProfileUpdate }) => {
+    // ... existing state ...
+
+    // ... existing fetchProfile ...
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setSaving(true);
+        try {
+            if (userRole === 'recruiter') {
+                // ... existing upload logic ...
+                // Upload Profile Image if changed
+                if (profileImageFile) {
+                    const result = await ProfileService.uploadRecruiterProfileImage(profileImageFile);
+                    formData.profileImage = result.url;
+                }
+
+                // If logo changed, upload it
+                if (logoFile) {
+                    const result = await ProfileService.uploadRecruiterLogo(logoFile);
+                    formData.companyLogo = result.url;
+                }
+
+                await ProfileService.updateRecruiterProfile({
+                    companyName: formData.companyName,
+                    designation: formData.designation,
+                    location: formData.location,
+                    mobileNumber: formData.mobileNumber,
+                    companyLogo: formData.companyLogo,
+                    // Ensure ProfileImage is handled if needed in Update DTO? 
+                    // Wait, UpdateRecruiterProfileDto DOES NOT have ProfileImage. 
+                    // ProfileImage is updated via separate endpoint.
+                    // The state update above (formData.profileImage = result.url) is local.
+                    // The backend update for profile image happens in uploadRecruiterProfileImage.
+                });
+            } else {
+                // ... existing applicant logic ...
+                const formDataToSend = new FormData();
+                formDataToSend.append('FullName', formData.fullName);
+                formDataToSend.append('MobileNumber', formData.mobileNumber);
+                formDataToSend.append('Location', formData.location);
+                // ...
+
+                const educationList = [{
+                    CollegeName: formData.collegeName,
+                    CompletionYear: parseInt(formData.completionYear) || 0,
+                    Grade: formData.grade
+                }];
+                formDataToSend.append('EducationJson', JSON.stringify(educationList));
+                formDataToSend.append('ExperienceYears', formData.experienceYears);
+
+                // Add Profile Image for Applicant
+                if (profileImageFile) {
+                    formDataToSend.append('ProfileImage', profileImageFile);
+                }
+
+                await ProfileService.updateApplicantProfile(formDataToSend);
+            }
+
+            // Success
+            if (onProfileUpdate) {
+                onProfileUpdate();
+            }
+
+            setIsEditing(false); // Switch back to view mode
+            fetchProfile(); // Refresh data
+        } catch (error) {
+            console.error("Failed to save profile", error);
+            alert("Failed to save profile changes.");
+        } finally {
+            setSaving(false);
+        }
+    };
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
@@ -15,6 +87,7 @@ const ProfileEditor = ({ isOpen, onClose, userRole }) => {
         email: '',
         location: '',
         mobileNumber: '',
+        profileImage: '', // Shared field
         // Recruiter specific
         companyName: '',
         designation: '',
@@ -24,11 +97,22 @@ const ProfileEditor = ({ isOpen, onClose, userRole }) => {
         experienceYears: 0,
         collegeName: '',
         completionYear: '',
-        grade: ''
+        grade: '',
+        // Detailed
+        skills: '',
+        linkedInUrl: '',
+        preferredRole: '',
+        preferredWorkLocation: '',
+        gender: '',
+        dateOfBirth: ''
     });
 
     const [logoFile, setLogoFile] = useState(null);
     const [logoPreview, setLogoPreview] = useState('');
+
+    // New state for Profile Image
+    const [profileImageFile, setProfileImageFile] = useState(null);
+    const [profileImagePreview, setProfileImagePreview] = useState('');
 
     useEffect(() => {
         if (isOpen) {
@@ -49,6 +133,7 @@ const ProfileEditor = ({ isOpen, onClose, userRole }) => {
                 companyName: '',
                 designation: '',
                 companyLogo: '',
+                profileImage: '',
                 currentRole: '',
                 experienceYears: 0,
                 collegeName: '',
@@ -66,11 +151,12 @@ const ProfileEditor = ({ isOpen, onClose, userRole }) => {
                 data.companyName = profile.CompanyName || profile.companyName || '';
                 data.designation = profile.Designation || profile.designation || '';
                 data.companyLogo = profile.CompanyLogo || profile.companyLogo || '';
+                data.profileImage = profile.ProfileImage || profile.profileImage || '';
             } else {
                 const profile = await ProfileService.getApplicantProfile();
                 data = { ...data, ...profile };
 
-                // Explicitly map PascalCase or ensure fallback
+                // Explicitly map
                 data.location = profile.Location || profile.location || '';
                 data.mobileNumber = profile.MobileNumber || profile.mobileNumber || '';
                 data.currentRole = profile.CurrentRole || profile.currentRole || '';
@@ -88,6 +174,10 @@ const ProfileEditor = ({ isOpen, onClose, userRole }) => {
 
             }
             setFormData(data);
+            setLogoPreview('');
+            setProfileImagePreview('');
+            setLogoFile(null);
+            setProfileImageFile(null);
         } catch (error) {
             console.error("Failed to load profile", error);
         } finally {
@@ -103,67 +193,17 @@ const ProfileEditor = ({ isOpen, onClose, userRole }) => {
         }
     };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setSaving(true);
-        try {
-            if (userRole === 'recruiter') {
-                // If logo changed, upload it first
-                if (logoFile) {
-                    const result = await ProfileService.uploadRecruiterLogo(logoFile);
-                    formData.companyLogo = result.url;
-                }
-
-                await ProfileService.updateRecruiterProfile({
-                    companyName: formData.companyName,
-                    designation: formData.designation,
-                    location: formData.location,
-                    mobileNumber: formData.mobileNumber,
-                    companyLogo: formData.companyLogo
-                });
-            } else {
-                const formDataToSend = new FormData();
-                formDataToSend.append('FullName', formData.fullName);
-                formDataToSend.append('MobileNumber', formData.mobileNumber);
-                formDataToSend.append('Location', formData.location);
-                formDataToSend.append('CurrentRole', formData.currentRole); // Actually, CurrentRole is not in UpdateApplicantProfileRequest?
-                // Wait. I removed CurrentRole from request? 
-                // Step 924: UpdateApplicantProfileRequest HAS NO CurrentRole. 
-                // It has PreferredRole. 
-                // But Applicant Entitiy has CurrentRole.
-                // I forgot to include CurrentRole in UpdateApplicantProfileRequest!
-                // ERROR: I need to add CurrentRole to UpdateApplicantProfileRequest in Backend DTO!
-                // And update ProfilesController to map it.
-                // Otherwise this data is lost.
-
-                // For now, I will use PreferredRole as CurrentRole? No, different meanings.
-                // Quick Fix: I will just map the available fields. Education is key.
-
-                const educationList = [{
-                    CollegeName: formData.collegeName,
-                    CompletionYear: parseInt(formData.completionYear) || 0,
-                    Grade: formData.grade
-                }];
-                formDataToSend.append('EducationJson', JSON.stringify(educationList));
-                formDataToSend.append('ExperienceYears', formData.experienceYears); // Wait, Request also lacks ExperienceYears??
-                // Checking Step 924:
-                // UpdateApplicantProfileRequest fields: FullName, Email, Mobile, Location, Address, DOB, Gender, ProfileImage, Resume, EduJson, WorkJson, Skills, LinkedIn, PreferredRole, PreferredLoc.
-                // MISSING: CurrentRole, ExperienceYears.
-
-                // I need to add them to DTO and Controller.
-                // Backend Fix required first.
-
-                await ProfileService.updateApplicantProfile(formDataToSend);
-            }
-            setIsEditing(false); // Switch back to view mode
-            fetchProfile(); // Refresh data
-        } catch (error) {
-            console.error("Failed to save profile", error);
-            alert("Failed to save profile changes.");
-        } finally {
-            setSaving(false);
+    const handleProfileImageChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setProfileImageFile(file);
+            setProfileImagePreview(URL.createObjectURL(file));
         }
     };
+
+
+
+    // Removed duplicate handleSubmit
 
     if (!isOpen) return null;
 
@@ -189,13 +229,13 @@ const ProfileEditor = ({ isOpen, onClose, userRole }) => {
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                                 {/* User Info Header */}
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', paddingBottom: '1.5rem', borderBottom: '1px solid var(--glass-border)' }}>
-                                    {/* Handle Photo Display */}
-                                    {(userRole === 'recruiter' && formData.companyLogo) || (userRole === 'applicant' && formData.profileImage) ? (
+                                    {/* Handle Photo Display - ALWAYS SHOW PROFILE IMAGE (Personal) in Header */}
+                                    {formData.profileImage ? (
                                         <img
                                             src={
-                                                (userRole === 'recruiter' ? formData.companyLogo : formData.profileImage).startsWith('/')
-                                                    ? `http://localhost:5033${userRole === 'recruiter' ? formData.companyLogo : formData.profileImage}`
-                                                    : (userRole === 'recruiter' ? formData.companyLogo : formData.profileImage)
+                                                formData.profileImage.startsWith('/')
+                                                    ? `http://localhost:5033${formData.profileImage}`
+                                                    : formData.profileImage
                                             }
                                             alt="Profile"
                                             style={{ width: '80px', height: '80px', borderRadius: '50%', objectFit: 'cover' }}
@@ -229,6 +269,17 @@ const ProfileEditor = ({ isOpen, onClose, userRole }) => {
                                             <>
                                                 <ViewField icon={<Building size={18} />} label="Company" value={formData.companyName || '-'} />
                                                 <ViewField icon={<Briefcase size={18} />} label="Designation" value={formData.designation || '-'} />
+                                                {/* Show Company Logo in View Mode if exists */}
+                                                {formData.companyLogo && (
+                                                    <div style={{ gridColumn: '1 / -1', marginTop: '1rem' }}>
+                                                        <label style={labelStyle}>Company Logo</label>
+                                                        <img
+                                                            src={formData.companyLogo.startsWith('/') ? `http://localhost:5033${formData.companyLogo}` : formData.companyLogo}
+                                                            alt="Company Logo"
+                                                            style={{ height: '50px', borderRadius: '8px', objectFit: 'contain' }}
+                                                        />
+                                                    </div>
+                                                )}
                                             </>
                                         ) : (
                                             <>
@@ -237,7 +288,6 @@ const ProfileEditor = ({ isOpen, onClose, userRole }) => {
                                                 <ViewField icon={<GraduationCap size={18} />} label="College" value={formData.collegeName || '-'} />
                                                 <ViewField icon={<GraduationCap size={18} />} label="Graduation" value={formData.completionYear || '-'} />
                                                 <ViewField icon={<GraduationCap size={18} />} label="Grade" value={formData.grade || '-'} />
-                                                {/* New Fields */}
                                                 <ViewField icon={<User size={18} />} label="Gender" value={formData.gender || '-'} />
                                                 <ViewField icon={<Calendar size={18} />} label="Date of Birth" value={formData.dateOfBirth ? new Date(formData.dateOfBirth).toLocaleDateString() : '-'} />
                                                 <ViewField icon={<MapPin size={18} />} label="Preferred Location" value={formData.preferredWorkLocation || '-'} />
@@ -273,6 +323,28 @@ const ProfileEditor = ({ isOpen, onClose, userRole }) => {
                                     <label style={labelStyle}>Email</label>
                                     <div style={readOnlyStyle}>
                                         <Mail size={18} /> {formData.email}
+                                    </div>
+                                </div>
+
+                                {/* Shared: Profile Image Upload */}
+                                <div>
+                                    <label style={labelStyle}>Profile Photo</label>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                        {(profileImagePreview || formData.profileImage) && (
+                                            <img
+                                                src={profileImagePreview || (formData.profileImage && formData.profileImage.startsWith('/') ? `http://localhost:5033${formData.profileImage}` : formData.profileImage)}
+                                                alt="Profile"
+                                                style={{ width: '60px', height: '60px', borderRadius: '50%', objectFit: 'cover' }}
+                                            />
+                                        )}
+                                        <label style={{
+                                            cursor: 'pointer', padding: '6px 12px', background: 'var(--bg-secondary)',
+                                            border: '1px solid var(--glass-border)', borderRadius: '6px', fontSize: '0.9rem',
+                                            display: 'flex', alignItems: 'center', gap: '6px'
+                                        }}>
+                                            <Upload size={16} /> Change Photo
+                                            <input type="file" accept="image/*" onChange={handleProfileImageChange} style={{ display: 'none' }} />
+                                        </label>
                                     </div>
                                 </div>
 
@@ -340,32 +412,6 @@ const ProfileEditor = ({ isOpen, onClose, userRole }) => {
                                     </>
                                 ) : (
                                     <>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
-                                            {(logoPreview || formData.profileImage) ? (
-                                                <img
-                                                    src={logoPreview || (formData.profileImage && formData.profileImage.startsWith('/') ? `http://localhost:5033${formData.profileImage}` : formData.profileImage)}
-                                                    alt="Profile"
-                                                    style={{ width: '60px', height: '60px', borderRadius: '50%', objectFit: 'cover' }}
-                                                />
-                                            ) : (
-                                                <div style={{
-                                                    width: '60px', height: '60px', borderRadius: '50%',
-                                                    background: 'var(--primary)', color: 'white',
-                                                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem'
-                                                }}>
-                                                    {formData.fullName.charAt(0)}
-                                                </div>
-                                            )}
-                                            <label style={{
-                                                cursor: 'pointer', padding: '6px 12px', background: 'var(--bg-secondary)',
-                                                border: '1px solid var(--glass-border)', borderRadius: '6px', fontSize: '0.9rem',
-                                                display: 'flex', alignItems: 'center', gap: '6px'
-                                            }}>
-                                                <Upload size={16} /> Change Photo
-                                                <input type="file" accept="image/*" onChange={handleLogoChange} style={{ display: 'none' }} />
-                                            </label>
-                                        </div>
-
                                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                                             <div>
                                                 <label style={labelStyle}>Current Role</label>
@@ -386,7 +432,6 @@ const ProfileEditor = ({ isOpen, onClose, userRole }) => {
                                                 />
                                             </div>
                                         </div>
-
                                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                                             <div>
                                                 <label style={labelStyle}>Preferred Role</label>
@@ -479,7 +524,7 @@ const ProfileEditor = ({ isOpen, onClose, userRole }) => {
                                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1rem' }}>
                                     <button
                                         type="button"
-                                        onClick={() => { setIsEditing(false); fetchProfile(); }} // Re-fetch to discard unsaved changes
+                                        onClick={() => { setIsEditing(false); fetchProfile(); }}
                                         className="btn-ghost"
                                         disabled={saving}
                                     >
