@@ -390,7 +390,12 @@ async def interview_chat(chat_input: ChatInput, session_id: int = None, db: Sess
 
         # Convert history to OpenAI format
         messages = [
-            {"role": "system", "content": "You are a helpful Interview Copilot. You help candidates practice technical interviews."}
+            {"role": "system", "content": """You are an expert technical interviewer. Your goal is to help candidates improve their answers.
+When providing feedback:
+1. Acknowledge what the candidate got right.
+2. ONLY provide 'Suggestions for improvement' if the candidate missed key concepts or made mistakes.
+3. CRITICAL: DO NOT suggest points the candidate has already mentioned in their answer.
+4. If the answer is accurate and complete, simply state that it is excellent and move to the next question."""}
         ]
         
         for msg in chat_input.history:

@@ -214,99 +214,162 @@ const ProfileEditor = ({ isOpen, onClose, userRole, onProfileUpdate }) => {
             zIndex: 9999, display: 'flex', overflow: 'auto', padding: '20px'
         }}>
             <div className="glass-panel" style={{ width: '100%', maxWidth: '600px', padding: '2rem', position: 'relative', margin: 'auto', maxHeight: 'none' }}>
-                <button onClick={onClose} style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+                <button onClick={onClose} style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', color: !isEditing ? 'white' : 'var(--text-secondary)', cursor: 'pointer', zIndex: 10 }}>
                     <X size={24} />
                 </button>
 
-                <h2 className="gradient-text" style={{ fontSize: '1.5rem', marginBottom: '1.5rem' }}>
-                    {isEditing ? 'Edit Profile' : 'My Profile'}
-                </h2>
+                {isEditing && (
+                    <h2 className="gradient-text" style={{ fontSize: '1.5rem', marginBottom: '1.5rem' }}>
+                        Edit Profile
+                    </h2>
+                )}
 
                 {loading ? <div style={{ color: 'var(--text-secondary)' }}>Loading...</div> : (
                     <>
                         {!isEditing ? (
-                            // VIEW MODE
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                                {/* User Info Header */}
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', paddingBottom: '1.5rem', borderBottom: '1px solid var(--glass-border)' }}>
-                                    {/* Handle Photo Display - ALWAYS SHOW PROFILE IMAGE (Personal) in Header */}
-                                    {formData.profileImage ? (
-                                        <img
-                                            src={
-                                                formData.profileImage.startsWith('/')
-                                                    ? `http://localhost:5033${formData.profileImage}`
-                                                    : formData.profileImage
-                                            }
-                                            alt="Profile"
-                                            style={{ width: '80px', height: '80px', borderRadius: '50%', objectFit: 'cover' }}
-                                        />
-                                    ) : (
-                                        <div style={{
-                                            width: '80px', height: '80px', borderRadius: '50%',
-                                            background: 'var(--accent-primary)', color: 'white',
-                                            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem'
-                                        }}>
-                                            {formData.fullName.charAt(0)}
-                                        </div>
-                                    )}
+                            // VIEW MODE - REDESIGNED
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
+                                {/* Gradient Banner */}
+                                <div style={{
+                                    height: '130px',
+                                    background: 'linear-gradient(135deg, var(--primary), #4f46e5)', // Using a richer fallback if vars are flat
+                                    margin: '-2rem -2rem 0 -2rem',
+                                    borderRadius: '16px 16px 0 0',
+                                    position: 'relative',
+                                    overflow: 'hidden',
+                                    zIndex: 1
+                                }}>
+                                    {/* Decorative circle overlay */}
+                                    <div style={{
+                                        position: 'absolute', top: '-50%', right: '-10%',
+                                        width: '200px', height: '200px', borderRadius: '50%',
+                                        background: 'rgba(255,255,255,0.1)', pointerEvents: 'none'
+                                    }} />
 
-                                    <div>
-                                        <h3 style={{ fontSize: '1.4rem', color: 'var(--text-primary)', margin: 0 }}>{formData.fullName}</h3>
-                                        <p style={{ color: 'var(--text-secondary)', margin: '4px 0 0' }}>
-                                            {userRole === 'recruiter' ? formData.designation : formData.currentRole}
-                                            {userRole === 'recruiter' && formData.companyName && ` at ${formData.companyName}`}
-                                        </p>
+                                    {/* Edit Button - Floating Top Right */}
+                                    <button
+                                        onClick={() => setIsEditing(true)}
+                                        style={{
+                                            position: 'absolute', top: '1rem', right: '4.5rem',
+                                            background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.3)',
+                                            padding: '6px 14px', borderRadius: '20px',
+                                            color: 'white', cursor: 'pointer', backdropFilter: 'blur(8px)',
+                                            display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem',
+                                            fontWeight: '500', transition: 'all 0.2s',
+                                            boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
+                                        }}
+                                        onMouseEnter={e => {
+                                            e.currentTarget.style.background = 'rgba(255,255,255,0.3)';
+                                            e.currentTarget.style.transform = 'translateY(-1px)';
+                                        }}
+                                        onMouseLeave={e => {
+                                            e.currentTarget.style.background = 'rgba(255,255,255,0.2)';
+                                            e.currentTarget.style.transform = 'translateY(0)';
+                                        }}
+                                    >
+                                        <Edit2 size={14} /> <span>Edit</span>
+                                    </button>
+                                </div>
+
+                                {/* Profile Header Section */}
+                                <div style={{
+                                    display: 'flex', flexDirection: 'column', alignItems: 'center',
+                                    marginTop: '-65px', // More overlap
+                                    paddingBottom: '1.5rem',
+                                    borderBottom: '1px solid var(--border-color)',
+                                    position: 'relative',
+                                    zIndex: 5
+                                }}>
+                                    {/* Profile Image */}
+                                    <div style={{
+                                        padding: '0',
+                                        borderRadius: '50%',
+                                        border: '4px solid white', // Crisp white border
+                                        boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+                                        background: 'white', // Ensure opacity
+                                        width: '100px', height: '100px',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                    }}>
+                                        {formData.profileImage ? (
+                                            <img
+                                                src={
+                                                    formData.profileImage.startsWith('/')
+                                                        ? `http://localhost:5033${formData.profileImage}`
+                                                        : formData.profileImage
+                                                }
+                                                alt="Profile"
+                                                style={{ width: '90px', height: '90px', borderRadius: '50%', objectFit: 'cover', display: 'block' }}
+                                            />
+                                        ) : (
+                                            <div style={{
+                                                width: '90px', height: '90px', borderRadius: '50%',
+                                                background: 'linear-gradient(135deg, var(--accent-primary), var(--accent-secondary))', color: 'white',
+                                                display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2.5rem', fontWeight: 'bold'
+                                            }}>
+                                                {formData.fullName.charAt(0)}
+                                            </div>
+                                        )}
                                     </div>
-                                </div >
 
-                                {/* Details Grid */}
-                                < div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
-                                    <ViewField icon={<Mail size={18} />} label="Email" value={formData.email} />
-                                    <ViewField icon={<Phone size={18} />} label="Mobile" value={formData.mobileNumber || '-'} />
-                                    <ViewField icon={<MapPin size={18} />} label="Location" value={formData.location || '-'} />
-                                    {
-                                        userRole === 'recruiter' ? (
+                                    <h3 style={{ fontSize: '1.5rem', fontWeight: '700', marginTop: '0.75rem', color: 'var(--text-primary)' }}>
+                                        {formData.fullName}
+                                    </h3>
+
+                                    <div style={{
+                                        display: 'flex', alignItems: 'center', gap: '6px',
+                                        color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '4px',
+                                        background: 'var(--bg-secondary)', padding: '4px 12px', borderRadius: '20px'
+                                    }}>
+                                        {userRole === 'recruiter' ? (
                                             <>
-                                                <ViewField icon={<Building size={18} />} label="Company" value={formData.companyName || '-'} />
-                                                <ViewField icon={<Briefcase size={18} />} label="Designation" value={formData.designation || '-'} />
-                                                {/* Show Company Logo in View Mode if exists */}
+                                                {formData.designation && <span>{formData.designation}</span>}
+                                                {formData.designation && formData.companyName && <span style={{ opacity: 0.5 }}>•</span>}
+                                                {formData.companyName && <span style={{ fontWeight: '500' }}>{formData.companyName}</span>}
+                                            </>
+                                        ) : (
+                                            <span>{formData.currentRole || 'Applicant'}</span>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Info Grid */}
+                                <div style={{ padding: '1.5rem 0.5rem' }}>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
+                                        <ViewField icon={<Mail size={16} />} label="Email" value={formData.email} />
+                                        <ViewField icon={<Phone size={16} />} label="Mobile" value={formData.mobileNumber} />
+                                        <ViewField icon={<MapPin size={16} />} label="Location" value={formData.location} />
+
+                                        {userRole === 'recruiter' ? (
+                                            <>
+                                                <ViewField icon={<Building size={16} />} label="Company" value={formData.companyName} />
+
                                                 {formData.companyLogo && (
-                                                    <div style={{ gridColumn: '1 / -1', marginTop: '1rem' }}>
-                                                        <label style={labelStyle}>Company Logo</label>
+                                                    <div style={{
+                                                        gridColumn: '1 / -1', marginTop: '0.5rem',
+                                                        padding: '0.75rem',
+                                                        border: '1px solid var(--border-color)',
+                                                        background: 'var(--bg-secondary)',
+                                                        borderRadius: '12px',
+                                                        display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                                    }}>
                                                         <img
                                                             src={formData.companyLogo.startsWith('/') ? `http://localhost:5033${formData.companyLogo}` : formData.companyLogo}
                                                             alt="Company Logo"
-                                                            style={{ height: '50px', borderRadius: '8px', objectFit: 'contain' }}
+                                                            style={{ maxHeight: '50px', maxWidth: '100%', objectFit: 'contain' }}
                                                         />
                                                     </div>
                                                 )}
                                             </>
                                         ) : (
                                             <>
-                                                <ViewField icon={<Briefcase size={18} />} label="Current Role" value={formData.currentRole || '-'} />
-                                                <ViewField icon={<Calendar size={18} />} label="Experience" value={formData.experienceYears > 0 ? `${formData.experienceYears} Years` : '0 Years'} />
-                                                <ViewField icon={<GraduationCap size={18} />} label="College" value={formData.collegeName || '-'} />
-                                                <ViewField icon={<GraduationCap size={18} />} label="Graduation" value={formData.completionYear || '-'} />
-                                                <ViewField icon={<GraduationCap size={18} />} label="Grade" value={formData.grade || '-'} />
-                                                <ViewField icon={<User size={18} />} label="Gender" value={formData.gender || '-'} />
-                                                <ViewField icon={<Calendar size={18} />} label="Date of Birth" value={formData.dateOfBirth ? new Date(formData.dateOfBirth).toLocaleDateString() : '-'} />
-                                                <ViewField icon={<MapPin size={18} />} label="Preferred Location" value={formData.preferredWorkLocation || '-'} />
+                                                <ViewField icon={<GraduationCap size={16} />} label="College" value={formData.collegeName} />
+                                                <ViewField icon={<Briefcase size={16} />} label="Experience" value={formData.experienceYears ? `${formData.experienceYears} Years` : 'Fresher'} />
                                                 <div style={{ gridColumn: '1 / -1' }}>
-                                                    <ViewField icon={<Briefcase size={18} />} label="Skills" value={formData.skills || '-'} />
+                                                    <ViewField icon={<Briefcase size={16} />} label="Skills" value={formData.skills} />
                                                 </div>
                                             </>
-                                        )
-                                    }
-                                </div>
-
-                                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
-                                    <button
-                                        onClick={() => setIsEditing(true)}
-                                        className="btn-primary"
-                                        style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
-                                    >
-                                        <Edit2 size={18} /> Edit Profile
-                                    </button>
+                                        )}
+                                    </div>
                                 </div>
                             </div >
                         ) : (
