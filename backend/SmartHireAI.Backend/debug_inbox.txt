@@ -240,3 +240,13 @@
 01-01-2026 13:12:46: [Inbox] Applicant found: 6056c3aa-451c-4a3c-94ad-4ad388d38484
 01-01-2026 13:12:46: [Inbox] Query matched 1 threads.
 01-01-2026 13:12:46: [Inbox] Mapped 1 threads successfully.
+02-01-2026 10:56:38: [Inbox] GetThreads called. UserIdString: ea300ce6-8175-4dc0-a5eb-da7a6f96b580
+02-01-2026 10:56:38: [Inbox] User Role: recruiter
+02-01-2026 10:56:38: [Inbox] Recruiter found: ea300ce6-8175-4dc0-a5eb-da7a6f96b580
+02-01-2026 10:56:39: [Inbox] Query matched 2 threads.
+02-01-2026 10:56:39: [Inbox] Mapped 2 threads successfully.
+02-01-2026 10:56:39: [Inbox] GetThreads called. UserIdString: ea300ce6-8175-4dc0-a5eb-da7a6f96b580
+02-01-2026 10:56:39: [Inbox] User Role: recruiter
+02-01-2026 10:56:39: [Inbox] Recruiter found: ea300ce6-8175-4dc0-a5eb-da7a6f96b580
+02-01-2026 10:56:39: [Inbox] Query matched 2 threads.
+02-01-2026 10:56:39: [Inbox] Mapped 2 threads successfully.

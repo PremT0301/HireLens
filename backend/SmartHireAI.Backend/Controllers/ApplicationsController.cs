@@ -562,8 +562,11 @@ public class ApplicationsController : ControllerBase
             await _context.Entry(app).Reference(a => a.Applicant).Query().Include(a => a.User).LoadAsync();
         }
 
+        if (app.JobDescription == null) return NotFound("Job Description not found");
         var jobDesc = app.JobDescription;
-        var applicantUser = app.Applicant.User;
+
+        var applicantUser = app.Applicant?.User;
+        if (applicantUser == null) return NotFound("Applicant or User not found");
 
         app.Status = "Interview Scheduled";
         app.InterviewDate = request.Date;
@@ -574,7 +577,7 @@ public class ApplicationsController : ControllerBase
         app.RoundId = request.RoundId;
 
         // 1. Send Email to Applicant
-        if (!string.IsNullOrEmpty(applicantUser?.Email))
+        if (!string.IsNullOrEmpty(applicantUser.Email))
         {
             var roundName = request.RoundId ?? "Interview";
             var emailSubject = $"Interview Scheduled - {jobDesc.Title}";
@@ -646,7 +649,7 @@ public class ApplicationsController : ControllerBase
         var notification = new Notification
         {
             NotificationId = Guid.NewGuid(),
-            UserId = applicantUser.UserId,
+            UserId = applicantUser!.UserId,
             Title = "Interview Scheduled",
             Message = $"New interview scheduled for {jobDesc.Title}",
             Type = "InterviewScheduled",
