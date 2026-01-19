@@ -33,6 +33,7 @@ public class JobsController : ControllerBase
                 ExperienceRequired = j.ExperienceRequired,
                 SalaryMin = j.SalaryMin,
                 SalaryMax = j.SalaryMax,
+                ProbableSalary = j.ProbableSalary,
                 CreatedAt = j.CreatedAt,
                 RecruiterId = j.RecruiterId,
                 CompanyName = j.Recruiter.CompanyName,
@@ -88,6 +89,7 @@ public class JobsController : ControllerBase
                 ExperienceRequired = j.ExperienceRequired,
                 SalaryMin = j.SalaryMin,
                 SalaryMax = j.SalaryMax,
+                ProbableSalary = j.ProbableSalary,
                 CreatedAt = j.CreatedAt,
                 RecruiterId = j.RecruiterId,
                 CompanyName = j.Recruiter.CompanyName,
@@ -146,6 +148,7 @@ public class JobsController : ControllerBase
             ExperienceRequired = job.ExperienceRequired,
             SalaryMin = job.SalaryMin,
             SalaryMax = job.SalaryMax,
+            ProbableSalary = job.ProbableSalary,
             CreatedAt = job.CreatedAt,
             RecruiterId = job.RecruiterId,
             CompanyName = job.Recruiter.CompanyName,
@@ -226,6 +229,7 @@ public class JobsController : ControllerBase
             ExperienceRequired = request.ExperienceRequired,
             SalaryMin = request.SalaryMin,
             SalaryMax = request.SalaryMax,
+            ProbableSalary = request.ProbableSalary,
             CreatedAt = DateTime.UtcNow,
             Status = request.Status,
             RecruiterId = recruiter.RecruiterId,
@@ -302,6 +306,7 @@ public class JobsController : ControllerBase
         job.ExperienceRequired = request.ExperienceRequired;
         job.SalaryMin = request.SalaryMin;
         job.SalaryMax = request.SalaryMax;
+        job.ProbableSalary = request.ProbableSalary;
         job.Status = request.Status;
         job.Description = request.Description;
         job.Department = request.Department;

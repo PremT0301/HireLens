@@ -260,3 +260,33 @@
 02-01-2026 15:45:36: [Inbox] Applicant found: b651f321-2f56-4784-b9d2-f24f4f9a4ea2
 02-01-2026 15:45:36: [Inbox] Query matched 0 threads.
 02-01-2026 15:45:36: [Inbox] Mapped 0 threads successfully.
+19-01-2026 13:40:38: [Inbox] GetThreads called. UserIdString: d0e19413-e81b-4793-b29f-00975e5ff650
+19-01-2026 13:40:38: [Inbox] User Role: recruiter
+19-01-2026 13:40:38: [Inbox] Recruiter found: d0e19413-e81b-4793-b29f-00975e5ff650
+19-01-2026 13:40:38: [Inbox] Query matched 0 threads.
+19-01-2026 13:40:38: [Inbox] Mapped 0 threads successfully.
+19-01-2026 13:40:38: [Inbox] GetThreads called. UserIdString: d0e19413-e81b-4793-b29f-00975e5ff650
+19-01-2026 13:40:38: [Inbox] User Role: recruiter
+19-01-2026 13:40:38: [Inbox] Recruiter found: d0e19413-e81b-4793-b29f-00975e5ff650
+19-01-2026 13:40:38: [Inbox] Query matched 0 threads.
+19-01-2026 13:40:38: [Inbox] Mapped 0 threads successfully.
+19-01-2026 13:40:48: [Inbox] GetThreads called. UserIdString: d0e19413-e81b-4793-b29f-00975e5ff650
+19-01-2026 13:40:48: [Inbox] User Role: recruiter
+19-01-2026 13:40:48: [Inbox] Recruiter found: d0e19413-e81b-4793-b29f-00975e5ff650
+19-01-2026 13:40:48: [Inbox] Query matched 0 threads.
+19-01-2026 13:40:48: [Inbox] Mapped 0 threads successfully.
+19-01-2026 13:40:48: [Inbox] GetThreads called. UserIdString: d0e19413-e81b-4793-b29f-00975e5ff650
+19-01-2026 13:40:48: [Inbox] User Role: recruiter
+19-01-2026 13:40:48: [Inbox] Recruiter found: d0e19413-e81b-4793-b29f-00975e5ff650
+19-01-2026 13:40:48: [Inbox] Query matched 0 threads.
+19-01-2026 13:40:48: [Inbox] Mapped 0 threads successfully.
+19-01-2026 13:58:47: [Inbox] GetThreads called. UserIdString: d0e19413-e81b-4793-b29f-00975e5ff650
+19-01-2026 13:58:47: [Inbox] User Role: recruiter
+19-01-2026 13:58:47: [Inbox] Recruiter found: d0e19413-e81b-4793-b29f-00975e5ff650
+19-01-2026 13:58:47: [Inbox] Query matched 0 threads.
+19-01-2026 13:58:47: [Inbox] Mapped 0 threads successfully.
+19-01-2026 13:58:47: [Inbox] GetThreads called. UserIdString: d0e19413-e81b-4793-b29f-00975e5ff650
+19-01-2026 13:58:47: [Inbox] User Role: recruiter
+19-01-2026 13:58:47: [Inbox] Recruiter found: d0e19413-e81b-4793-b29f-00975e5ff650
+19-01-2026 13:58:47: [Inbox] Query matched 0 threads.
+19-01-2026 13:58:47: [Inbox] Mapped 0 threads successfully.

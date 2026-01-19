@@ -307,6 +307,9 @@ namespace SmartHireAI.Backend.Data
         [Column("salary_min")]
         public int SalaryMin { get; set; }
 
+        [Column("probable_salary")]
+        public string? ProbableSalary { get; set; }
+
         [Required]
         [MaxLength(150)]
         [Column("title")]

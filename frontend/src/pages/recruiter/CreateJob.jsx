@@ -136,8 +136,12 @@ const CreateJob = () => {
                 return;
             }
 
+            // Derive requiredSkills from mandatorySkills for legacy DB column
+            const requiredSkillsString = formData.mandatorySkills.map(s => s.skillName).join(', ');
+
             const jobDto = {
                 title: formData.title,
+                requiredSkills: requiredSkillsString, // Populate legacy column
                 experienceRequired: Number(formData.experienceMin), // Legacy support
                 numberOfOpenings: Number(formData.numberOfOpenings),
                 salaryMin: Number(formData.salaryMin),
@@ -445,6 +449,28 @@ const CreateJob = () => {
                                 value={formData.perksAndBenefits}
                                 onChange={e => setFormData({ ...formData, perksAndBenefits: e.target.value })}
                             />
+                        </div>
+                        <div style={{ display: 'flex', gap: '1rem' }}>
+                            <div style={{ flex: 1 }}>
+                                <label className="label">Min Salary (₹)</label>
+                                <input
+                                    type="number"
+                                    className="input-field"
+                                    placeholder="e.g. 500000"
+                                    value={formData.salaryMin}
+                                    onChange={e => setFormData({ ...formData, salaryMin: e.target.value })}
+                                />
+                            </div>
+                            <div style={{ flex: 1 }}>
+                                <label className="label">Max Salary (₹)</label>
+                                <input
+                                    type="number"
+                                    className="input-field"
+                                    placeholder="e.g. 1500000"
+                                    value={formData.salaryMax}
+                                    onChange={e => setFormData({ ...formData, salaryMax: e.target.value })}
+                                />
+                            </div>
                         </div>
                         <div>
                             <label className="label">Growth Opportunities</label>
