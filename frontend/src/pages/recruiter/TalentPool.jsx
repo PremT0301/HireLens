@@ -57,12 +57,6 @@ const TalentPool = () => {
         }
     };
 
-    const handleOpenActionModal = (candidate) => {
-        setSelectedCandidate(candidate);
-        setModalView('profile');
-        setActiveCandidate(null); // Close chart if open
-    };
-
     const handleScheduleSubmit = async (formData) => {
         try {
             await ApplicationService.scheduleInterview(selectedCandidate.id, formData);
@@ -82,8 +76,6 @@ const TalentPool = () => {
             addToast('Failed to schedule interview', 'error');
         }
     };
-
-
 
     const handleReject = (candidate) => {
         setSelectedCandidate(candidate);
@@ -531,7 +523,7 @@ const TalentPool = () => {
                     modalView === 'profile' ? "Candidate Profile" :
                         modalView === 'schedule' ? "Schedule Interview" :
                             modalView === 'reject-confirmation' ? "Confirm Action" :
-                                "Send Message"
+                                "Candidate Action"
                 }
             >
                 {selectedCandidate && (

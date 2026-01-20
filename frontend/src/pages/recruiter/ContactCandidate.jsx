@@ -15,17 +15,47 @@ const ContactCandidate = () => {
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
 
-    const [formData, setFormData] = useState({
-        subject: '',
-        message: ''
-    });
+    const [messageType, setMessageType] = useState('interview'); // 'interview', 'follow_up', 'rejection'
+
+    const TEMPLATES = {
+        interview: {
+            subject: 'Interview Availability – SmartHireAI',
+            message: (name) => `Hi ${name || 'Candidate'},
+We’ve reviewed your application and would like to schedule an interview to discuss your experience in more detail.
+Please let us know your availability for the coming week.
+Best regards,
+The Hiring Team`
+        },
+        follow_up: {
+            subject: 'Following Up on Your Application – SmartHireAI',
+            message: (name) => `Hi ${name || 'Candidate'},
+We’re following up regarding your application. Our team is currently reviewing profiles, and we’ll get back to you shortly with an update.
+Thank you for your patience.
+Best regards,
+The Hiring Team`
+        },
+        rejection: {
+            subject: 'Update on Your Application – SmartHireAI',
+            message: (name) => `Hi ${name || 'Candidate'},
+Thank you for taking the time to apply. After careful consideration, we’ve decided to move forward with other candidates whose experience more closely matches our current needs.
+We appreciate your interest and encourage you to apply again in the future.
+Best regards,
+The Hiring Team`
+        }
+    };
 
     useEffect(() => {
         const fetchDetails = async () => {
             try {
                 const data = await ApplicationService.getApplicationDetails(applicationId);
                 setApplication(data);
-                setFormData(prev => ({ ...prev, subject: `Regarding your application for ${data.role}` }));
+
+                // Initialize with Interview Request template
+                const template = TEMPLATES['interview'];
+                setFormData({
+                    subject: template.subject,
+                    message: template.message(data.name)
+                });
             } catch (error) {
                 console.error("Failed to load application details", error);
                 addToast("Failed to load candidate details", "error");
@@ -35,7 +65,18 @@ const ContactCandidate = () => {
             }
         };
         fetchDetails();
-    }, [applicationId, addToast, navigate]);
+    }, [applicationId, addToast, navigate]); // Removed TEMPLATES from deps to avoid infinite loop if defined inside render (moved outside or stable)
+
+    const handleMessageTypeChange = (type) => {
+        setMessageType(type);
+        const template = TEMPLATES[type];
+        if (template && application) {
+            setFormData({
+                subject: template.subject,
+                message: template.message(application.name)
+            });
+        }
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -135,6 +176,34 @@ const ContactCandidate = () => {
 
                 <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
 
+                    {/* Message Type Selector */}
+                    <div style={{ display: 'flex', gap: '10px', marginBottom: '0.5rem' }}>
+                        {[
+                            { id: 'interview', label: 'Interview Request' },
+                            { id: 'follow_up', label: 'Follow Up' },
+                            { id: 'rejection', label: 'Rejection' }
+                        ].map(type => (
+                            <button
+                                key={type.id}
+                                type="button"
+                                onClick={() => handleMessageTypeChange(type.id)}
+                                style={{
+                                    padding: '8px 16px',
+                                    borderRadius: '20px',
+                                    border: messageType === type.id ? '1px solid var(--primary)' : '1px solid var(--border-color)',
+                                    background: messageType === type.id ? 'var(--primary-light)' : 'transparent',
+                                    color: messageType === type.id ? 'var(--primary)' : 'var(--text-secondary)',
+                                    fontWeight: '500',
+                                    fontSize: '0.9rem',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s'
+                                }}
+                            >
+                                {type.label}
+                            </button>
+                        ))}
+                    </div>
+
                     {/* Subject Row */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                         <label style={{ fontSize: '0.95rem', fontWeight: 500, color: 'var(--text-primary)' }}>Subject <span style={{ color: 'var(--error)' }}>*</span></label>
@@ -157,7 +226,7 @@ const ContactCandidate = () => {
                         <div className="input-group" style={{ display: 'flex', alignItems: 'flex-start', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '0.75rem 1rem' }}>
                             <AlignLeft size={18} style={{ color: 'var(--text-secondary)', marginRight: '10px', marginTop: '4px' }} />
                             <textarea
-                                rows="8"
+                                rows="12"
                                 required
                                 placeholder="Type your message here..."
                                 style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', width: '100%', outline: 'none', fontSize: '1rem', resize: 'vertical' }}

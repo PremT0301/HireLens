@@ -290,3 +290,38 @@
 19-01-2026 13:58:47: [Inbox] Recruiter found: d0e19413-e81b-4793-b29f-00975e5ff650
 19-01-2026 13:58:47: [Inbox] Query matched 0 threads.
 19-01-2026 13:58:47: [Inbox] Mapped 0 threads successfully.
+20-01-2026 10:23:13: [Inbox] GetThreads called. UserIdString: 27e07612-ef2f-472c-b89b-7a1a78011c50
+20-01-2026 10:23:13: [Inbox] User Role: recruiter
+20-01-2026 10:23:13: [Inbox] Recruiter found: 27e07612-ef2f-472c-b89b-7a1a78011c50
+20-01-2026 10:23:13: [Inbox] Query matched 0 threads.
+20-01-2026 10:23:13: [Inbox] Mapped 0 threads successfully.
+20-01-2026 10:23:13: [Inbox] GetThreads called. UserIdString: 27e07612-ef2f-472c-b89b-7a1a78011c50
+20-01-2026 10:23:13: [Inbox] User Role: recruiter
+20-01-2026 10:23:13: [Inbox] Recruiter found: 27e07612-ef2f-472c-b89b-7a1a78011c50
+20-01-2026 10:23:13: [Inbox] Query matched 0 threads.
+20-01-2026 10:23:13: [Inbox] Mapped 0 threads successfully.
+20-01-2026 10:28:36: [Inbox] GetThreads called. UserIdString: d0e19413-e81b-4793-b29f-00975e5ff650
+20-01-2026 10:28:36: [Inbox] User Role: recruiter
+20-01-2026 10:28:36: [Inbox] Recruiter found: d0e19413-e81b-4793-b29f-00975e5ff650
+20-01-2026 10:28:36: [Inbox] Query matched 1 threads.
+20-01-2026 10:28:36: [Inbox] Mapped 1 threads successfully.
+20-01-2026 10:28:36: [Inbox] GetThreads called. UserIdString: d0e19413-e81b-4793-b29f-00975e5ff650
+20-01-2026 10:28:36: [Inbox] User Role: recruiter
+20-01-2026 10:28:36: [Inbox] Recruiter found: d0e19413-e81b-4793-b29f-00975e5ff650
+20-01-2026 10:28:36: [Inbox] Query matched 1 threads.
+20-01-2026 10:28:36: [Inbox] Mapped 1 threads successfully.
+20-01-2026 10:30:32: [Inbox] GetThreads called. UserIdString: a16fb980-4e45-4766-b10c-cb23191c1a41
+20-01-2026 10:30:32: [Inbox] User Role: applicant
+20-01-2026 10:30:32: [Inbox] Applicant found: a16fb980-4e45-4766-b10c-cb23191c1a41
+20-01-2026 10:30:32: [Inbox] Query matched 1 threads.
+20-01-2026 10:30:32: [Inbox] Mapped 1 threads successfully.
+20-01-2026 10:30:32: [Inbox] GetThreads called. UserIdString: a16fb980-4e45-4766-b10c-cb23191c1a41
+20-01-2026 10:30:32: [Inbox] User Role: applicant
+20-01-2026 10:30:32: [Inbox] Applicant found: a16fb980-4e45-4766-b10c-cb23191c1a41
+20-01-2026 10:30:32: [Inbox] Query matched 1 threads.
+20-01-2026 10:30:32: [Inbox] Mapped 1 threads successfully.
+20-01-2026 10:30:37: [Inbox] GetThreads called. UserIdString: a16fb980-4e45-4766-b10c-cb23191c1a41
+20-01-2026 10:30:37: [Inbox] User Role: applicant
+20-01-2026 10:30:37: [Inbox] Applicant found: a16fb980-4e45-4766-b10c-cb23191c1a41
+20-01-2026 10:30:37: [Inbox] Query matched 1 threads.
+20-01-2026 10:30:37: [Inbox] Mapped 1 threads successfully.
