@@ -107,7 +107,7 @@ public class ApplicationsController : ControllerBase
             .Include(a => a.JobDescription)
             .Include(a => a.Applicant)
             .ThenInclude(app => app.User)
-            .Where(a => a.JobDescription.RecruiterId == recruiter.RecruiterId)
+            .Where(a => a.JobDescription.RecruiterId == recruiter.RecruiterId && a.Status != "Rejected")
             .OrderByDescending(a => a.AppliedAt)
             .Take(10)
             .Select(a => new
@@ -140,6 +140,7 @@ public class ApplicationsController : ControllerBase
     }
 
     // POST: api/applications/apply
+    // POST: api/applications/apply
     [HttpPost("apply")]
     [Authorize]
     public async Task<IActionResult> Apply(Guid jobId)
@@ -147,7 +148,10 @@ public class ApplicationsController : ControllerBase
         var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (!Guid.TryParse(userIdString, out var userId)) return Unauthorized();
 
-        var applicant = await _context.Applicants.FirstOrDefaultAsync(a => a.User.UserId == userId);
+        var applicant = await _context.Applicants
+            .Include(a => a.User) // Include User for Name/Email
+            .FirstOrDefaultAsync(a => a.User.UserId == userId);
+
         if (applicant == null) return BadRequest("Must be an applicant profile to apply");
 
         // Check if already applied
@@ -159,8 +163,12 @@ public class ApplicationsController : ControllerBase
             return BadRequest($"Already applied to this job. Status is: {existingApp.Status}");
         }
 
-        // Get Job Description
-        var job = await _context.JobDescriptions.FindAsync(jobId);
+        // Get Job Description with Recruiter info
+        var job = await _context.JobDescriptions
+            .Include(j => j.Recruiter)
+            .ThenInclude(r => r.User)
+            .FirstOrDefaultAsync(j => j.JobId == jobId);
+
         if (job == null) return NotFound("Job not found");
 
         // Get Latest Resume
@@ -191,21 +199,77 @@ public class ApplicationsController : ControllerBase
             existingApp.MeetingLink = null;
 
             await _context.SaveChangesAsync();
-            return Ok(new { Message = "Re-application submitted successfully", Score = finalScore });
+
+            // Send Notification for Re-application as well? Requirement says "When an applicant completes an application". 
+            // Reuse logic below or extract to method. For now, assuming "new applicant" focus, but re-application is also an "application".
+            // Let's include it for completeness, or just duplicate the logic briefly since it's cleaner than refactoring the whole method right now.
+            // Actually, requirements say "New applicant has applied". I'll treat re-apply as apply.
+            // But strict requirement: "application submission". Reapply is a submission.
+        }
+        else
+        {
+            var app = new JobApplication
+            {
+                ApplicationId = Guid.NewGuid(),
+                JobId = jobId,
+                ApplicantId = applicant.ApplicantId,
+                Status = "Applied",
+                AppliedAt = DateTime.UtcNow,
+                AtsScore = finalScore
+            };
+
+            _context.JobApplications.Add(app);
+            await _context.SaveChangesAsync();
         }
 
-        var app = new JobApplication
+        // --- Send Email Notification to Recruiter ---
+        if (job.Recruiter?.User?.Email != null)
         {
-            ApplicationId = Guid.NewGuid(),
-            JobId = jobId,
-            ApplicantId = applicant.ApplicantId,
-            Status = "Applied",
-            AppliedAt = DateTime.UtcNow,
-            AtsScore = finalScore
-        };
+            try
+            {
+                var recruiterEmail = job.Recruiter.User.Email;
+                var jobTitle = job.Title;
+                var candidateName = applicant.User?.FullName ?? "Unknown Candidate";
+                var candidateEmail = applicant.User?.Email ?? "No Email";
+                var candidateExperience = $"{applicant.ExperienceYears} years";
+                var matchScore = (int)finalScore;
 
-        _context.JobApplications.Add(app);
-        await _context.SaveChangesAsync();
+                string subject = $"New Job Application Received – {jobTitle}";
+                string body = $@"
+                    <div style='font-family: Arial, sans-serif;'>
+                        <p>Hi Team,</p>
+                        <p>A new applicant has applied for the position of <strong>{jobTitle}</strong>.</p>
+                        <br/>
+                        <p><strong>Applicant Details:</strong></p>
+                        <p>Name: {candidateName}</p>
+                        <p>Email: {candidateEmail}</p>
+                        <p>Experience: {candidateExperience}</p>
+                        <p>Match Score: {matchScore}%</p>
+                        <br/>
+                        <p>You can review the applicant profile and resume from the recruiter dashboard.</p>
+                        <br/>
+                        <p>Best regards,</p>
+                        <p>SmartHireAI Team</p>
+                    </div>";
+
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        await _emailService.SendEmailAsync(recruiterEmail, subject, body);
+                        Console.WriteLine($"[{DateTime.UtcNow}] [Notification] New Application email sent to {recruiterEmail} (JobId: {jobId}, ApplicantId: {applicant.ApplicantId})");
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"[Error] Failed to send new application email: {ex.Message}");
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Error] Recruiter notification logic failed: {ex.Message}");
+            }
+        }
 
         return Ok(new { Message = "Application submitted successfully", Score = finalScore });
     }
@@ -367,7 +431,7 @@ public class ApplicationsController : ControllerBase
             .ThenInclude(app => app.User)
             .Include(a => a.Applicant.Education) // Include Education
             .Include(a => a.JobDescription)
-            .Where(a => a.JobDescription.RecruiterId == recruiter.RecruiterId)
+            .Where(a => a.JobDescription.RecruiterId == recruiter.RecruiterId && a.Status != "Rejected")
             .Select(a => new
             {
                 a.ApplicationId,
@@ -484,11 +548,58 @@ public class ApplicationsController : ControllerBase
     [Authorize]
     public async Task<IActionResult> UpdateStatus(Guid id, [FromBody] StatusDto request)
     {
-        var app = await _context.JobApplications.FindAsync(id);
+        var app = await _context.JobApplications
+            .Include(a => a.Applicant).ThenInclude(user => user.User)
+            .Include(a => a.JobDescription).ThenInclude(job => job.Recruiter)
+            .FirstOrDefaultAsync(a => a.ApplicationId == id); // Include necessary data
+
         if (app == null) return NotFound("Application not found");
 
+        var oldStatus = app.Status;
         app.Status = request.Status;
         await _context.SaveChangesAsync();
+
+        // Check if transitioning to Rejected
+        if (!string.Equals(oldStatus, "Rejected", StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(request.Status, "Rejected", StringComparison.OrdinalIgnoreCase))
+        {
+            var applicantUser = app.Applicant?.User;
+            if (applicantUser != null && !string.IsNullOrEmpty(applicantUser.Email))
+            {
+                try
+                {
+                    string candidateName = applicantUser.FullName ?? "Candidate";
+                    string subject = "Update on Your Application – SmartHireAI";
+                    string body = $@"
+                        <div style='font-family: Arial, sans-serif;'>
+                            <p>Hi {candidateName},</p>
+                            <p>Thank you for taking the time to apply. After careful consideration, we’ve decided to move forward with other candidates whose experience more closely matches our current needs.</p>
+                            <p>We appreciate your interest and encourage you to apply again in the future.</p>
+                            <br/>
+                            <p>Best regards,</p>
+                            <p>The Hiring Team</p>
+                        </div>";
+
+                    // Run in background to not block response
+                    _ = Task.Run(async () =>
+                    {
+                        try
+                        {
+                            await _emailService.SendEmailAsync(applicantUser.Email, subject, body);
+                            Console.WriteLine($"[{DateTime.UtcNow}] [Notification] Rejection email sent to {applicantUser.Email} (ApplicantId: {app.ApplicantId}, RecruiterId: {app.JobDescription?.RecruiterId})");
+                        }
+                        catch (Exception emailEx)
+                        {
+                            Console.WriteLine($"[Error] Failed to send rejection email: {emailEx.Message}");
+                        }
+                    });
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[Error] Rejection logic failed: {ex.Message}");
+                }
+            }
+        }
 
         return Ok(new { Message = "Status updated successfully" });
     }

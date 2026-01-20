@@ -11,7 +11,7 @@ import HireLensLoader from '../../components/ui/HireLensLoader';
 import ApplicationService from '../../api/applicationService';
 import { useToast } from '../../context/ToastContext';
 import ScheduleForm from '../../components/forms/ScheduleForm';
-import MessageForm from '../../components/forms/MessageForm';
+
 import Modal from '../../components/ui/Modal';
 import api from '../../api/axios';
 
@@ -73,16 +73,7 @@ const CandidateProfile = () => {
         }
     };
 
-    const handleMessageSubmit = async (formData) => {
-        try {
-            await ApplicationService.sendMessage(candidate.applicationId, formData);
-            addToast('Message sent successfully', 'success');
-            setModalView(null);
-        } catch (error) {
-            console.error("Failed to send message", error);
-            addToast('Failed to send message', 'error');
-        }
-    };
+
 
 
     const handleHire = async () => {
@@ -207,9 +198,9 @@ const CandidateProfile = () => {
                         <button
                             className="btn-ghost"
                             style={{ border: '1px solid var(--border-color)', height: '48px', padding: '0 20px' }}
-                            onClick={() => setModalView('message')}
+                            onClick={() => navigate(`/recruiter/contact/${candidate.applicationId}`)}
                         >
-                            <Mail size={18} style={{ marginRight: '8px' }} /> Message
+                            <Mail size={18} style={{ marginRight: '8px' }} /> Contact Candidate
                         </button>
                         <button
                             className="btn-primary"
@@ -424,7 +415,7 @@ const CandidateProfile = () => {
             <Modal
                 isOpen={!!modalView}
                 onClose={() => setModalView(null)}
-                title={modalView === 'schedule' ? "Schedule Interview" : "Send Message"}
+                title={modalView === 'schedule' ? "Schedule Interview" : "Actions"}
             >
                 {modalView === 'schedule' && (
                     <ScheduleForm
@@ -433,10 +424,9 @@ const CandidateProfile = () => {
                     />
                 )}
 
-                {modalView === 'message' && (
-                    <MessageForm
-                        candidateName={candidate.name}
-                        onSubmit={handleMessageSubmit}
+                {modalView === 'schedule' && (
+                    <ScheduleForm
+                        onSubmit={handleScheduleSubmit}
                         onCancel={() => setModalView(null)}
                     />
                 )}

@@ -44,6 +44,11 @@ The Hiring Team`
         }
     };
 
+    const [formData, setFormData] = useState({
+        subject: '',
+        message: ''
+    });
+
     useEffect(() => {
         const fetchDetails = async () => {
             try {
