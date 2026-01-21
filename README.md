@@ -272,6 +272,31 @@ npm run dev
 ```
 *Verify at: http://localhost:5173*
 
+### Step 4: Enable Email Verification on External Devices (Optional) 📧
+
+To test email verification from mobile devices or other computers during development:
+
+```bash
+# Install ngrok
+choco install ngrok
+
+# Start ngrok tunnel (in a new terminal)
+ngrok http 5000 --host-header="localhost:5000"
+
+# Set environment variable with your ngrok URL
+$env:AppSettings__BaseUrl="https://your-ngrok-url.ngrok-free.app"
+
+# Restart backend server
+cd D:/HireLens/backend/SmartHireAI.Backend
+dotnet run
+```
+
+**📖 Detailed Guide:** See [TUNNELING_SETUP.md](TUNNELING_SETUP.md) for complete instructions.
+
+**Why?** Email verification links default to `localhost:5173`, which only works on your development machine. Using ngrok creates a secure HTTPS tunnel, allowing verification links to work from any device.
+
+**Production:** Simply update `AppSettings:BaseUrl` to your production domain - no code changes needed!
+
 ---
 
 ## 📂 Project Directory Structure

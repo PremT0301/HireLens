@@ -237,7 +237,8 @@ public class AuthService : IAuthService
         // 5. Send Verification Email
         try
         {
-            var verificationUrl = $"http://localhost:5173/verify-email?userId={user.UserId}&token={user.VerificationToken}";
+            var baseUrl = _configuration["AppSettings:BaseUrl"] ?? "http://localhost:5173";
+            var verificationUrl = $"{baseUrl}/verify-email?userId={user.UserId}&token={user.VerificationToken}";
             var emailBody = $@"
                 <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; borderRadius: 8px;'>
                     <h2 style='color: #4f46e5;'>Welcome to HireLens AI!</h2>
@@ -386,7 +387,8 @@ public class AuthService : IAuthService
         // Send Email
         try
         {
-            var verificationUrl = $"http://localhost:5173/verify-email?userId={user.UserId}&token={user.VerificationToken}";
+            var baseUrl = _configuration["AppSettings:BaseUrl"] ?? "http://localhost:5173";
+            var verificationUrl = $"{baseUrl}/verify-email?userId={user.UserId}&token={user.VerificationToken}";
             var emailBody = $@"
                 <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;'>
                     <h2 style='color: #4f46e5;'>New Verification Link - HireLens AI</h2>
