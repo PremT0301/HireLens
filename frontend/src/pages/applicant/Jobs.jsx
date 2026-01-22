@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { MapPin, IndianRupee, Building, Calendar } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import JobService from '../../api/jobService';
 import ApplicationService from '../../api/applicationService';
-import HireLensLoader from '../../components/ui/HireLensLoader';
+import Skeleton, { SkeletonList } from '../../components/ui/Skeleton';
+import { NoJobsState } from '../../components/ui/EmptyState';
 import ConfirmationModal from '../../components/ui/ConfirmationModal';
 import { useToast } from '../../context/ToastContext';
 
@@ -171,163 +172,173 @@ const Jobs = () => {
         }
     };
 
-    if (loading) return <HireLensLoader text="Loading Jobs..." />;
+    // Memoize job cards to prevent unnecessary re-renders
+    const jobCards = useMemo(() => {
+        return jobs.map((job) => {
+            const matchScore = job.match || 0;
+            let suitability = { label: 'Needs Improvement', color: 'var(--warning)', bg: 'rgba(251, 191, 36, 0.1)' };
+            if (matchScore >= 80) suitability = { label: 'Highly Suitable', color: 'var(--success)', bg: 'rgba(76, 175, 80, 0.1)' };
+            else if (matchScore >= 60) suitability = { label: 'Suitable', color: 'var(--primary)', bg: 'rgba(59, 130, 246, 0.1)' };
+
+            const application = applications[job.jobId];
+            const statusConfig = application ? getStatusConfig(application.status) : null;
+
+            return (
+                <div key={job.jobId} className="glass-panel" style={{ padding: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+                    <div style={{ flex: 1, minWidth: '250px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '0.5rem' }}>
+                            <h3 style={{ fontSize: '1.3rem' }}>{job.title}</h3>
+
+                            {application ? (
+                                <span style={{
+                                    padding: '4px 12px',
+                                    borderRadius: '20px',
+                                    background: statusConfig.bg,
+                                    color: statusConfig.color,
+                                    fontSize: '0.85rem',
+                                    fontWeight: '600'
+                                }}>
+                                    {statusConfig.label}
+                                </span>
+                            ) : (
+                                job.match && (
+                                    <span style={{
+                                        padding: '4px 12px',
+                                        borderRadius: '20px',
+                                        background: suitability.bg,
+                                        color: suitability.color,
+                                        fontSize: '0.85rem',
+                                        fontWeight: '600',
+                                        border: `1px solid ${suitability.color}`
+                                    }}>
+                                        {suitability.label}
+                                    </span>
+                                )
+                            )}
+                        </div>
+                        <div style={{ display: 'flex', gap: '1.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                            <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Building size={16} /> {job.companyName}</span>
+                            <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><MapPin size={16} /> Remote</span>
+                            <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><IndianRupee size={16} /> ₹{job.salaryMin.toLocaleString()} - ₹{job.salaryMax.toLocaleString()}</span>
+                        </div>
+
+
+                        {/* Interview Details Block */}
+                        {['Interview Scheduled', 'Interview Accepted'].includes(application?.status) && application.interviewDate && (
+                            <div style={{ marginTop: '1.5rem', padding: '1rem', background: 'rgba(59, 130, 246, 0.05)', borderRadius: '12px', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
+                                <h4 style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--primary)', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <Calendar size={16} /> Interview Scheduled
+                                </h4>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'auto auto auto', gap: '1.5rem', fontSize: '0.9rem' }}>
+                                    <div>
+                                        <div className="text-subtle" style={{ fontSize: '0.8rem' }}>Date & Time</div>
+                                        <div style={{ fontWeight: 500 }}>{new Date(application.interviewDate).toLocaleString()}</div>
+                                    </div>
+                                    <div>
+                                        <div className="text-subtle" style={{ fontSize: '0.8rem' }}>Mode</div>
+                                        <div style={{ fontWeight: 500 }}>{application.interviewMode}</div>
+                                    </div>
+                                    {application.meetingLink && (
+                                        <div>
+                                            <div className="text-subtle" style={{ fontSize: '0.8rem' }}>Link/Location</div>
+                                            <a href={application.meetingLink} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--primary)', textDecoration: 'underline' }}>
+                                                Join / View
+                                            </a>
+                                        </div>
+                                    )}
+                                    {application.roundId && (
+                                        <div>
+                                            <div className="text-subtle" style={{ fontSize: '0.8rem' }}>Round</div>
+                                            <div style={{ fontWeight: 500 }}>{application.roundId}</div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {application?.status === 'Hired' ? (
+                        <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'flex-end',
+                            gap: '0.5rem',
+                            padding: '0.8rem 1.5rem',
+                            background: 'rgba(34, 197, 94, 0.1)',
+                            borderRadius: '12px',
+                            border: '1px solid var(--success)',
+                            color: 'var(--success)',
+                            fontWeight: '600',
+                            marginLeft: 'auto'
+                        }}>
+                            <span style={{ fontSize: '1.2rem' }}>🎉</span>
+                            <span>Congratulations! You've been hired!</span>
+                        </div>
+                    ) : (
+                        <div style={{ display: 'flex', gap: '1rem' }}>
+                            <button
+                                className="btn-ghost"
+                                style={{ border: '1px solid var(--glass-border)' }}
+                                onClick={() => navigate(`/applicant/jobs/${job.jobId}`)}
+                            >
+                                View Details
+                            </button>
+
+                            {!application || application.status === 'Rejected' ? (
+                                <button onClick={() => handleAnalyze(job)} className="btn-primary">
+                                    {resumeData ? 'Check Readiness' : 'Analyze Fit'}
+                                </button>
+                            ) : null}
+
+                            {application && application.status === 'Interview Scheduled' && (
+                                <button
+                                    onClick={() => handleAcceptInterview(application)}
+                                    className="btn-primary"
+                                    style={{ background: 'var(--success)', border: 'none' }}
+                                >
+                                    Accept Interview
+                                </button>
+                            )}
+
+                            {application && application.status !== 'Rejected' ? (
+                                <button
+                                    className="btn-ghost"
+                                    style={{ color: 'var(--error)', border: '1px solid var(--error)' }}
+                                    onClick={() => openWithdrawModal(job)}
+                                >
+                                    Withdraw
+                                </button>
+                            ) : (
+                                <button
+                                    className="btn-primary"
+                                    style={{ background: 'var(--success)', border: 'none' }}
+                                    onClick={() => openApplyModal(job)}
+                                >
+                                    {application && application.status === 'Rejected' ? 'Reapply' : 'Apply'}
+                                </button>
+                            )}
+                        </div>
+                    )}
+                </div>
+            );
+        });
+    }, [jobs, applications, resumeData, navigate]);
 
     return (
         <div>
             <h1 className="gradient-text" style={{ fontSize: '2rem', marginBottom: '2rem' }}>Available Jobs</h1>
 
-            <div style={{ display: 'grid', gap: '1.5rem' }}>
-                {jobs.map((job) => {
-                    // Replicated logic because getSuitability removed
-                    const matchScore = job.match || 0;
-                    let suitability = { label: 'Needs Improvement', color: 'var(--warning)', bg: 'rgba(251, 191, 36, 0.1)' };
-                    if (matchScore >= 80) suitability = { label: 'Highly Suitable', color: 'var(--success)', bg: 'rgba(76, 175, 80, 0.1)' };
-                    else if (matchScore >= 60) suitability = { label: 'Suitable', color: 'var(--primary)', bg: 'rgba(59, 130, 246, 0.1)' };
-
-                    const application = applications[job.jobId];
-                    const statusConfig = application ? getStatusConfig(application.status) : null;
-
-                    return (
-                        <div key={job.jobId} className="glass-panel" style={{ padding: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-                            <div style={{ flex: 1, minWidth: '250px' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '0.5rem' }}>
-                                    <h3 style={{ fontSize: '1.3rem' }}>{job.title}</h3>
-
-                                    {application ? (
-                                        <span style={{
-                                            padding: '4px 12px',
-                                            borderRadius: '20px',
-                                            background: statusConfig.bg,
-                                            color: statusConfig.color,
-                                            fontSize: '0.85rem',
-                                            fontWeight: '600'
-                                        }}>
-                                            {statusConfig.label}
-                                        </span>
-                                    ) : (
-                                        job.match && (
-                                            <span style={{
-                                                padding: '4px 12px',
-                                                borderRadius: '20px',
-                                                background: suitability.bg,
-                                                color: suitability.color,
-                                                fontSize: '0.85rem',
-                                                fontWeight: '600',
-                                                border: `1px solid ${suitability.color}`
-                                            }}>
-                                                {suitability.label}
-                                            </span>
-                                        )
-                                    )}
-                                </div>
-                                <div style={{ display: 'flex', gap: '1.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Building size={16} /> {job.companyName}</span>
-                                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><MapPin size={16} /> Remote</span>
-                                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><IndianRupee size={16} /> ₹{job.salaryMin.toLocaleString()} - ₹{job.salaryMax.toLocaleString()}</span>
-                                </div>
-
-
-                                {/* Interview Details Block */}
-                                {['Interview Scheduled', 'Interview Accepted'].includes(application?.status) && application.interviewDate && (
-                                    <div style={{ marginTop: '1.5rem', padding: '1rem', background: 'rgba(59, 130, 246, 0.05)', borderRadius: '12px', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
-                                        <h4 style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--primary)', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                            <Calendar size={16} /> Interview Scheduled
-                                        </h4>
-                                        <div style={{ display: 'grid', gridTemplateColumns: 'auto auto auto', gap: '1.5rem', fontSize: '0.9rem' }}>
-                                            <div>
-                                                <div className="text-subtle" style={{ fontSize: '0.8rem' }}>Date & Time</div>
-                                                <div style={{ fontWeight: 500 }}>{new Date(application.interviewDate).toLocaleString()}</div>
-                                            </div>
-                                            <div>
-                                                <div className="text-subtle" style={{ fontSize: '0.8rem' }}>Mode</div>
-                                                <div style={{ fontWeight: 500 }}>{application.interviewMode}</div>
-                                            </div>
-                                            {application.meetingLink && (
-                                                <div>
-                                                    <div className="text-subtle" style={{ fontSize: '0.8rem' }}>Link/Location</div>
-                                                    <a href={application.meetingLink} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--primary)', textDecoration: 'underline' }}>
-                                                        Join / View
-                                                    </a>
-                                                </div>
-                                            )}
-                                            {application.roundId && (
-                                                <div>
-                                                    <div className="text-subtle" style={{ fontSize: '0.8rem' }}>Round</div>
-                                                    <div style={{ fontWeight: 500 }}>{application.roundId}</div>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-
-                            {application?.status === 'Hired' ? (
-                                <div style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'flex-end',
-                                    gap: '0.5rem',
-                                    padding: '0.8rem 1.5rem',
-                                    background: 'rgba(34, 197, 94, 0.1)',
-                                    borderRadius: '12px',
-                                    border: '1px solid var(--success)',
-                                    color: 'var(--success)',
-                                    fontWeight: '600',
-                                    marginLeft: 'auto'
-                                }}>
-                                    <span style={{ fontSize: '1.2rem' }}>🎉</span>
-                                    <span>Congratulations! You've been hired!</span>
-                                </div>
-                            ) : (
-                                <div style={{ display: 'flex', gap: '1rem' }}>
-                                    <button
-                                        className="btn-ghost"
-                                        style={{ border: '1px solid var(--glass-border)' }}
-                                        onClick={() => navigate(`/applicant/jobs/${job.jobId}`)}
-                                    >
-                                        View Details
-                                    </button>
-
-                                    {!application || application.status === 'Rejected' ? (
-                                        <button onClick={() => handleAnalyze(job)} className="btn-primary">
-                                            {resumeData ? 'Check Readiness' : 'Analyze Fit'}
-                                        </button>
-                                    ) : null}
-
-                                    {application && application.status === 'Interview Scheduled' && (
-                                        <button
-                                            onClick={() => handleAcceptInterview(application)}
-                                            className="btn-primary"
-                                            style={{ background: 'var(--success)', border: 'none' }}
-                                        >
-                                            Accept Interview
-                                        </button>
-                                    )}
-
-                                    {application && application.status !== 'Rejected' ? (
-                                        <button
-                                            className="btn-ghost"
-                                            style={{ color: 'var(--error)', border: '1px solid var(--error)' }}
-                                            onClick={() => openWithdrawModal(job)}
-                                        >
-                                            Withdraw
-                                        </button>
-                                    ) : (
-                                        <button
-                                            className="btn-primary"
-                                            style={{ background: 'var(--success)', border: 'none' }}
-                                            onClick={() => openApplyModal(job)}
-                                        >
-                                            {application && application.status === 'Rejected' ? 'Reapply' : 'Apply'}
-                                        </button>
-                                    )}
-                                </div>
-                            )}
-                        </div>
-                    );
-                })}
-            </div>
+            {loading ? (
+                <div style={{ display: 'grid', gap: '1.5rem' }}>
+                    <SkeletonList count={5} itemHeight="180px" />
+                </div>
+            ) : jobs.length === 0 ? (
+                <NoJobsState onAction={() => window.location.reload()} />
+            ) : (
+                <div style={{ display: 'grid', gap: '1.5rem' }}>
+                    {jobCards}
+                </div>
+            )}
 
             <ConfirmationModal
                 isOpen={modalConfig.isOpen}

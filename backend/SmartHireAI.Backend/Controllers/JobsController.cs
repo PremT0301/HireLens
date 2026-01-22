@@ -197,7 +197,7 @@ public class JobsController : ControllerBase
 
     // POST: api/jobs
     [HttpPost]
-    [Authorize] // Ideally specific to Recruiter role
+    [Authorize(Roles = "Recruiter")]
     public async Task<ActionResult<JobDto>> CreateJob(CreateJobDto request)
     {
         var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -210,15 +210,7 @@ public class JobsController : ControllerBase
         var recruiter = await _context.Recruiters.FirstOrDefaultAsync(r => r.User.UserId == userId);
         if (recruiter == null)
         {
-            // Auto-create recruiter profile if missing (simplified for prototype)
-            recruiter = new Recruiter
-            {
-                RecruiterId = Guid.NewGuid(),
-                User = await _context.Users.FindAsync(userId) ?? throw new Exception("User not found"),
-                CompanyName = "My Company" // Placeholder
-            };
-            _context.Recruiters.Add(recruiter);
-            await _context.SaveChangesAsync();
+            return Forbid("Recruiter profile required. Please complete your profile setup.");
         }
 
         var job = new JobDescription
@@ -289,17 +281,30 @@ public class JobsController : ControllerBase
 
     // PUT: api/jobs/5
     [HttpPut("{id}")]
-    [Authorize]
+    [Authorize(Roles = "Recruiter")]
     public async Task<IActionResult> UpdateJob(Guid id, UpdateJobDto request)
     {
-        var job = await _context.JobDescriptions.FindAsync(id);
-        if (job == null)
+        // Get authenticated recruiter
+        var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
         {
-            return NotFound();
+            return Unauthorized();
         }
 
-        // Verify ownership (simplified)
-        // In real app, check if current user matches job.Recruiter.UserId
+        var recruiter = await _context.Recruiters.FirstOrDefaultAsync(r => r.User.UserId == userId);
+        if (recruiter == null)
+        {
+            return Forbid("Recruiter profile not found.");
+        }
+
+        // Verify ownership - only allow updating jobs owned by this recruiter
+        var job = await _context.JobDescriptions
+            .FirstOrDefaultAsync(j => j.JobId == id && j.RecruiterId == recruiter.RecruiterId);
+
+        if (job == null)
+        {
+            return NotFound(); // Don't reveal if job exists but isn't owned by this recruiter
+        }
 
         job.Title = request.Title;
         job.RequiredSkills = request.RequiredSkills;
@@ -356,13 +361,29 @@ public class JobsController : ControllerBase
 
     // DELETE: api/jobs/5
     [HttpDelete("{id}")]
-    [Authorize]
+    [Authorize(Roles = "Recruiter")]
     public async Task<IActionResult> DeleteJob(Guid id)
     {
-        var job = await _context.JobDescriptions.FindAsync(id);
+        // Get authenticated recruiter
+        var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
+        {
+            return Unauthorized();
+        }
+
+        var recruiter = await _context.Recruiters.FirstOrDefaultAsync(r => r.User.UserId == userId);
+        if (recruiter == null)
+        {
+            return Forbid("Recruiter profile not found.");
+        }
+
+        // Verify ownership - only allow deleting jobs owned by this recruiter
+        var job = await _context.JobDescriptions
+            .FirstOrDefaultAsync(j => j.JobId == id && j.RecruiterId == recruiter.RecruiterId);
+
         if (job == null)
         {
-            return NotFound();
+            return NotFound(); // Don't reveal if job exists but isn't owned by this recruiter
         }
 
         _context.JobDescriptions.Remove(job);

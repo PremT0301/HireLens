@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
 import { Send, Mic, Volume2, Loader2, Plus, MessageSquare, Trash2, X, AlertTriangle } from 'lucide-react';
+import Skeleton from '../../components/ui/Skeleton';
+import { NoSessionsState } from '../../components/ui/EmptyState';
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { createPortal } from 'react-dom';
+import { jwtDecode } from 'jwt-decode';
 
 const InterviewCopilot = () => {
     // ... existing state ...
@@ -18,6 +21,7 @@ const InterviewCopilot = () => {
     // State for sessions
     const [sessions, setSessions] = useState([]);
     const [currentSessionId, setCurrentSessionId] = useState(null);
+    const [sessionsLoading, setSessionsLoading] = useState(true);
 
     // Create Modal State
     const [createModal, setCreateModal] = useState({ show: false });
@@ -26,14 +30,47 @@ const InterviewCopilot = () => {
     // Delete Modal State
     const [deleteModal, setDeleteModal] = useState({ show: false, sessionId: null });
 
+    // Extract userId from JWT token for session isolation
+    const getUserId = () => {
+        try {
+            const token = sessionStorage.getItem('token');
+            if (!token) {
+                console.error('No authentication token found');
+                return null;
+            }
+            const decoded = jwtDecode(token);
+            console.log('Decoded JWT:', decoded); // Debug log
+            // Extract userId from ClaimTypes.NameIdentifier (ASP.NET Core format)
+            const userId = decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier']
+                || decoded.nameid
+                || decoded.sub
+                || decoded.userId;
+            console.log('Extracted userId:', userId); // Debug logy
+            return userId;
+        } catch (err) {
+            console.error('Failed to decode JWT token:', err);
+            return null;
+        }
+    };
+
     // Initial load
     React.useEffect(() => {
         fetchSessions();
     }, []);
 
     const fetchSessions = async () => {
+        const userId = getUserId();
+        if (!userId) {
+            console.error('Cannot fetch sessions: User not authenticated');
+            setSessionsLoading(false);
+            return;
+        }
+
         try {
-            const res = await axios.get('http://localhost:8000/chat/sessions');
+            setSessionsLoading(true);
+            const res = await axios.get('http://localhost:8000/chat/sessions', {
+                params: { applicant_id: userId }
+            });
             setSessions(res.data);
 
             // If we have sessions but no current one selected, select the most recent
@@ -43,6 +80,11 @@ const InterviewCopilot = () => {
             }
         } catch (err) {
             console.error("Failed to fetch sessions", err);
+            if (err.response?.status === 403) {
+                console.error('Access denied: Session belongs to another applicant');
+            }
+        } finally {
+            setSessionsLoading(false);
         }
     };
 
@@ -54,9 +96,15 @@ const InterviewCopilot = () => {
     const confirmCreateSession = async () => {
         if (!newSessionTitle.trim()) return;
 
+        const userId = getUserId();
+        if (!userId) {
+            console.error('Cannot create session: User not authenticated');
+            return;
+        }
+
         try {
             const res = await axios.post('http://localhost:8000/chat/sessions', null, {
-                params: { title: newSessionTitle }
+                params: { title: newSessionTitle, applicant_id: userId }
             });
             setSessions(prev => [res.data, ...prev]);
             setCurrentSessionId(res.data.id);
@@ -76,8 +124,16 @@ const InterviewCopilot = () => {
         const sessionId = deleteModal.sessionId;
         if (!sessionId) return;
 
+        const userId = getUserId();
+        if (!userId) {
+            console.error('Cannot delete session: User not authenticated');
+            return;
+        }
+
         try {
-            await axios.delete(`http://localhost:8000/chat/sessions/${sessionId}`);
+            await axios.delete(`http://localhost:8000/chat/sessions/${sessionId}`, {
+                params: { applicant_id: userId }
+            });
             setSessions(prev => prev.filter(s => s.id !== sessionId));
 
             // If deleted session was active, reset view
@@ -88,13 +144,24 @@ const InterviewCopilot = () => {
             setDeleteModal({ show: false, sessionId: null });
         } catch (err) {
             console.error("Failed to delete session", err);
+            if (err.response?.status === 403) {
+                alert('Access denied: This session belongs to another applicant');
+            }
         }
     };
 
     const loadSession = async (sessionId) => {
+        const userId = getUserId();
+        if (!userId) {
+            console.error('Cannot load session: User not authenticated');
+            return;
+        }
+
         try {
             setIsLoading(true);
-            const res = await axios.get(`http://localhost:8000/chat/sessions/${sessionId}`);
+            const res = await axios.get(`http://localhost:8000/chat/sessions/${sessionId}`, {
+                params: { applicant_id: userId }
+            });
             setCurrentSessionId(sessionId);
 
             // Convert DB messages to UI format
@@ -111,6 +178,10 @@ const InterviewCopilot = () => {
             }
         } catch (err) {
             console.error("Failed to load session", err);
+            if (err.response?.status === 403) {
+                alert('Access denied: This session belongs to another applicant');
+                setCurrentSessionId(null);
+            }
         } finally {
             setIsLoading(false);
         }
@@ -119,13 +190,23 @@ const InterviewCopilot = () => {
     const handleSend = async () => {
         if (!input.trim() || isLoading) return;
 
+        const userId = getUserId();
+        if (!userId) {
+            console.error('Cannot send message: User not authenticated');
+            alert('Please login to use the Interview Copilot');
+            return;
+        }
+
         // Ensure we have a session
         let activeSessionId = currentSessionId;
         if (!activeSessionId) {
             // Create session implicitly if none exists
             try {
                 const res = await axios.post('http://localhost:8000/chat/sessions', null, {
-                    params: { title: `${input.substring(0, 30)}${input.length > 30 ? '...' : ''}` }
+                    params: {
+                        title: `${input.substring(0, 30)}${input.length > 30 ? '...' : ''}`,
+                        applicant_id: userId
+                    }
                 });
                 setSessions(prev => [res.data, ...prev]);
                 activeSessionId = res.data.id;
@@ -190,54 +271,58 @@ const InterviewCopilot = () => {
                 </div>
                 <div style={{ flex: 1, overflowY: 'auto', padding: '15px' }}>
 
-                    {sessions.map(session => (
-                        <div
-                            key={session.id}
-                            onClick={() => loadSession(session.id)}
-                            className="hover-lift"
-                            style={{
-                                padding: '12px',
-                                borderRadius: '8px',
-                                background: currentSessionId === session.id ? 'rgba(79, 70, 229, 0.2)' : 'rgba(255,255,255,0.05)',
-                                marginBottom: '10px',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '10px',
-                                border: currentSessionId === session.id ? '1px solid var(--primary)' : '1px solid transparent',
-                                position: 'relative' // For absolute positioning of trash if needed, or flex
-                            }}
-                        >
-                            <MessageSquare size={18} style={{ color: 'var(--primary)', opacity: 0.8 }} />
-                            <div style={{ overflow: 'hidden', flex: 1 }}>
-                                <div style={{ fontWeight: '600', fontSize: '0.9rem', marginBottom: '4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{session.title}</div>
-                                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                                    {new Date(session.created_at || Date.now()).toLocaleDateString()}
-                                </div>
-                            </div>
-                            <button
-                                onClick={(e) => promptDeleteSession(e, session.id)}
+                    {sessionsLoading ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                            {[1, 2, 3].map(i => (
+                                <Skeleton key={i} variant="list" height="70px" />
+                            ))}
+                        </div>
+                    ) : sessions.length === 0 ? (
+                        <NoSessionsState onAction={openCreateModal} />
+                    ) : (
+                        sessions.map(session => (
+                            <div
+                                key={session.id}
+                                onClick={() => loadSession(session.id)}
+                                className="hover-lift"
                                 style={{
-                                    background: 'none',
-                                    border: 'none',
-                                    color: 'var(--text-secondary)',
-                                    opacity: 0.6,
+                                    padding: '12px',
+                                    borderRadius: '8px',
+                                    background: currentSessionId === session.id ? 'rgba(79, 70, 229, 0.2)' : 'rgba(255,255,255,0.05)',
+                                    marginBottom: '10px',
                                     cursor: 'pointer',
-                                    padding: '4px'
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '10px',
+                                    border: currentSessionId === session.id ? '1px solid var(--primary)' : '1px solid transparent',
+                                    position: 'relative'
                                 }}
-                                onMouseEnter={(e) => e.currentTarget.style.color = 'var(--error)'}
-                                onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-secondary)'}
-                                title="Delete History"
                             >
-                                <Trash2 size={16} />
-                            </button>
-                        </div>
-                    ))}
-
-                    {sessions.length === 0 && (
-                        <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                            No history yet. Start a chat!
-                        </div>
+                                <MessageSquare size={18} style={{ color: 'var(--primary)', opacity: 0.8 }} />
+                                <div style={{ overflow: 'hidden', flex: 1 }}>
+                                    <div style={{ fontWeight: '600', fontSize: '0.9rem', marginBottom: '4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{session.title}</div>
+                                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                                        {new Date(session.created_at || Date.now()).toLocaleDateString()}
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={(e) => promptDeleteSession(e, session.id)}
+                                    style={{
+                                        background: 'none',
+                                        border: 'none',
+                                        color: 'var(--text-secondary)',
+                                        opacity: 0.6,
+                                        cursor: 'pointer',
+                                        padding: '4px'
+                                    }}
+                                    onMouseEnter={(e) => e.currentTarget.style.color = 'var(--error)'}
+                                    onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-secondary)'}
+                                    title="Delete History"
+                                >
+                                    <Trash2 size={16} />
+                                </button>
+                            </div>
+                        ))
                     )}
 
                 </div>

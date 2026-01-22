@@ -7,6 +7,7 @@ class ChatSession(Base):
     __tablename__ = "chat_sessions"
 
     id = Column(Integer, primary_key=True, index=True)
+    applicant_id = Column(String, index=True, nullable=False)  # Links session to authenticated applicant
     title = Column(String, default="New Interview Session")
     created_at = Column(DateTime, default=datetime.utcnow)
     

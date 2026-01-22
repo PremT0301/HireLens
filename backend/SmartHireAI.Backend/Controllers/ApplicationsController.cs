@@ -69,18 +69,22 @@ public class ApplicationsController : ControllerBase
         var recruiter = await _context.Recruiters.FirstOrDefaultAsync(r => r.User.UserId == userId);
         if (recruiter == null) return NotFound("Recruiter profile not found");
 
-        var totalCandidates = await _context.JobApplications
-            .Include(a => a.JobDescription)
-            .CountAsync(a => a.JobDescription.RecruiterId == recruiter.RecruiterId);
+        // Optimized: Single query to get all stats
+        var stats = await _context.JobApplications
+            .Where(a => a.JobDescription.RecruiterId == recruiter.RecruiterId)
+            .GroupBy(a => 1) // Group all to get aggregates
+            .Select(g => new
+            {
+                TotalCandidates = g.Count(),
+                HiredCount = g.Count(a => a.Status == "Hired")
+            })
+            .FirstOrDefaultAsync();
 
         var activeJobs = await _context.JobDescriptions
             .CountAsync(j => j.RecruiterId == recruiter.RecruiterId);
 
-        // Calculate placement rate (Based on Hired status)
-        var hiredCount = await _context.JobApplications
-             .Include(a => a.JobDescription)
-             .CountAsync(a => a.JobDescription.RecruiterId == recruiter.RecruiterId && a.Status == "Hired");
-
+        var totalCandidates = stats?.TotalCandidates ?? 0;
+        var hiredCount = stats?.HiredCount ?? 0;
         var placementRate = totalCandidates > 0 ? (hiredCount * 100 / totalCandidates) : 0;
 
         return Ok(new
@@ -103,25 +107,24 @@ public class ApplicationsController : ControllerBase
         var recruiter = await _context.Recruiters.FirstOrDefaultAsync(r => r.User.UserId == userId);
         if (recruiter == null) return NotFound("Recruiter profile not found");
 
+        // Optimized: Fetch only necessary fields and do time calculation in memory
         var rawApps = await _context.JobApplications
-            .Include(a => a.JobDescription)
-            .Include(a => a.Applicant)
-            .ThenInclude(app => app.User)
             .Where(a => a.JobDescription.RecruiterId == recruiter.RecruiterId && a.Status != "Rejected")
             .OrderByDescending(a => a.AppliedAt)
             .Take(10)
             .Select(a => new
             {
+                a.ApplicationId,
                 Name = a.Applicant.User.FullName ?? "Unknown",
                 Role = a.JobDescription.Title,
                 Score = (int)a.AtsScore,
                 a.AppliedAt,
                 a.Status,
-                a.ApplicationId,
                 Email = a.Applicant.User.Email
             })
             .ToListAsync();
 
+        // Calculate time and label in memory (simple operations)
         var recentApps = rawApps.Select(a => new
         {
             Id = a.ApplicationId,
@@ -426,11 +429,8 @@ public class ApplicationsController : ControllerBase
         var recruiter = await _context.Recruiters.FirstOrDefaultAsync(r => r.User.UserId == userId);
         if (recruiter == null) return NotFound("Recruiter profile not found");
 
+        // Optimized: Use Select projection without Include for better performance
         var rawCandidates = await _context.JobApplications
-            .Include(a => a.Applicant)
-            .ThenInclude(app => app.User)
-            .Include(a => a.Applicant.Education) // Include Education
-            .Include(a => a.JobDescription)
             .Where(a => a.JobDescription.RecruiterId == recruiter.RecruiterId && a.Status != "Rejected")
             .Select(a => new
             {
@@ -443,9 +443,8 @@ public class ApplicationsController : ControllerBase
                 Phone = a.Applicant.User.MobileNumber,
                 Experience = a.Applicant.ExperienceYears,
                 a.Applicant.Location,
-                College = a.Applicant.Education.Select(e => e.CollegeName).FirstOrDefault(), // Map first edu
+                College = a.Applicant.Education.Select(e => e.CollegeName).FirstOrDefault(),
                 CurrentRole = a.Applicant.CurrentRole,
-                // Grade = a.Applicant.Education.FirstOrDefault().Grade,
                 a.InterviewDate,
                 a.InterviewMode,
                 a.MeetingLink,
@@ -453,7 +452,7 @@ public class ApplicationsController : ControllerBase
             })
             .ToListAsync();
 
-        // Separate projection to add mocked skills for the chart
+        // Calculate label and mock skills in memory
         var candidates = rawCandidates.Select(c => new
         {
             Id = c.ApplicationId,
@@ -545,7 +544,7 @@ public class ApplicationsController : ControllerBase
 
     // PATCH: api/applications/{id}/status
     [HttpPatch("{id}/status")]
-    [Authorize]
+    [Authorize(Roles = "Recruiter")]
     public async Task<IActionResult> UpdateStatus(Guid id, [FromBody] StatusDto request)
     {
         var app = await _context.JobApplications
@@ -606,7 +605,7 @@ public class ApplicationsController : ControllerBase
 
     // POST: api/applications/{id}/schedule
     [HttpPost("{id}/schedule")]
-    [Authorize]
+    [Authorize(Roles = "Recruiter")]
     public async Task<IActionResult> ScheduleInterview(Guid id, [FromBody] InterviewDto request)
     {
         var app = await _context.JobApplications.FindAsync(id);
@@ -901,7 +900,7 @@ public class ApplicationsController : ControllerBase
 
     // POST: api/applications/{id}/hire
     [HttpPost("{id}/hire")]
-    [Authorize]
+    [Authorize(Roles = "Recruiter")]
     public async Task<IActionResult> HireCandidate(Guid id)
     {
         var app = await _context.JobApplications

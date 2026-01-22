@@ -7,6 +7,7 @@ import ProfileService from '../../api/profileService';
 import Modal from '../../components/ui/Modal';
 import NewsSection from '../../components/NewsSection';
 import ScheduleInterviewModal from '../../components/ScheduleInterviewModal';
+import Skeleton, { SkeletonList } from '../../components/ui/Skeleton';
 
 const RecruiterDashboard = () => {
     const navigate = useNavigate();
@@ -19,6 +20,7 @@ const RecruiterDashboard = () => {
     const [recentApplications, setRecentApplications] = useState([]);
     const [sortOrder, setSortOrder] = useState('score_desc');
     const [profile, setProfile] = useState(null);
+    const [loading, setLoading] = useState(true);
 
     const [selectedCandidate, setSelectedCandidate] = useState(null);
     const [isInterviewModalOpen, setIsInterviewModalOpen] = useState(false);
@@ -49,6 +51,7 @@ const RecruiterDashboard = () => {
     useEffect(() => {
         const loadDashboardData = async () => {
             try {
+                setLoading(true);
                 const statsData = await ApplicationService.getRecruiterStats();
                 setStats(statsData);
 
@@ -60,6 +63,8 @@ const RecruiterDashboard = () => {
                 setProfile(profileData);
             } catch (error) {
                 console.error("Failed to load dashboard data", error);
+            } finally {
+                setLoading(false);
             }
         };
         loadDashboardData();
@@ -98,36 +103,52 @@ const RecruiterDashboard = () => {
 
             {/* Stats Grid */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', marginBottom: '3rem' }}>
-                <ThreeDTiltCard>
-                    <StatCard
-                        icon={<Users size={24} />}
-                        title="Total Candidates"
-                        subtitle="Total received candidates"
-                        value={stats.totalCandidates}
-                        trend="+12%"
-                        color="var(--primary)"
-                    />
-                </ThreeDTiltCard>
-                <ThreeDTiltCard>
-                    <StatCard
-                        icon={<FileText size={24} />}
-                        title="Active Jobs"
-                        subtitle="Currently open roles"
-                        value={stats.activeJobs}
-                        trend="+2"
-                        color="var(--secondary)"
-                    />
-                </ThreeDTiltCard>
-                <ThreeDTiltCard>
-                    <StatCard
-                        icon={<TrendingUp size={24} />}
-                        title="Placement Rate"
-                        subtitle="Candidates hired this month"
-                        value={stats.placementRate}
-                        trend={stats.trend}
-                        color="var(--success)"
-                    />
-                </ThreeDTiltCard>
+                {loading ? (
+                    [1, 2, 3].map((i) => (
+                        <div key={i} className="glass-panel" style={{ padding: '1.5rem' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
+                                <Skeleton variant="circle" width="48px" height="48px" />
+                                <Skeleton variant="text" width="60px" height="24px" />
+                            </div>
+                            <Skeleton variant="title" width="100px" height="36px" style={{ marginBottom: '0.5rem' }} />
+                            <Skeleton variant="text" width="150px" height="20px" style={{ marginBottom: '0.25rem' }} />
+                            <Skeleton variant="text" width="120px" height="16px" />
+                        </div>
+                    ))
+                ) : (
+                    <>
+                        <ThreeDTiltCard>
+                            <StatCard
+                                icon={<Users size={24} />}
+                                title="Total Candidates"
+                                subtitle="Total received candidates"
+                                value={stats.totalCandidates}
+                                trend="+12%"
+                                color="var(--primary)"
+                            />
+                        </ThreeDTiltCard>
+                        <ThreeDTiltCard>
+                            <StatCard
+                                icon={<FileText size={24} />}
+                                title="Active Jobs"
+                                subtitle="Currently open roles"
+                                value={stats.activeJobs}
+                                trend="+2"
+                                color="var(--secondary)"
+                            />
+                        </ThreeDTiltCard>
+                        <ThreeDTiltCard>
+                            <StatCard
+                                icon={<TrendingUp size={24} />}
+                                title="Placement Rate"
+                                subtitle="Candidates hired this month"
+                                value={stats.placementRate}
+                                trend={stats.trend}
+                                color="var(--success)"
+                            />
+                        </ThreeDTiltCard>
+                    </>
+                )}
             </div>
 
 
@@ -164,39 +185,47 @@ const RecruiterDashboard = () => {
                     </div>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                        {[...recentApplications]
-                            .sort((a, b) => {
-                                if (sortOrder === 'score_desc') return b.score - a.score;
-                                if (sortOrder === 'score_asc') return a.score - b.score;
+                        {loading ? (
+                            <SkeletonList count={5} itemHeight="80px" />
+                        ) : recentApplications.length === 0 ? (
+                            <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                                No recent applications yet. Applications will appear here once candidates start applying.
+                            </div>
+                        ) : (
+                            [...recentApplications]
+                                .sort((a, b) => {
+                                    if (sortOrder === 'score_desc') return b.score - a.score;
+                                    if (sortOrder === 'score_asc') return a.score - b.score;
 
-                                // Parse time strings like "0h ago", "2d ago"
-                                const parseTime = (str) => {
-                                    if (!str) return 0;
-                                    const match = str.match(/(\d+)([hd])/);
-                                    if (!match) return 9999;
-                                    const val = parseInt(match[1]);
-                                    const unit = match[2];
-                                    // Convert to hours for comparison
-                                    return unit === 'd' ? val * 24 : val;
-                                };
+                                    // Parse time strings like "0h ago", "2d ago"
+                                    const parseTime = (str) => {
+                                        if (!str) return 0;
+                                        const match = str.match(/(\d+)([hd])/);
+                                        if (!match) return 9999;
+                                        const val = parseInt(match[1]);
+                                        const unit = match[2];
+                                        // Convert to hours for comparison
+                                        return unit === 'd' ? val * 24 : val;
+                                    };
 
-                                const timeA = parseTime(a.time);
-                                const timeB = parseTime(b.time);
+                                    const timeA = parseTime(a.time);
+                                    const timeB = parseTime(b.time);
 
-                                // date_desc means smallest time ago first (0h < 5h)
-                                if (sortOrder === 'date_desc') return timeA - timeB;
-                                if (sortOrder === 'date_asc') return timeB - timeA;
-                                return 0;
-                            })
-                            .map((candidate, i) => (
-                                <CandidateRow
-                                    key={i}
-                                    candidate={candidate}
-                                    onSchedule={handleScheduleClick}
-                                    onStatusUpdate={handleStatusUpdate}
-                                    onViewProfile={handleViewProfile}
-                                />
-                            ))}
+                                    // date_desc means smallest time ago first (0h < 5h)
+                                    if (sortOrder === 'date_desc') return timeA - timeB;
+                                    if (sortOrder === 'date_asc') return timeB - timeA;
+                                    return 0;
+                                })
+                                .map((candidate, i) => (
+                                    <CandidateRow
+                                        key={i}
+                                        candidate={candidate}
+                                        onSchedule={handleScheduleClick}
+                                        onStatusUpdate={handleStatusUpdate}
+                                        onViewProfile={handleViewProfile}
+                                    />
+                                ))
+                        )}
                     </div>
                 </div>
 

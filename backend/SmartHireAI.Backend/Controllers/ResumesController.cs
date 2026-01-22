@@ -210,10 +210,53 @@ public class ResumesController : ControllerBase
     }
 
     [HttpGet("download/{id}")]
+    [Authorize]
     public async Task<IActionResult> DownloadResume(Guid id)
     {
         try
         {
+            // Get authenticated user
+            var userIdString = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
+            {
+                return Unauthorized();
+            }
+
+            // Find the resume and verify ownership
+            var resume = await _context.Resumes
+                .Include(r => r.Applicant)
+                .ThenInclude(a => a.User)
+                .FirstOrDefaultAsync(r => r.ResumeId == id);
+
+            if (resume == null)
+            {
+                return NotFound("Resume not found.");
+            }
+
+            // Check if user is the applicant who owns this resume
+            var isOwner = resume.Applicant?.User?.UserId == userId;
+
+            // Check if user is a recruiter who has access to this candidate
+            var isRecruiterWithAccess = false;
+            if (!isOwner)
+            {
+                var recruiter = await _context.Recruiters
+                    .FirstOrDefaultAsync(r => r.User.UserId == userId);
+
+                if (recruiter != null)
+                {
+                    // Recruiter can access resume if the applicant has applied to any of their jobs
+                    isRecruiterWithAccess = await _context.JobApplications
+                        .AnyAsync(a => a.ApplicantId == resume.ApplicantId &&
+                                      a.JobDescription.RecruiterId == recruiter.RecruiterId);
+                }
+            }
+
+            if (!isOwner && !isRecruiterWithAccess)
+            {
+                return Forbid(); // User doesn't have permission to access this resume
+            }
+
             var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "resumes");
 
             // Try explicit PDF first
@@ -225,8 +268,7 @@ public class ResumesController : ControllerBase
                 if (!System.IO.File.Exists(filePath))
                 {
                     // Fallback: Check if we have the text in DB and generate a text file
-                    var resume = await _context.Resumes.FindAsync(id);
-                    if (resume != null && !string.IsNullOrEmpty(resume.ResumeText))
+                    if (!string.IsNullOrEmpty(resume.ResumeText))
                     {
                         var bytes = System.Text.Encoding.UTF8.GetBytes(resume.ResumeText);
                         return File(bytes, "text/plain", $"Resume_{id}.txt");

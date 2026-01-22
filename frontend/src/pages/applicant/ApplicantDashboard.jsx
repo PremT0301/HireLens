@@ -12,6 +12,8 @@ import NewsSection from '../../components/NewsSection';
 import ThreeDTiltCard from '../../components/ui/ThreeDTiltCard';
 import ATSScoreDisplay from '../../components/applicant/ATSScoreDisplay';
 import HireLensLoader from '../../components/ui/HireLensLoader';
+import Skeleton, { SkeletonTable } from '../../components/ui/Skeleton';
+import { NoApplicationsState } from '../../components/ui/EmptyState';
 import ApplicationService from '../../api/applicationService';
 
 const ApplicantDashboard = () => {
@@ -163,25 +165,40 @@ const ApplicantDashboard = () => {
 
             {/* Stats Grid */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem', marginBottom: '3rem' }}>
-                {stats.map((stat, i) => (
-                    <ThreeDTiltCard key={i}>
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: i * 0.1 }}
-                            className="glass-panel"
-                            style={{ padding: '2rem', display: 'flex', alignItems: 'center', gap: '1.5rem', height: '100%' }}
-                        >
-                            <div style={{ padding: '15px', borderRadius: '12px', background: `${stat.color}15`, color: stat.color }}>
-                                {stat.icon}
+                {loading ? (
+                    // Skeleton loaders for stats
+                    [1, 2, 3].map((i) => (
+                        <div key={i} className="glass-panel" style={{ padding: '2rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+                                <Skeleton variant="circle" width="60px" height="60px" />
+                                <div style={{ flex: 1 }}>
+                                    <Skeleton variant="title" width="80px" height="32px" style={{ marginBottom: '8px' }} />
+                                    <Skeleton variant="text" width="120px" height="16px" />
+                                </div>
                             </div>
-                            <div>
-                                <div style={{ fontSize: '2rem', fontWeight: 'bold' }}>{stat.value}</div>
-                                <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>{stat.label}</div>
-                            </div>
-                        </motion.div>
-                    </ThreeDTiltCard>
-                ))}
+                        </div>
+                    ))
+                ) : (
+                    stats.map((stat, i) => (
+                        <ThreeDTiltCard key={i}>
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: i * 0.1 }}
+                                className="glass-panel"
+                                style={{ padding: '2rem', display: 'flex', alignItems: 'center', gap: '1.5rem', height: '100%' }}
+                            >
+                                <div style={{ padding: '15px', borderRadius: '12px', background: `${stat.color}15`, color: stat.color }}>
+                                    {stat.icon}
+                                </div>
+                                <div>
+                                    <div style={{ fontSize: '2rem', fontWeight: 'bold' }}>{stat.value}</div>
+                                    <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>{stat.label}</div>
+                                </div>
+                            </motion.div>
+                        </ThreeDTiltCard>
+                    ))
+                )}
             </div>
 
 
@@ -312,18 +329,22 @@ const ApplicantDashboard = () => {
                     <Briefcase size={24} /> Recently Applied
                 </h3>
                 <div className="glass-panel" style={{ padding: '0' }}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-                        <thead>
-                            <tr style={{ borderBottom: '1px solid var(--glass-border)', color: 'var(--text-secondary)' }}>
-                                <th style={{ padding: '1rem' }}>Job Title</th>
-                                <th style={{ padding: '1rem' }}>Company</th>
-                                <th style={{ padding: '1rem' }}>Date Applied</th>
-                                <th style={{ padding: '1rem' }}>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {applications.length > 0 ? (
-                                applications.slice(0, 5).map((app, i) => (
+                    {loading ? (
+                        <div style={{ padding: '2rem' }}>
+                            <SkeletonTable rows={5} columns={4} />
+                        </div>
+                    ) : applications.length > 0 ? (
+                        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                            <thead>
+                                <tr style={{ borderBottom: '1px solid var(--glass-border)', color: 'var(--text-secondary)' }}>
+                                    <th style={{ padding: '1rem' }}>Job Title</th>
+                                    <th style={{ padding: '1rem' }}>Company</th>
+                                    <th style={{ padding: '1rem' }}>Date Applied</th>
+                                    <th style={{ padding: '1rem' }}>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {applications.slice(0, 5).map((app, i) => (
                                     <tr key={i} style={{ borderBottom: i < applications.length - 1 ? '1px solid var(--glass-border)' : 'none' }}>
                                         <td style={{ padding: '1rem', fontWeight: '500' }}>{app.jobTitle}</td>
                                         <td style={{ padding: '1rem', color: 'var(--text-secondary)' }}>{app.companyName}</td>
@@ -339,19 +360,16 @@ const ApplicantDashboard = () => {
                                             }}>
                                                 {app.status}
                                             </span>
-
                                         </td>
                                     </tr>
-                                ))
-                            ) : (
-                                <tr>
-                                    <td colSpan="4" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
-                                        No applications found. Upload your resume and start applying!
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
+                                ))}
+                            </tbody>
+                        </table>
+                    ) : (
+                        <div style={{ padding: '3rem' }}>
+                            <NoApplicationsState onAction={() => navigate('/applicant/jobs')} />
+                        </div>
+                    )}
                 </div>
             </div>
 

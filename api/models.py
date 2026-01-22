@@ -212,6 +212,7 @@ class MessageSchema(BaseModel):
 
 class SessionSchema(BaseModel):
     id: int
+    applicant_id: str
     title: str
     created_at: datetime
     messages: List[MessageSchema] = []
@@ -221,6 +222,7 @@ class SessionSchema(BaseModel):
 
 class CreateSessionResponse(BaseModel):
     id: int
+    applicant_id: str
     title: str
     created_at: datetime
 

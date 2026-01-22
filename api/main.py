@@ -340,33 +340,56 @@ async def match_job(data: ResumeJobInput):
 # -------------------- CHAT SESSIONS --------------------
 
 @app.post("/chat/sessions", response_model=CreateSessionResponse)
-def create_session(title: str = "New Interview", db: Session = Depends(get_db)):
-    session = db_models.ChatSession(title=title)
+def create_session(title: str = "New Interview", applicant_id: str = None, db: Session = Depends(get_db)):
+    if not applicant_id:
+        raise HTTPException(status_code=400, detail="applicant_id is required")
+    
+    session = db_models.ChatSession(title=title, applicant_id=applicant_id)
     db.add(session)
     db.commit()
     db.refresh(session)
     return session
 
 @app.get("/chat/sessions", response_model=list[SessionSchema])
-def get_sessions(db: Session = Depends(get_db)):
+def get_sessions(applicant_id: str = None, db: Session = Depends(get_db)):
+    if not applicant_id:
+        raise HTTPException(status_code=400, detail="applicant_id is required")
+    
     start_time = datetime.utcnow()
-    # Sort by ID desc (newest first)
-    sessions = db.query(db_models.ChatSession).order_by(db_models.ChatSession.id.desc()).all()
-    print(f"Fetched {len(sessions)} sessions in {(datetime.utcnow() - start_time).total_seconds()}s")
+    # Filter by applicant_id and sort by ID desc (newest first)
+    sessions = db.query(db_models.ChatSession).filter(
+        db_models.ChatSession.applicant_id == applicant_id
+    ).order_by(db_models.ChatSession.id.desc()).all()
+    print(f"Fetched {len(sessions)} sessions for applicant {applicant_id} in {(datetime.utcnow() - start_time).total_seconds()}s")
     return sessions
 
 @app.get("/chat/sessions/{session_id}", response_model=SessionSchema)
-def get_session(session_id: int, db: Session = Depends(get_db)):
+def get_session(session_id: int, applicant_id: str = None, db: Session = Depends(get_db)):
+    if not applicant_id:
+        raise HTTPException(status_code=400, detail="applicant_id is required")
+    
     session = db.query(db_models.ChatSession).filter(db_models.ChatSession.id == session_id).first()
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
+    
+    # Verify ownership
+    if session.applicant_id != applicant_id:
+        raise HTTPException(status_code=403, detail="Access denied: Session belongs to another applicant")
+    
     return session
 
 @app.delete("/chat/sessions/{session_id}")
-def delete_session(session_id: int, db: Session = Depends(get_db)):
+def delete_session(session_id: int, applicant_id: str = None, db: Session = Depends(get_db)):
+    if not applicant_id:
+        raise HTTPException(status_code=400, detail="applicant_id is required")
+    
     session = db.query(db_models.ChatSession).filter(db_models.ChatSession.id == session_id).first()
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
+    
+    # Verify ownership
+    if session.applicant_id != applicant_id:
+        raise HTTPException(status_code=403, detail="Access denied: Session belongs to another applicant")
     
     db.delete(session)
     db.commit()
@@ -552,3 +575,4 @@ def get_rankings(
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+
