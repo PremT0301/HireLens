@@ -3,7 +3,6 @@ import { Search, Filter, MoreHorizontal, Eye, Mail, Phone, Briefcase, Calendar, 
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';
 import Modal from '../../components/ui/Modal';
-import ScheduleForm from '../../components/forms/ScheduleForm';
 import { SkeletonTable } from '../../components/ui/Skeleton';
 import { NoCandidatesState } from '../../components/ui/EmptyState';
 
@@ -58,25 +57,7 @@ const TalentPool = () => {
         }
     };
 
-    const handleScheduleSubmit = async (formData) => {
-        try {
-            await ApplicationService.scheduleInterview(selectedCandidate.id, formData);
-            addToast('Interview scheduled successfully', 'success');
 
-            // Update local state to reflect status change
-            setCandidates(prev => prev.map(c =>
-                c.id === selectedCandidate.id ? { ...c, status: 'Interview Scheduled' } : c
-            ));
-
-            // Update selected candidate as well so if they reopen it is updated
-            setSelectedCandidate(prev => ({ ...prev, status: 'Interview Scheduled' }));
-
-            handleCloseModal();
-        } catch (error) {
-            console.error("Failed to schedule", error);
-            addToast('Failed to schedule interview', 'error');
-        }
-    };
 
     const handleReject = (candidate) => {
         setSelectedCandidate(candidate);
@@ -530,9 +511,8 @@ const TalentPool = () => {
                 hideHeader={modalView === 'reject-confirmation'}
                 title={
                     modalView === 'profile' ? "Candidate Profile" :
-                        modalView === 'schedule' ? "Schedule Interview" :
-                            modalView === 'reject-confirmation' ? "Confirm Action" :
-                                "Candidate Action"
+                        modalView === 'reject-confirmation' ? "Confirm Action" :
+                            "Candidate Action"
                 }
             >
                 {selectedCandidate && (
@@ -627,12 +607,7 @@ const TalentPool = () => {
                             null
                         )}
 
-                        {modalView === 'schedule' && (
-                            <ScheduleForm
-                                onSubmit={handleScheduleSubmit}
-                                onCancel={() => setModalView('profile')}
-                            />
-                        )}
+
 
 
                     </div>

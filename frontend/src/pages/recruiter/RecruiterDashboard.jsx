@@ -6,7 +6,6 @@ import ApplicationService from '../../api/applicationService';
 import ProfileService from '../../api/profileService';
 import Modal from '../../components/ui/Modal';
 import NewsSection from '../../components/NewsSection';
-import ScheduleInterviewModal from '../../components/ScheduleInterviewModal';
 import Skeleton, { SkeletonList } from '../../components/ui/Skeleton';
 
 const RecruiterDashboard = () => {
@@ -22,15 +21,10 @@ const RecruiterDashboard = () => {
     const [profile, setProfile] = useState(null);
     const [loading, setLoading] = useState(true);
 
-    const [selectedCandidate, setSelectedCandidate] = useState(null);
-    const [isInterviewModalOpen, setIsInterviewModalOpen] = useState(false);
-    // const [isProfileModalOpen, setIsProfileModalOpen] = useState(false); // Removed modal state
-
     // ... (handlers remain same)
 
     const handleScheduleClick = (candidate) => {
-        setSelectedCandidate(candidate);
-        setIsInterviewModalOpen(true);
+        navigate(`/recruiter/schedule/${candidate.id}`);
     };
 
     const handleViewProfile = (candidate) => {
@@ -40,12 +34,6 @@ const RecruiterDashboard = () => {
     const handleStatusUpdate = (candidateId, newStatus) => {
         console.log(`Update status for ${candidateId} to ${newStatus}`);
         // In a real app, make API call here and update local state
-    };
-
-    const handleInterviewScheduled = async (interviewData) => {
-        console.log("Interview scheduled", interviewData);
-        // Could enable a toast notification here
-        setIsInterviewModalOpen(false);
     };
 
     useEffect(() => {
@@ -235,14 +223,6 @@ const RecruiterDashboard = () => {
             <NewsSection query="technology recruitment hiring talent acquisition" title="Recruitment Insights & News" />
 
             <div style={{ height: '2rem' }}></div>
-
-            {isInterviewModalOpen && (
-                <ScheduleInterviewModal
-                    candidate={selectedCandidate}
-                    onClose={() => setIsInterviewModalOpen(false)}
-                    onSubmit={handleInterviewScheduled}
-                />
-            )}
         </div>
     );
 };

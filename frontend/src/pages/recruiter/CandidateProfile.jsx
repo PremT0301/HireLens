@@ -10,9 +10,6 @@ import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Responsi
 import HireLensLoader from '../../components/ui/HireLensLoader';
 import ApplicationService from '../../api/applicationService';
 import { useToast } from '../../context/ToastContext';
-import ScheduleForm from '../../components/forms/ScheduleForm';
-
-import Modal from '../../components/ui/Modal';
 import api from '../../api/axios';
 
 const CandidateProfile = () => {
@@ -23,7 +20,6 @@ const CandidateProfile = () => {
     const [candidate, setCandidate] = useState(null);
     const [gapAnalysis, setGapAnalysis] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [modalView, setModalView] = useState(null); // 'schedule', 'message'
 
     useEffect(() => {
         const fetchCandidate = async () => {
@@ -60,19 +56,6 @@ const CandidateProfile = () => {
             fetchGap();
         }
     }, [candidate]);
-
-    const handleScheduleSubmit = async (formData) => {
-        try {
-            await ApplicationService.scheduleInterview(candidate.applicationId, formData);
-            addToast('Interview scheduled successfully', 'success');
-            setCandidate(prev => ({ ...prev, status: 'Interview Scheduled' }));
-            setModalView(null);
-        } catch (error) {
-            console.error("Failed to schedule", error);
-            addToast('Failed to schedule interview', 'error');
-        }
-    };
-
 
 
 
@@ -205,7 +188,7 @@ const CandidateProfile = () => {
                         <button
                             className="btn-primary"
                             style={{ height: '48px', padding: '0 24px', fontSize: '1rem' }}
-                            onClick={() => setModalView('schedule')}
+                            onClick={() => navigate(`/recruiter/schedule/${candidate.applicationId}`)}
                         >
                             <Calendar size={18} style={{ marginRight: '8px' }} /> Schedule Interview
                         </button>
@@ -411,26 +394,6 @@ const CandidateProfile = () => {
 
             {/* End of Header/Glass Panel */}
 
-            {/* Modals */}
-            <Modal
-                isOpen={!!modalView}
-                onClose={() => setModalView(null)}
-                title={modalView === 'schedule' ? "Schedule Interview" : "Actions"}
-            >
-                {modalView === 'schedule' && (
-                    <ScheduleForm
-                        onSubmit={handleScheduleSubmit}
-                        onCancel={() => setModalView(null)}
-                    />
-                )}
-
-                {modalView === 'schedule' && (
-                    <ScheduleForm
-                        onSubmit={handleScheduleSubmit}
-                        onCancel={() => setModalView(null)}
-                    />
-                )}
-            </Modal>
         </div>
     );
 };
