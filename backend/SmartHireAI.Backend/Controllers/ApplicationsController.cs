@@ -421,7 +421,7 @@ public class ApplicationsController : ControllerBase
     // GET: api/applications/talent-pool
     [HttpGet("talent-pool")]
     [Authorize]
-    public async Task<ActionResult<IEnumerable<object>>> GetTalentPool()
+    public async Task<ActionResult<IEnumerable<object>>> GetTalentPool([FromQuery] TalentPoolFilterDto filter)
     {
         var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (!Guid.TryParse(userIdString, out var userId)) return Unauthorized();
@@ -429,9 +429,64 @@ public class ApplicationsController : ControllerBase
         var recruiter = await _context.Recruiters.FirstOrDefaultAsync(r => r.User.UserId == userId);
         if (recruiter == null) return NotFound("Recruiter profile not found");
 
-        // Optimized: Use Select projection without Include for better performance
-        var rawCandidates = await _context.JobApplications
+        // Initialize query
+        var query = _context.JobApplications
+            .Include(a => a.Applicant).ThenInclude(user => user.User)
             .Where(a => a.JobDescription.RecruiterId == recruiter.RecruiterId && a.Status != "Rejected")
+            .AsQueryable();
+
+        // Apply Filters
+        if (!string.IsNullOrEmpty(filter.SearchTerm))
+        {
+            var term = filter.SearchTerm.ToLower();
+            query = query.Where(a =>
+                a.Applicant.User.FullName.ToLower().Contains(term) ||
+                a.JobDescription.Title.ToLower().Contains(term) ||
+                a.Applicant.Resumes.Any(r => r.ResumeText.ToLower().Contains(term))
+            );
+        }
+
+        if (!string.IsNullOrEmpty(filter.Status))
+        {
+            query = query.Where(a => a.Status == filter.Status);
+        }
+
+        if (filter.MinScore.HasValue)
+        {
+            // AtsScore is float, filter is int. match exact or range? 
+            // Logic in projection was: (int)(a.AtsScore <= 1f ? a.AtsScore * 100 : a.AtsScore)
+            // We need to replicate that logic or assume backend standardizes. 
+            // Assuming stored as 0-100 mostly or normalize in query.
+            // Let's assume standard usage for filtering for now to keep query simple, 
+            // or check both 0-1 and 0-100 ranges if needed. 
+            // Given the projection logic, it seems mixed. Safe bet:
+            query = query.Where(a => (a.AtsScore <= 1 ? a.AtsScore * 100 : a.AtsScore) >= filter.MinScore.Value);
+        }
+
+        if (filter.MaxScore.HasValue)
+        {
+            query = query.Where(a => (a.AtsScore <= 1 ? a.AtsScore * 100 : a.AtsScore) <= filter.MaxScore.Value);
+        }
+
+        if (filter.StartDate.HasValue)
+        {
+            query = query.Where(a => a.AppliedAt >= filter.StartDate.Value);
+        }
+
+        if (filter.EndDate.HasValue)
+        {
+            query = query.Where(a => a.AppliedAt <= filter.EndDate.Value);
+        }
+
+        if (!string.IsNullOrEmpty(filter.JobRole))
+        {
+            // Case insensitive contains or exact? Start with Contains for flexibility
+            query = query.Where(a => a.JobDescription.Title.ToLower().Contains(filter.JobRole.ToLower()));
+        }
+
+
+        // Optimized: Use Select projection without Include for better performance
+        var rawCandidates = await query
             .Select(a => new
             {
                 a.ApplicationId,
@@ -955,4 +1010,5 @@ public class ApplicationsController : ControllerBase
     public record InterviewDto(DateTime Date, string Mode, string? Link, int? Duration, string? Notes, string? RoundId);
     public record MessageDto(string Subject, string Message);
     public record StatusDto(string Status);
+    public record TalentPoolFilterDto(string? SearchTerm, string? Status, int? MinScore, int? MaxScore, DateTime? StartDate, DateTime? EndDate, string? JobRole);
 }

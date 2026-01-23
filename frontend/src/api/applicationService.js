@@ -22,8 +22,8 @@ const ApplicationService = {
         return response.data;
     },
 
-    getTalentPool: async () => {
-        const response = await axios.get(`${endpoints.applications}/talent-pool`);
+    getTalentPool: async (params) => {
+        const response = await axios.get(`${endpoints.applications}/talent-pool`, { params });
         return response.data;
     },
 

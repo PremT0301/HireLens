@@ -4,7 +4,7 @@ import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Responsi
 import { motion, AnimatePresence } from 'framer-motion';
 import Modal from '../../components/ui/Modal';
 import { SkeletonTable } from '../../components/ui/Skeleton';
-import { NoCandidatesState } from '../../components/ui/EmptyState';
+import { NoCandidatesState, NoSearchResultsState } from '../../components/ui/EmptyState';
 
 import ApplicationService from '../../api/applicationService';
 import { useNavigate } from 'react-router-dom';
@@ -21,21 +21,48 @@ const TalentPool = () => {
     const [candidates, setCandidates] = useState([]);
     const [loading, setLoading] = useState(true);
 
+    // Search & Filter State
+    const [searchTerm, setSearchTerm] = useState('');
+    const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+    const [showFilters, setShowFilters] = useState(false);
+    const [filters, setFilters] = useState({
+        status: '',
+        minScore: '',
+        maxScore: '',
+        startDate: '',
+        endDate: '',
+        jobRole: ''
+    });
+
+    // Debounce Search
+    React.useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearchTerm(searchTerm);
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [searchTerm]);
+
     React.useEffect(() => {
         const fetchTalentPool = async () => {
             try {
-                // Import Service inside effect or at top. Assuming imported at top.
-                const data = await ApplicationService.getTalentPool();
+                setLoading(true);
+                // Clean filters to remove empty strings
+                const cleanFilters = Object.fromEntries(
+                    Object.entries({ ...filters, searchTerm: debouncedSearchTerm })
+                        .filter(([_, v]) => v !== '' && v !== null)
+                );
+
+                const data = await ApplicationService.getTalentPool(cleanFilters);
                 setCandidates(data);
             } catch (error) {
                 console.error("Failed to load talent pool", error);
-                // alert("Failed to load candidates. Please try again."); // Optional: verify backend connectivity
+                addToast("Failed to load candidates", "error");
             } finally {
                 setLoading(false);
             }
         };
         fetchTalentPool();
-    }, []);
+    }, [debouncedSearchTerm, filters, addToast]); // Trigger on filter/search change
 
     const getData = (candidate) => {
         if (!candidate || !candidate.skills) return [];
@@ -112,27 +139,166 @@ const TalentPool = () => {
         <div style={{ position: 'relative', minHeight: '100vh', paddingBottom: '300px' }}>
             <h1 className="title-lg" style={{ marginBottom: '2rem' }}>Talent Pool</h1>
 
-            {/* Filters */}
-            <div className="glass-panel" style={{ padding: '1.5rem', marginBottom: '2rem', display: 'flex', gap: '1rem' }}>
-                <div style={{ flex: 1, position: 'relative' }}>
-                    <Search size={20} style={{ position: 'absolute', left: '12px', top: '12px', color: 'var(--text-secondary)' }} />
-                    <input
-                        type="text"
-                        placeholder="Search candidates by skill, role, or ID..."
-                        style={{
-                            width: '100%',
-                            padding: '12px 12px 12px 40px',
-                            borderRadius: '8px',
-                            border: '1px solid var(--glass-border)',
-                            background: 'var(--bg-secondary)',
-                            color: 'var(--text-primary)',
-                            outline: 'none'
-                        }}
-                    />
+            <div className="glass-panel" style={{ padding: '0', marginBottom: '2rem', overflow: 'hidden' }}>
+                <div style={{ padding: '1.25rem 1.5rem', display: 'flex', gap: '1rem', alignItems: 'center', borderBottom: showFilters ? '1px solid var(--border-color)' : 'none' }}>
+                    <div style={{ flex: 1, position: 'relative' }}>
+                        <Search size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} />
+                        <input
+                            type="text"
+                            placeholder="Search candidates by name, skill, role..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            style={{
+                                width: '100%',
+                                padding: '10px 16px 10px 44px',
+                                borderRadius: '10px',
+                                border: '1px solid var(--border-color)',
+                                background: 'var(--bg-secondary)',
+                                color: 'var(--text-primary)',
+                                outline: 'none',
+                                fontSize: '0.95rem',
+                                transition: 'all 0.2s',
+                            }}
+                            onFocus={(e) => e.target.style.borderColor = 'var(--primary)'}
+                            onBlur={(e) => e.target.style.borderColor = 'var(--border-color)'}
+                        />
+                    </div>
+                    <div style={{ display: 'flex', gap: '0.75rem' }}>
+                        <button
+                            className={`btn-ghost ${showFilters ? 'active' : ''}`}
+                            onClick={() => setShowFilters(!showFilters)}
+                            style={{
+                                border: '1px solid var(--border-color)',
+                                background: showFilters ? 'var(--primary-light)' : 'transparent',
+                                color: showFilters ? 'var(--primary)' : 'var(--text-secondary)',
+                                borderRadius: '8px',
+                                padding: '8px 16px',
+                                fontWeight: 500
+                            }}
+                        >
+                            <Filter size={16} style={{ marginRight: '8px' }} /> Filters
+                        </button>
+
+                        {(Object.values(filters).some(x => x) || searchTerm) && (
+                            <button
+                                className="btn-ghost"
+                                onClick={() => {
+                                    setSearchTerm('');
+                                    setFilters({ status: '', minScore: '', maxScore: '', startDate: '', endDate: '', jobRole: '' });
+                                }}
+                                style={{
+                                    color: 'var(--error)',
+                                    fontSize: '0.9rem',
+                                    padding: '8px 12px',
+                                    borderRadius: '8px'
+                                }}
+                            >
+                                <XCircle size={16} style={{ marginRight: '4px' }} /> Reset
+                            </button>
+                        )}
+                    </div>
                 </div>
-                <button className="btn-ghost" style={{ border: '1px solid var(--glass-border)' }}>
-                    <Filter size={18} style={{ marginRight: '8px' }} /> Filters
-                </button>
+
+                {/* Expanded Filter Panel */}
+                <AnimatePresence>
+                    {showFilters && (
+                        <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            style={{ overflow: 'hidden', background: 'var(--bg-secondary-light)' }}
+                        >
+                            <div style={{ padding: '1.5rem', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.5rem' }}>
+                                {/* Status Filter */}
+                                <div>
+                                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Status</label>
+                                    <div className="select-wrapper" style={{ position: 'relative' }}>
+                                        <select
+                                            className="input-field"
+                                            style={{ width: '100%', appearance: 'none', background: 'white', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '10px 12px', fontSize: '0.9rem' }}
+                                            value={filters.status}
+                                            onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
+                                        >
+                                            <option value="">All Statuses</option>
+                                            <option value="Applied">Applied</option>
+                                            <option value="Interview Scheduled">Interview Scheduled</option>
+                                            <option value="Interview Accepted">Interview Accepted</option>
+                                            <option value="Hired">Hired</option>
+                                            <option value="Rejected">Rejected</option>
+                                        </select>
+                                        <div style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--text-secondary)' }}>
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6" /></svg>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Score Range */}
+                                <div>
+                                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Match Score %</label>
+                                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                        <input
+                                            type="number"
+                                            placeholder="0"
+                                            className="input-field"
+                                            style={{ width: '100%', background: 'white', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '10px', fontSize: '0.9rem' }}
+                                            value={filters.minScore}
+                                            onChange={(e) => setFilters(prev => ({ ...prev, minScore: e.target.value }))}
+                                        />
+                                        <span style={{ color: 'var(--text-disabled)', fontWeight: 500 }}>—</span>
+                                        <input
+                                            type="number"
+                                            placeholder="100"
+                                            className="input-field"
+                                            style={{ width: '100%', background: 'white', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '10px', fontSize: '0.9rem' }}
+                                            value={filters.maxScore}
+                                            onChange={(e) => setFilters(prev => ({ ...prev, maxScore: e.target.value }))}
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Date Range */}
+                                <div>
+                                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Applied Date</label>
+                                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                        <input
+                                            type="date"
+                                            className="input-field"
+                                            style={{ width: '100%', background: 'white', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '10px', fontSize: '0.9rem' }}
+                                            value={filters.startDate}
+                                            onChange={(e) => setFilters(prev => ({ ...prev, startDate: e.target.value }))}
+                                            placeholder="Start"
+                                        />
+                                        <span style={{ color: 'var(--text-disabled)', fontWeight: 500 }}>—</span>
+                                        <input
+                                            type="date"
+                                            className="input-field"
+                                            style={{ width: '100%', background: 'white', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '10px', fontSize: '0.9rem' }}
+                                            value={filters.endDate}
+                                            onChange={(e) => setFilters(prev => ({ ...prev, endDate: e.target.value }))}
+                                            placeholder="End"
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Job Role */}
+                                <div>
+                                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Job Role</label>
+                                    <div style={{ position: 'relative' }}>
+                                        <input
+                                            type="text"
+                                            placeholder="e.g. Developer"
+                                            className="input-field"
+                                            style={{ width: '100%', background: 'white', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '10px 12px 10px 36px', fontSize: '0.9rem' }}
+                                            value={filters.jobRole}
+                                            onChange={(e) => setFilters(prev => ({ ...prev, jobRole: e.target.value }))}
+                                        />
+                                        <Briefcase size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-disabled)' }} />
+                                    </div>
+                                </div>
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
             </div>
 
             {/* Table */}
@@ -142,7 +308,11 @@ const TalentPool = () => {
                 </div>
             ) : candidates.length === 0 ? (
                 <div className="glass-panel" style={{ padding: '2rem' }}>
-                    <NoCandidatesState onAction={() => navigate('/recruiter/create-job')} />
+                    {(Object.values(filters).some(x => x) || searchTerm) ? (
+                        <NoSearchResultsState searchTerm={searchTerm} />
+                    ) : (
+                        <NoCandidatesState onAction={() => navigate('/recruiter/create-job')} />
+                    )}
                 </div>
             ) : (
                 <div className="glass-panel" style={{ overflow: 'visible' }}>
