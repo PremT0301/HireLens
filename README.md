@@ -78,6 +78,7 @@ graph TD
 | `ApplicationsController` | Handling the act of applying and tracking status. |
 | `ResumesController` | Uploading and parsing resume files. |
 | `AnalysisController` | Bridge between .NET and Python AI Service. |
+| `InboxController` | Management of notifications and messages. |
 ## 🌟 User Functionalities (The Product)
 
 This section details every feature available in the application.
@@ -114,6 +115,11 @@ Designed to empower job seekers with data-driven insights.
     *   **Privacy**: Deletion is confirmed via a custom modal and permanently removes chat history.
     *   Helps candidates practice before the real interview.
 
+*   **🔔 Notification Center**
+    *   **Real-time Alerts**: Instant notifications for Interview Schedules, Messages, and Rejections.
+    *   **Email Sync**: All notifications are mirrored via Email to ensure no missed updates.
+    *   **Read Receipts**: Track unread/read status of alerts.
+
 *   **💼 Job Search**
     *   A curated list of jobs that match the user's analyzed profile.
 
@@ -139,6 +145,7 @@ Designed to streamline the hiring workflow.
 
 *   **📅 Interview & Hiring Workflow**
     *   **Interactive Scheduling**: Schedule interviews directly from the platform.
+    *   **Unified Contact**: "Contact Candidate" feature allows sending Interview Requests, Follow-ups, or Rejection emails from a single interface.
     *   **Status Tracking**: Real-time updates for "Interview Scheduled", "Interview Accepted", and "Hired".
     *   **Hire Button**: One-click hiring action that automatically closes the loop.
 
@@ -271,31 +278,6 @@ npm install
 npm run dev
 ```
 *Verify at: http://localhost:5173*
-
-### Step 4: Enable Email Verification on External Devices (Optional) 📧
-
-To test email verification from mobile devices or other computers during development:
-
-```bash
-# Install ngrok
-choco install ngrok
-
-# Start ngrok tunnel (in a new terminal)
-ngrok http 5000 --host-header="localhost:5000"
-
-# Set environment variable with your ngrok URL
-$env:AppSettings__BaseUrl="https://your-ngrok-url.ngrok-free.app"
-
-# Restart backend server
-cd D:/HireLens/backend/SmartHireAI.Backend
-dotnet run
-```
-
-**📖 Detailed Guide:** See [TUNNELING_SETUP.md](TUNNELING_SETUP.md) for complete instructions.
-
-**Why?** Email verification links default to `localhost:5173`, which only works on your development machine. Using ngrok creates a secure HTTPS tunnel, allowing verification links to work from any device.
-
-**Production:** Simply update `AppSettings:BaseUrl` to your production domain - no code changes needed!
 
 ---
 

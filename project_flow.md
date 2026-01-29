@@ -50,6 +50,8 @@ graph TD
     *   AI Service compares `Proccessed Resume` vs `Job Description` (NER & Semantic Matching).
     *   Returns: Match %, Skills Match, Missing Skills.
 4.  **Action**: Recruiter schedules an interview or rejects the candidate.
+    *   **Unified Contact**: Recruiter can send "Interview Request", "Follow-up", or "Rejection" via `ContactCandidate`.
+    *   **Notifications**: Actions trigger emails and in-app alerts for the applicant.
 5.  **Hiring**: Recruiter clicks "Hire Candidate".
     *   **Validation**: Backend checks if the candidate is already hired elsewhere and if the job has remaining openings.
     *   **Auto-Close**: If the hire fills the last opening (e.g., 3/3 hires), the job status is automatically updated to `Closed`.
@@ -74,6 +76,7 @@ The "Brain" of the operation works as follows:
 | `ApplicationsController` | Handling the act of applying and tracking status. |
 | `ResumesController` | Uploading and parsing resume files. |
 | `AnalysisController` | Bridge between .NET and Python AI Service. |
+| `InboxController` | Management of in-app notifications and messages. |
 
 ## 🔗 Deep Links
 - [Frontend Codebase](file:///d:/HireLens/frontend)
