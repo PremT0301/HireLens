@@ -13,10 +13,8 @@ const Navbar = () => {
     const [userRole, setUserRole] = useState(sessionStorage.getItem('userRole'));
     const [userProfile, setUserProfile] = useState(null);
 
-    // Scroll & Visibility State
+    // Scroll State for Glass Effect
     const [isScrolled, setIsScrolled] = useState(false);
-    const [isVisible, setIsVisible] = useState(true);
-    const [lastScrollY, setLastScrollY] = useState(0);
 
     // Profile Editor State
     const [isProfileEditorOpen, setIsProfileEditorOpen] = useState(false);
@@ -25,27 +23,15 @@ const Navbar = () => {
     const location = useLocation();
     const navigate = useNavigate();
 
-    // Scroll Effect (Smart Hide)
+    // Scroll Effect (Glass State Only)
     useEffect(() => {
         const handleScroll = () => {
-            const currentScrollY = window.scrollY;
-
-            // Determine if scrolled (for glass effect)
-            setIsScrolled(currentScrollY > 10);
-
-            // Determine visibility (Hide on down, Show on up)
-            if (currentScrollY > lastScrollY && currentScrollY > 70) {
-                setIsVisible(false); // Scrolling Down
-            } else {
-                setIsVisible(true);  // Scrolling Up
-            }
-
-            setLastScrollY(currentScrollY);
+            setIsScrolled(window.scrollY > 10);
         };
 
         window.addEventListener('scroll', handleScroll);
         return () => window.removeEventListener('scroll', handleScroll);
-    }, [lastScrollY]);
+    }, []);
 
     // Initialize theme
     useEffect(() => {
@@ -162,25 +148,22 @@ const Navbar = () => {
 
     const userImage = getUserImage();
 
-    // ... (rest of component)
     return (
         <nav style={{
-            // ... existing styles ...
-            position: 'fixed', // Fixed to allow hiding/showing
+            position: 'fixed',
             top: 0,
             width: '100%',
+            height: '74px', // Explicit height
             zIndex: 1000,
-            // Styling
-            backgroundColor: isScrolled ? 'var(--glass-bg)' : 'transparent',
-            backdropFilter: isScrolled ? 'blur(var(--glass-blur))' : 'none',
-            WebkitBackdropFilter: isScrolled ? 'blur(var(--glass-blur))' : 'none',
+            backgroundColor: isScrolled ? 'var(--glass-bg)' : 'var(--bg-primary)', // Always have background unless specified otherwise
+            backdropFilter: 'blur(var(--glass-blur))',
+            WebkitBackdropFilter: 'blur(var(--glass-blur))',
             borderBottom: isScrolled ? '1px solid var(--border-color)' : '1px solid transparent',
-            // Smart Hide Animation
-            transform: isVisible ? 'translateY(0)' : 'translateY(-100%)',
-            transition: 'background-color 0.3s ease, border-color 0.3s ease, backdrop-filter 0.3s ease, transform 0.3s ease-in-out'
+            boxShadow: isScrolled ? 'var(--shadow-sm)' : 'none',
+            transition: 'all 0.3s ease'
         }}>
             <div className="container" style={{
-                height: '70px',
+                height: '100%',
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center'
