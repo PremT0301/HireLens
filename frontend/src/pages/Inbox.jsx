@@ -136,19 +136,25 @@ const Inbox = () => {
         <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="inbox-container page-transition"
+            className="inbox-page-wrapper"
         >
-            <div className="inbox-wrapper glass-panel">
+            {/* 1. PAGE TITLE (MANDATORY) */}
+            <div className="inbox-page-header">
+                <h1>Inbox</h1>
+            </div>
+
+            {/* 2. OUTER CONTAINER (MATCH COPILOT - SPLIT GLASS PANELS) */}
+            <div className="inbox-grid-container">
 
                 {/* LEFT PANEL: CONVERSATION LIST */}
-                <div className="inbox-sidebar">
+                <div className="inbox-sidebar glass-panel">
                     <div className="sidebar-header">
                         <div className="search-container">
                             <Search size={18} className="text-subtle" />
                             <input
                                 type="text"
                                 className="search-input"
-                                placeholder="Search candidates or jobs..."
+                                placeholder="Search conversations..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
@@ -206,7 +212,7 @@ const Inbox = () => {
                 </div>
 
                 {/* RIGHT PANEL: MESSAGE VIEW */}
-                <div className="inbox-main">
+                <div className="inbox-main glass-panel">
                     {selectedThread ? (
                         <>
                             {/* Header */}
@@ -220,10 +226,10 @@ const Inbox = () => {
                                     </span>
                                 </div>
                                 <div style={{ display: 'flex', gap: '8px' }}>
-                                    <button className="btn-ghost" title="Call Candidate">
+                                    <button className="btn-ghost" title="Call">
                                         <Phone size={18} />
                                     </button>
-                                    <button className="btn-ghost" title="View Profile">
+                                    <button className="btn-ghost" title="Profile">
                                         <User size={18} />
                                     </button>
                                     <button className="btn-ghost" title="Action">
@@ -242,22 +248,21 @@ const Inbox = () => {
                                     messages.map((msg, index) => (
                                         <motion.div
                                             key={msg.messageId || index}
-                                            initial={{ opacity: 0, scale: 0.95 }}
+                                            initial={{ opacity: 0, scale: 0.98 }}
                                             animate={{ opacity: 1, scale: 1 }}
-                                            transition={{ duration: 0.2 }}
-                                            className={msg.senderRole === "System" ? "system-message" : `message-group ${msg.isMine ? 'mine' : 'theirs'}`}
+                                            className={msg.senderRole === "System" ? "system-message" : `message-wrapper ${msg.isMine ? 'mine' : 'theirs'}`}
                                         >
                                             {msg.senderRole === "System" ? (
                                                 <span>{msg.content}</span>
                                             ) : (
-                                                <>
+                                                <div className="message-content-group">
                                                     <div className={`message-bubble ${msg.isMine ? 'mine' : 'theirs'}`}>
                                                         {msg.content}
                                                     </div>
                                                     <span className="message-time">
                                                         {new Date(msg.sentAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                     </span>
-                                                </>
+                                                </div>
                                             )}
                                         </motion.div>
                                     ))
@@ -265,28 +270,29 @@ const Inbox = () => {
                                 <div ref={messagesEndRef} />
                             </div>
 
-                            {/* Input */}
+                            {/* Input Area (Copilot Style) */}
                             <div className="chat-input-area">
-                                <button className="btn-ghost" style={{ padding: '8px' }}>
-                                    <Briefcase size={20} />
-                                </button>
-                                <form onSubmit={handleSendMessage} className="chat-input-wrapper">
-                                    <input
-                                        type="text"
-                                        className="chat-input"
-                                        placeholder="Type your message..."
-                                        value={newMessage}
-                                        onChange={(e) => setNewMessage(e.target.value)}
-                                    />
-                                    <button
-                                        type="submit"
-                                        className="send-btn"
-                                        disabled={!newMessage.trim()}
-                                        style={{ position: 'absolute', right: '6px' }}
-                                    >
-                                        <Send size={20} />
+                                <div className="input-row">
+                                    <button className="btn-ghost icon-btn">
+                                        <Briefcase size={20} />
                                     </button>
-                                </form>
+                                    <form onSubmit={handleSendMessage} className="chat-input-wrapper">
+                                        <input
+                                            type="text"
+                                            className="chat-input"
+                                            placeholder="Type a message..."
+                                            value={newMessage}
+                                            onChange={(e) => setNewMessage(e.target.value)}
+                                        />
+                                        <button
+                                            type="submit"
+                                            className="send-btn"
+                                            disabled={!newMessage.trim()}
+                                        >
+                                            <Send size={18} />
+                                        </button>
+                                    </form>
+                                </div>
                             </div>
                         </>
                     ) : (

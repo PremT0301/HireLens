@@ -1,69 +1,76 @@
-/* Inbox Layout */
-.inbox-container {
+/* =========================================
+   INBOX UI (MATCHED TO COPILOT)
+   ========================================= */
+
+/* 
+   Page Layout Calculation 
+   Viewport (100vh) - Navbar (80px padded in layout) - Title (~50px) - Bottom Padding (20px)
+   Approx height for grid = calc(100vh - 150px)
+*/
+
+.inbox-page-wrapper {
     display: flex;
-    /* Navbar is ~70px. Adjusted height to fit viewport without main scrollbar.
-       70px navbar + 32px (top/bottom padding of 2rem) + slight buffer */
-    height: calc(100vh - 90px);
-    max-width: 1600px;
-    margin: 80px auto 0;
-    /* Top margin accounts for fixed navbar (70px) + gap */
-    padding: 0 1rem 1rem 1rem;
-    gap: 1.5rem;
-    overflow: hidden;
-    /* CRITICAL: Prevents the container itself from scrolling */
+    flex-direction: column;
+    /* Height calculation ensures the page fits exactly within viewport minus navbar */
+    height: calc(100vh - 100px);
+    gap: 16px;
 }
 
-/* Glass Wrapper for entire inbox */
-.inbox-wrapper {
+.inbox-page-header {
+    flex-shrink: 0;
+    padding: 0 4px;
+}
+
+.inbox-page-header h1 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -0.02em;
+}
+
+.inbox-grid-container {
     display: flex;
-    width: 100%;
-    height: 100%;
-    background: var(--glass-bg);
-    backdrop-filter: blur(var(--glass-blur));
-    -webkit-backdrop-filter: blur(var(--glass-blur));
-    border: 1px solid var(--glass-border);
-    border-radius: 24px;
+    gap: 20px;
+    flex: 1;
+    min-height: 0;
+    /* Critical for nested flex scrolling */
     overflow: hidden;
-    box-shadow: var(--shadow-xl);
+    /* Prevent page scroll */
 }
 
 /* =========================================
    LEFT PANEL - CONVERSATION LIST
    ========================================= */
 .inbox-sidebar {
-    width: 380px;
-    min-width: 320px;
-    border-right: 1px solid var(--glass-border);
+    width: 300px;
+    /* Matched Copilot Width */
+    flex-shrink: 0;
     display: flex;
     flex-direction: column;
-    background: rgba(255, 255, 255, 0.02);
-    transition: width 0.3s ease;
-    height: 100%;
-    /* Ensure strict height adherence */
+    overflow: hidden;
+    /* Contain inner scrolls */
+    /* Glass Panel styling is handled by global .glass-panel class in index.css */
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
 }
 
 .sidebar-header {
-    padding: 1.5rem;
+    padding: 20px;
     border-bottom: 1px solid var(--glass-border);
     flex-shrink: 0;
-    /* Prevent header from shrinking */
 }
 
 .search-container {
     position: relative;
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    border-radius: 12px;
-    padding: 10px 14px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--glass-border);
+    border-radius: 8px;
+    padding: 8px 12px;
     display: flex;
     align-items: center;
     gap: 10px;
-    transition: all 0.2s ease;
-}
-
-.search-container:focus-within {
-    border-color: var(--primary);
-    box-shadow: 0 0 0 3px var(--primary-light);
 }
 
 .search-input {
@@ -71,79 +78,81 @@
     background: transparent;
     outline: none;
     width: 100%;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     color: var(--text-primary);
 }
 
 .thread-list {
     flex: 1;
     overflow-y: auto;
-    /* Scroll ONLY the list */
-    overflow-x: hidden;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
 }
 
 .thread-item {
-    padding: 1.25rem;
-    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    border-radius: 8px;
     cursor: pointer;
     transition: all 0.2s ease;
-    display: flex;
-    gap: 12px;
+    border: 1px solid transparent;
     position: relative;
+    background: rgba(255, 255, 255, 0.02);
 }
 
 .thread-item:hover {
-    background: rgba(0, 0, 0, 0.02);
-}
-
-[data-theme='dark'] .thread-item:hover {
-    background: rgba(255, 255, 255, 0.03);
+    background: rgba(255, 255, 255, 0.05);
+    transform: translateY(-1px);
 }
 
 .thread-item.active {
-    background: var(--primary-light);
-    border-left: 3px solid var(--primary);
+    background: rgba(37, 99, 235, 0.1);
+    /* Primary light opacity */
+    border-color: var(--primary);
 }
 
 .thread-avatar {
-    width: 48px;
-    height: 48px;
-    border-radius: 12px;
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
     object-fit: cover;
     flex-shrink: 0;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .thread-avatar-placeholder {
-    width: 48px;
-    height: 48px;
-    border-radius: 12px;
-    background: linear-gradient(135deg, var(--secondary), var(--primary));
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    background: var(--primary);
     color: white;
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: 600;
-    font-size: 1.1rem;
+    font-size: 1rem;
     flex-shrink: 0;
+    opacity: 0.9;
 }
 
 .thread-content {
     flex: 1;
-    min-width: 0;
-    /* Enable truncation */
+    overflow: hidden;
 }
 
 .thread-header {
     display: flex;
     justify-content: space-between;
-    align-items: baseline;
+    align-items: center;
     margin-bottom: 2px;
 }
 
 .thread-name {
     font-weight: 600;
-    font-size: 1rem;
+    font-size: 0.95rem;
     color: var(--text-primary);
     white-space: nowrap;
     overflow: hidden;
@@ -151,34 +160,17 @@
 }
 
 .thread-time {
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     color: var(--text-secondary);
     flex-shrink: 0;
 }
 
 .thread-company {
-    font-size: 0.85rem;
-    color: var(--text-primary);
-    opacity: 0.9;
-    font-weight: 500;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    margin-bottom: 2px;
-}
-
-.thread-preview {
     font-size: 0.8rem;
     color: var(--text-secondary);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    line-height: 1.4;
-}
-
-.thread-item.unread .thread-name {
-    font-weight: 700;
-    color: var(--primary);
 }
 
 .unread-dot {
@@ -187,9 +179,8 @@
     background: var(--primary);
     border-radius: 50%;
     position: absolute;
-    top: 50%;
-    right: 1rem;
-    transform: translateY(-50%);
+    top: 12px;
+    right: 12px;
 }
 
 /* =========================================
@@ -199,246 +190,214 @@
     flex: 1;
     display: flex;
     flex-direction: column;
-    background: var(--bg-primary);
-    /* Slight contrast from list */
-    position: relative;
-    height: 100%;
-    /* Constraint height */
     overflow: hidden;
-    /* Prevent parent scroll */
-    /* texture/pattern optional */
+    /* Glass Panel styling */
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
 }
 
 .chat-header {
-    padding: 1rem 2rem;
-    border-bottom: 1px solid var(--img-border, var(--glass-border));
-    background: rgba(255, 255, 255, 0.5);
-    backdrop-filter: blur(10px);
+    padding: 20px;
+    border-bottom: 1px solid var(--glass-border);
     display: flex;
     justify-content: space-between;
     align-items: center;
-    z-index: 10;
-    flex-shrink: 0;
-    /* Don't shrink header */
-}
-
-[data-theme='dark'] .chat-header {
-    background: rgba(15, 23, 42, 0.7);
+    background: rgba(255, 255, 255, 0.02);
 }
 
 .chat-messages-area {
     flex: 1;
     overflow-y: auto;
-    /* Scroll ONLY messages */
-    padding: 2rem;
+    padding: 20px;
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
-    scroll-behavior: smooth;
-    min-height: 0;
-    /* Critical for flex scrolling */
+    gap: 20px;
 }
 
-.message-group {
+/* Message Styles - Matching Copilot aesthetics */
+.message-wrapper {
+    display: flex;
+    flex-direction: column;
+    max-width: 80%;
+}
+
+.message-wrapper.mine {
+    align-self: flex-end;
+}
+
+.message-wrapper.theirs {
+    align-self: flex-start;
+}
+
+.message-content-group {
     display: flex;
     flex-direction: column;
     gap: 4px;
-    max-width: 70%;
-}
-
-.message-group.mine {
-    align-self: flex-end;
-    align-items: flex-end;
-}
-
-.message-group.theirs {
-    align-self: flex-start;
-    align-items: flex-start;
 }
 
 .message-bubble {
-    padding: 12px 18px;
-    border-radius: 18px;
+    padding: 15px 20px;
+    border-radius: 16px;
     font-size: 0.95rem;
-    line-height: 1.5;
-    position: relative;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    line-height: 1.6;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
     word-wrap: break-word;
 }
 
 .message-bubble.mine {
     background: var(--primary);
     color: white;
-    border-bottom-right-radius: 4px;
+    border-top-right-radius: 4px;
+    /* Copilot style */
 }
 
 .message-bubble.theirs {
     background: var(--bg-secondary);
     color: var(--text-primary);
-    border: 1px solid var(--border-color);
-    border-bottom-left-radius: 4px;
+    border-top-left-radius: 4px;
+    /* Copilot style */
 }
 
 .message-time {
-    font-size: 0.7rem;
+    font-size: 0.75rem;
     color: var(--text-secondary);
-    margin-top: 4px;
-    margin-left: 4px;
-    margin-right: 4px;
     opacity: 0.8;
+    align-self: flex-end;
+    margin: 0 4px;
 }
 
-.system-message {
-    align-self: center;
-    background: rgba(100, 116, 139, 0.1);
-    color: var(--text-secondary);
-    padding: 6px 16px;
-    border-radius: 20px;
-    font-size: 0.8rem;
-    margin: 1rem 0;
-    border: 1px dashed var(--border-color);
+.message-wrapper.theirs .message-time {
+    align-self: flex-start;
 }
 
-/* Input Area */
+/* Input Area - Copilot Style */
 .chat-input-area {
-    padding: 1.5rem 2rem;
-    background: var(--bg-secondary);
-    border-top: 1px solid var(--border-color);
+    padding: 20px;
+    background: var(--glass-bg);
+    border-top: 1px solid var(--glass-border);
+}
+
+.input-row {
     display: flex;
-    gap: 12px;
+    gap: 10px;
     align-items: center;
-    flex-shrink: 0;
-    /* Input shouldn't shrink */
 }
 
 .chat-input-wrapper {
     flex: 1;
-    position: relative;
     display: flex;
     align-items: center;
+    position: relative;
+    background: transparent;
 }
 
 .chat-input {
     width: 100%;
-    padding: 14px 20px;
-    padding-right: 50px;
-    border-radius: 24px;
-    border: 1px solid var(--border-color);
-    background: var(--bg-primary);
-    color: var(--text-primary);
-    font-size: 0.95rem;
-    transition: all 0.2s;
+    padding: 12px 15px;
+    background: transparent;
+    border: none;
     outline: none;
-}
-
-.chat-input:focus {
-    border-color: var(--primary);
-    box-shadow: 0 0 0 3px var(--primary-light);
+    color: var(--text-primary);
+    font-size: 1rem;
 }
 
 .send-btn {
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
     background: var(--primary);
     color: white;
     border: none;
+    padding: 10px 15px;
+    border-radius: 8px;
+    cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    cursor: pointer;
     transition: all 0.2s;
-    box-shadow: 0 4px 6px rgba(37, 99, 235, 0.2);
 }
 
 .send-btn:hover:not(:disabled) {
     background: var(--primary-hover);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 12px rgba(37, 99, 235, 0.3);
+    transform: translateY(-1px);
 }
 
 .send-btn:disabled {
     background: var(--text-secondary);
     opacity: 0.5;
     cursor: not-allowed;
-    transform: none;
-    box-shadow: none;
+}
+
+.icon-btn {
+    padding: 12px;
+    border-radius: 50%;
+    border: 1px solid var(--glass-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    transition: all 0.2s;
+    background: transparent;
+    cursor: pointer;
+}
+
+.icon-btn:hover {
+    background: var(--bg-secondary);
+    color: var(--primary);
+    border-color: var(--primary);
 }
 
 /* Empty State */
 .empty-state {
-    height: 100%;
+    flex: 1;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     color: var(--text-secondary);
     text-align: center;
-    padding: 2rem;
 }
 
 .empty-state-icon {
-    width: 80px;
-    height: 80px;
-    background: var(--primary-light);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 1.5rem;
     color: var(--primary);
+    margin-bottom: 20px;
+    opacity: 0.8;
 }
 
-/* Utilities */
+/* Loader */
 .loading-spinner {
-    width: 30px;
-    height: 30px;
-    border: 3px solid rgba(37, 99, 235, 0.1);
+    width: 24px;
+    height: 24px;
+    border: 2px solid rgba(37, 99, 235, 0.2);
     border-top-color: var(--primary);
     border-radius: 50%;
-    animation: spinner-spin 0.8s linear infinite;
-    margin: 0 auto;
+    animation: spin 1s linear infinite;
 }
 
-@keyframes spinner-spin {
+@keyframes spin {
     to {
         transform: rotate(360deg);
     }
 }
 
+/* Mobile Responsive */
 @media (max-width: 900px) {
+    .inbox-grid-container {
+        flex-direction: column;
+        height: auto;
+    }
+
     .inbox-sidebar {
-        width: 80px;
-        min-width: 80px;
+        width: 100%;
+        height: 300px;
+        /* Fixed height for list on mobile */
     }
 
-    .inbox-sidebar .search-container,
-    .inbox-sidebar .thread-content,
-    .inbox-sidebar .thread-name,
-    .inbox-sidebar .thread-company,
-    .inbox-sidebar .thread-time,
-    .inbox-sidebar .thread-preview {
-        display: none;
+    .inbox-main {
+        height: 500px;
+        /* Fixed height for chat on mobile */
     }
 
-    .inbox-sidebar .thread-item {
-        justify-content: center;
-        padding: 1rem 0;
-    }
-
-    .inbox-sidebar .sidebar-header {
-        padding: 1rem;
-        display: flex;
-        justify-content: center;
-    }
-
-    /* Show only icon when collapsed */
-    .inbox-sidebar .sidebar-header .text-subtle {
-        width: 24px;
-        height: 24px;
-    }
-
-    .inbox-sidebar .search-input {
-        display: none;
+    .inbox-page-wrapper {
+        height: auto;
     }
 }
