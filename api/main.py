@@ -398,6 +398,28 @@ def delete_session(session_id: int, applicant_id: str = None, db: Session = Depe
 
 # -------------------- INTERVIEW COPILOT --------------------
 
+
+def summarize_session_title(first_message: str) -> str:
+    """Generate a short title (max 6 words) from the first user message"""
+    try:
+        if not openai_client:
+            return "New Interview Session"
+
+        prompt = f"Summarize the following user query into a short, professional interview session title (max 4-6 words). Do not use quotes. Text: {first_message}"
+        
+        response = openai_client.chat.completions.create(
+            model="meta-llama/llama-3.1-8b-instruct",
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=20
+        )
+        title = response.choices[0].message.content.strip()
+        # Remove surrounding quotes if any
+        title = title.strip('"').strip("'")
+        return title
+    except Exception as e:
+        print(f"Summarization failed: {e}")
+        return "New Interview Session"
+
 @app.post("/interview-chat", response_model=ChatResponse)
 async def interview_chat(chat_input: ChatInput, session_id: int = None, db: Session = Depends(get_db)):
 
@@ -439,14 +461,29 @@ When providing feedback:
         ai_message_text = response.choices[0].message.content
 
         # Save AI Message if session exists
+        updated_title = None
         if session_id:
             ai_msg = db_models.ChatMessage(session_id=session_id, sender="ai", content=ai_message_text)
             db.add(ai_msg)
+            
+            # Check if this is the first exchange (start of session)
+            # We already added the user message (committed) and the AI message (flushed by query), so count should be 2
+            count = db.query(db_models.ChatMessage).filter(db_models.ChatMessage.session_id == session_id).count()
+            
+            # If count is <= 2 (just the user message + current AI response), we should rename the session
+            if count <= 2: 
+                updated_title = summarize_session_title(chat_input.message)
+                session = db.query(db_models.ChatSession).filter(db_models.ChatSession.id == session_id).first()
+                if session:
+                    session.title = updated_title
+                    db.add(session)
+            
             db.commit()
 
         return ChatResponse(
             response=ai_message_text,
-            confidence=0.85
+            confidence=0.85,
+            session_title=updated_title
         )
 
     except Exception as e:

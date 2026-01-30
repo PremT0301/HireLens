@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Send, Mic, Volume2, Loader2, Plus, MessageSquare, Trash2, X, AlertTriangle } from 'lucide-react';
+import { Send, Mic, Loader2, Plus, MessageSquare, Trash2, X, AlertTriangle } from 'lucide-react';
 import Skeleton from '../../components/ui/Skeleton';
 import { NoSessionsState } from '../../components/ui/EmptyState';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -24,8 +24,7 @@ const InterviewCopilot = () => {
     const [sessionsLoading, setSessionsLoading] = useState(true);
 
     // Create Modal State
-    const [createModal, setCreateModal] = useState({ show: false });
-    const [newSessionTitle, setNewSessionTitle] = useState('');
+
 
     // Delete Modal State
     const [deleteModal, setDeleteModal] = useState({ show: false, sessionId: null });
@@ -88,32 +87,14 @@ const InterviewCopilot = () => {
         }
     };
 
-    const openCreateModal = () => {
-        setNewSessionTitle(`Interview Practice - ${new Date().toLocaleDateString()}`); // Default suggestion
-        setCreateModal({ show: true });
+    const startNewChat = () => {
+        setCurrentSessionId(null);
+        setMessages([
+            { id: Date.now(), sender: 'ai', text: "Hello! I'm your Interview Copilot. I can help you practice technical questions or refine your answers. What role are you preparing for?" }
+        ]);
     };
 
-    const confirmCreateSession = async () => {
-        if (!newSessionTitle.trim()) return;
 
-        const userId = getUserId();
-        if (!userId) {
-            console.error('Cannot create session: User not authenticated');
-            return;
-        }
-
-        try {
-            const res = await axios.post('http://localhost:8000/chat/sessions', null, {
-                params: { title: newSessionTitle, applicant_id: userId }
-            });
-            setSessions(prev => [res.data, ...prev]);
-            setCurrentSessionId(res.data.id);
-            setMessages([{ id: Date.now(), sender: 'ai', text: "Ready for a new session! What topic shall we cover?" }]);
-            setCreateModal({ show: false });
-        } catch (err) {
-            console.error("Failed to create session", err);
-        }
-    };
 
     const promptDeleteSession = (e, sessionId) => {
         e.stopPropagation();
@@ -204,7 +185,7 @@ const InterviewCopilot = () => {
             try {
                 const res = await axios.post('http://localhost:8000/chat/sessions', null, {
                     params: {
-                        title: `${input.substring(0, 30)}${input.length > 30 ? '...' : ''}`,
+                        title: "New Interview Session",
                         applicant_id: userId
                     }
                 });
@@ -248,6 +229,13 @@ const InterviewCopilot = () => {
                 if (response.data.confidence) {
                     setConfidence(Math.round(response.data.confidence * 100));
                 }
+
+                if (response.data.session_title) {
+                    // Update session title in the list
+                    setSessions(prev => prev.map(s =>
+                        s.id === activeSessionId ? { ...s, title: response.data.session_title } : s
+                    ));
+                }
             }
         } catch (error) {
             console.error("Chat error:", error);
@@ -278,7 +266,7 @@ const InterviewCopilot = () => {
                             ))}
                         </div>
                     ) : sessions.length === 0 ? (
-                        <NoSessionsState onAction={openCreateModal} />
+                        <NoSessionsState onAction={startNewChat} />
                     ) : (
                         sessions.map(session => (
                             <div
@@ -328,7 +316,7 @@ const InterviewCopilot = () => {
                 </div>
                 <div style={{ padding: '15px', borderTop: '1px solid var(--glass-border)' }}>
                     <button
-                        onClick={openCreateModal}
+                        onClick={startNewChat}
                         className="btn-primary"
                         style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
                     >
@@ -344,10 +332,7 @@ const InterviewCopilot = () => {
                     <h2 style={{ fontSize: '1.2rem', fontWeight: '600' }}>
                         {currentSessionId ? 'Current Session' : 'Select or Start a Session'}
                     </h2>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--success)' }}>
-                        <Volume2 size={18} />
-                        <span style={{ fontSize: '0.9rem' }}>Voice Active</span>
-                    </div>
+
                 </div>
 
                 <div style={{ flex: 1, padding: '20px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -463,74 +448,7 @@ const InterviewCopilot = () => {
                 </div>
             </div>
 
-            {/* CREATE MODAL */}
-            {createModal.show && createPortal(
-                <AnimatePresence>
-                    <div style={{
-                        position: 'fixed', inset: 0, zIndex: 9999,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)'
-                    }}>
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.95 }}
-                            className="glass-panel"
-                            style={{ width: '400px', padding: '24px', position: 'relative', border: '1px solid var(--glass-border)', boxShadow: '0 10px 25px rgba(0,0,0,0.2)' }}
-                        >
-                            <button
-                                onClick={() => setCreateModal({ show: false })}
-                                style={{ position: 'absolute', top: '16px', right: '16px', background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}
-                            >
-                                <X size={20} />
-                            </button>
 
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                                <h3 style={{ fontSize: '1.25rem', fontWeight: '600' }}>New Interview</h3>
-
-                                <div>
-                                    <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Session Name</label>
-                                    <input
-                                        type="text"
-                                        value={newSessionTitle}
-                                        onChange={(e) => setNewSessionTitle(e.target.value)}
-                                        placeholder="e.g. React Senior Developer Interview"
-                                        style={{
-                                            width: '100%',
-                                            padding: '12px',
-                                            borderRadius: '8px',
-                                            background: 'var(--bg-secondary)',
-                                            border: '1px solid var(--glass-border)',
-                                            color: 'var(--text-primary)',
-                                            fontSize: '1rem',
-                                            outline: 'none'
-                                        }}
-                                        autoFocus
-                                    />
-                                </div>
-
-                                <div style={{ display: 'flex', gap: '12px', width: '100%', marginTop: '8px' }}>
-                                    <button
-                                        onClick={() => setCreateModal({ show: false })}
-                                        className="btn-ghost"
-                                        style={{ flex: 1, justifyContent: 'center' }}
-                                    >
-                                        Cancel
-                                    </button>
-                                    <button
-                                        onClick={confirmCreateSession}
-                                        className="btn-primary"
-                                        style={{ flex: 1, justifyContent: 'center' }}
-                                    >
-                                        Create Session
-                                    </button>
-                                </div>
-                            </div>
-                        </motion.div>
-                    </div>
-                </AnimatePresence>,
-                document.body
-            )}
 
             {/* DELETE MODAL */}
             {deleteModal.show && createPortal(

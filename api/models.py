@@ -199,6 +199,7 @@ class ChatInput(BaseModel):
 class ChatResponse(BaseModel):
     response: str = Field(..., description="AI response text")
     confidence: float = Field(default=0.0, description="Confidence score")
+    session_title: Optional[str] = Field(default=None, description="Updated session title if changed")
 
 
 class MessageSchema(BaseModel):
