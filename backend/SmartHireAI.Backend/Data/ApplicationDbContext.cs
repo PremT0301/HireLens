@@ -25,6 +25,7 @@ namespace SmartHireAI.Backend.Data
         public DbSet<InboxThread> InboxThreads { get; set; }
         public DbSet<InboxMessage> InboxMessages { get; set; }
         public DbSet<Notification> Notifications { get; set; }
+        public DbSet<SystemLog> SystemLogs { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

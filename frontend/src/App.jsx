@@ -27,6 +27,12 @@ import Notifications from './pages/Notifications';
 import JobDetails from './pages/JobDetails';
 import ProtectedRoute from './components/ProtectedRoute';
 import PublicOnlyRoute from './components/PublicOnlyRoute';
+import AdminLayout from './layouts/AdminLayout';
+import AdminDashboard from './pages/admin/AdminDashboard';
+import UserManagement from './pages/admin/UserManagement';
+import JobModeration from './pages/admin/JobModeration';
+import AdminProtectedRoute from './components/admin/AdminProtectedRoute';
+import SystemLogs from './pages/admin/SystemLogs';
 
 // AnimatedRoutes component to use useLocation hook inside Router
 const AnimatedRoutes = () => {
@@ -81,6 +87,19 @@ const AnimatedRoutes = () => {
           <Route path="notifications" element={<Notifications />} />
         </Route>
 
+        {/* Admin Routes - PROTECTED */}
+        <Route path="/admin" element={
+          <AdminProtectedRoute>
+            <AdminLayout />
+          </AdminProtectedRoute>
+        }>
+          <Route index element={<Navigate to="/admin/dashboard" replace />} />
+          <Route path="dashboard" element={<AdminDashboard />} />
+          <Route path="users" element={<UserManagement />} />
+          <Route path="jobs" element={<JobModeration />} />
+          <Route path="logs" element={<SystemLogs />} />
+        </Route>
+
         <Route path="*" element={<Landing />} />
       </Routes>
     </AnimatePresence>
@@ -92,9 +111,13 @@ import AnimatedBackground from './components/ui/AnimatedBackground';
 
 const AppContent = () => {
   const location = useLocation();
-  const hideNavAndFooter = ['/login', '/signup', '/verify-email'];
-  const shouldHide = hideNavAndFooter.includes(location.pathname);
   const { addToast } = useToast();
+
+  // Hide default navbar for admin pages as AdminLayout has its own
+  const isAdminRoute = location.pathname.startsWith('/admin');
+  const hideNavAndFooter = ['/login', '/signup', '/verify-email'];
+  const shouldHide = hideNavAndFooter.includes(location.pathname) || isAdminRoute;
+
   // Notification Polling
   useEffect(() => {
     const token = sessionStorage.getItem('token');

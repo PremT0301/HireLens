@@ -61,9 +61,27 @@ const AuthService = {
         } catch (error) {
             console.error("Login failed", error);
 
-            throw error.response?.data || {
-                message: "Unable to connect to server"
-            };
+            let message = "Unable to connect to server";
+            const serverError = error.response?.data;
+
+            if (serverError) {
+                if (typeof serverError === "string") {
+                    message = serverError;
+                } else if (serverError.message) {
+                    message = serverError.message;
+                } else if (serverError.errors) {
+                    // ASP.NET Core Validation Errors
+                    const firstKey = Object.keys(serverError.errors)[0];
+                    const firstError = serverError.errors[firstKey];
+                    message = Array.isArray(firstError) ? firstError[0] : firstError;
+                } else if (serverError.title) {
+                    message = serverError.title;
+                }
+            } else if (error.message) {
+                message = error.message;
+            }
+
+            throw { message };
         }
     },
 
@@ -79,12 +97,27 @@ const AuthService = {
 
         } catch (error) {
             console.error("Registration failed", error);
-            if (error.response && error.response.data) {
-                console.error("Server Validation Errors:", error.response.data);
+
+            let message = "Unable to connect to server";
+            const serverError = error.response?.data;
+
+            if (serverError) {
+                if (typeof serverError === "string") {
+                    message = serverError;
+                } else if (serverError.message) {
+                    message = serverError.message;
+                } else if (serverError.errors) {
+                    const firstKey = Object.keys(serverError.errors)[0];
+                    const firstError = serverError.errors[firstKey];
+                    message = Array.isArray(firstError) ? firstError[0] : firstError;
+                } else if (serverError.title) {
+                    message = serverError.title;
+                }
+            } else if (error.message) {
+                message = error.message;
             }
-            throw error.response?.data || {
-                message: "Unable to connect to server"
-            };
+
+            throw { message };
         }
     },
 

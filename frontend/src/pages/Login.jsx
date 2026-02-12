@@ -47,6 +47,7 @@ const Login = () => {
 
             if (storedRole === 'applicant') navigate('/applicant/dashboard');
             else if (storedRole === 'recruiter') navigate('/recruiter/dashboard');
+            else if (storedRole === 'admin') navigate('/admin/dashboard');
             else navigate('/'); // Fallback
 
         } catch (err) {

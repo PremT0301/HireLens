@@ -283,6 +283,11 @@ public class AuthService : IAuthService
             throw new Exception("Invalid credentials.");
         }
 
+        if (!user.IsActive)
+        {
+            throw new Exception("Your account has been deactivated. Please contact support.");
+        }
+
         // 2. Verify Password
         if (string.IsNullOrEmpty(user.PasswordHash))
         {

@@ -69,11 +69,12 @@ if (app.Environment.IsDevelopment())
 }
 
 
-// Seed Database - DISABLED to prevent demo data proliferation
-// using (var scope = app.Services.CreateScope())
-// {
-//     await DbSeeder.Seed(scope.ServiceProvider);
-// }
+// Seed Database - Enabled
+using (var scope = app.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    await DbSeeder.Seed(scope.ServiceProvider);
+}
 
 app.UseCors();
 

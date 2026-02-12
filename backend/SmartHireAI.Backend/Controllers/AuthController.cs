@@ -1,8 +1,10 @@
+#nullable enable
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using SmartHireAI.Backend.Models;
 using SmartHireAI.Backend.Services;
 
+namespace SmartHireAI.Backend.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -33,7 +35,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("login")]
-    public async Task<ActionResult<AuthResponseDto>> Login(UserLoginDto request)
+    public async Task<ActionResult<AuthResponseDto>> Login([FromBody] UserLoginDto request)
     {
         try
         {
@@ -42,6 +44,17 @@ public class AuthController : ControllerBase
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Login failed for email: {Email}", request.Email);
+
+            if (ex.Message.Contains("Invalid credentials"))
+            {
+                return Unauthorized(new { message = ex.Message });
+            }
+            if (ex.Message.Contains("not verified") || ex.Message.Contains("verify-email") || ex.Message.Contains("deactivated"))
+            {
+                return StatusCode(403, new { message = ex.Message });
+            }
+
             return BadRequest(new { message = ex.Message });
         }
     }

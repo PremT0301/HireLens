@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -43,6 +44,9 @@ namespace SmartHireAI.Backend.Data
 
         [Column("is_email_verified")]
         public bool IsEmailVerified { get; set; } = false;
+
+        [Column("is_active")]
+        public bool IsActive { get; set; } = true;
 
         [MaxLength(100)]
         [Column("verification_token")]
@@ -696,5 +700,35 @@ namespace SmartHireAI.Backend.Data
 
         [ForeignKey("UserId")]
         public User User { get; set; } = null!;
+    }
+    [Table("system_logs")]
+    public class SystemLog
+    {
+        [Key]
+        [Column("log_id")]
+        public Guid LogId { get; set; }
+
+        [Column("timestamp")]
+        public DateTime Timestamp { get; set; } = DateTime.UtcNow;
+
+        [Required]
+        [MaxLength(20)]
+        [Column("level")]
+        public string Level { get; set; } = "Info"; // Info, Warning, Error
+
+        [Required]
+        [MaxLength(50)]
+        [Column("source")]
+        public string Source { get; set; } = "System"; // Auth, Admin, AI, System
+
+        [Required]
+        [Column("message")]
+        public string Message { get; set; } = string.Empty;
+
+        [Column("user_id")]
+        public Guid? UserId { get; set; } // Optional: User who performed the action or was affected
+
+        [ForeignKey("UserId")]
+        public User? User { get; set; }
     }
 }

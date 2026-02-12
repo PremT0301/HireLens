@@ -2,17 +2,20 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SmartHireAI.Backend.Data;
 
 #nullable disable
 
-namespace SmartHireAI.Backend.Migrations
+namespace SmartHireAI.Backend.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260210040614_AddIsActiveToUser")]
+    partial class AddIsActiveToUser
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -740,45 +743,6 @@ namespace SmartHireAI.Backend.Migrations
                     b.ToTable("resume_entities");
                 });
 
-            modelBuilder.Entity("SmartHireAI.Backend.Data.SystemLog", b =>
-                {
-                    b.Property<Guid>("LogId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)")
-                        .HasColumnName("log_id");
-
-                    b.Property<string>("Level")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("varchar(20)")
-                        .HasColumnName("level");
-
-                    b.Property<string>("Message")
-                        .IsRequired()
-                        .HasColumnType("longtext")
-                        .HasColumnName("message");
-
-                    b.Property<string>("Source")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("varchar(50)")
-                        .HasColumnName("source");
-
-                    b.Property<DateTime>("Timestamp")
-                        .HasColumnType("datetime(6)")
-                        .HasColumnName("timestamp");
-
-                    b.Property<Guid?>("UserId")
-                        .HasColumnType("char(36)")
-                        .HasColumnName("user_id");
-
-                    b.HasKey("LogId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("system_logs");
-                });
-
             modelBuilder.Entity("SmartHireAI.Backend.Data.User", b =>
                 {
                     b.Property<Guid>("UserId")
@@ -1099,15 +1063,6 @@ namespace SmartHireAI.Backend.Migrations
                         .IsRequired();
 
                     b.Navigation("Resume");
-                });
-
-            modelBuilder.Entity("SmartHireAI.Backend.Data.SystemLog", b =>
-                {
-                    b.HasOne("SmartHireAI.Backend.Data.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId");
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("SmartHireAI.Backend.Data.WorkExperience", b =>

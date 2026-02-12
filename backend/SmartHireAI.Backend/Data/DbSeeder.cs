@@ -1,5 +1,8 @@
 using Microsoft.AspNetCore.Identity;
 using SmartHireAI.Backend.Models;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using BCrypt.Net;
 
 namespace SmartHireAI.Backend.Data;
 
@@ -24,6 +27,7 @@ public static class DbSeeder
                 FullName = "Sarah Recruiter",
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword("password"), // Use proper hashing in prod
                 Role = "Recruiter",
+                IsActive = true,
                 CreatedAt = DateTime.UtcNow
             };
             context.Users.Add(recruiterUser);
@@ -42,6 +46,25 @@ public static class DbSeeder
         else
         {
             recruiter = context.Recruiters.FirstOrDefault(r => r.User.UserId == recruiterUser.UserId);
+        }
+
+        // 1.1 Seed Admin
+        var adminUser = context.Users.FirstOrDefault(u => u.Email == "admin@hirelens.ai");
+        if (adminUser == null)
+        {
+            adminUser = new User
+            {
+                UserId = Guid.NewGuid(),
+                Email = "admin@hirelens.ai",
+                FullName = "System Admin",
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword("admin123"),
+                Role = "Admin",
+                IsActive = true,
+                IsEmailVerified = true,
+                CreatedAt = DateTime.UtcNow
+            };
+            context.Users.Add(adminUser);
+            await context.SaveChangesAsync();
         }
 
         // 2. Seed Jobs
