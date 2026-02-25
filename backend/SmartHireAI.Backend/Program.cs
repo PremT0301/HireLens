@@ -1,5 +1,6 @@
 using SmartHireAI.Backend.Services;
 using SmartHireAI.Backend.Data;
+using SmartHireAI.Backend.Hubs;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -23,6 +24,10 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IResumeParserService, ResumeParserService>();
 builder.Services.AddHttpClient<IAIService, AIService>();
+builder.Services.AddScoped<IAdminAnalyticsService, AdminAnalyticsService>();
+builder.Services.AddScoped<IAdminService, AdminService>();
+builder.Services.AddMemoryCache();
+builder.Services.AddSignalR();
 
 // Configure JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
@@ -51,11 +56,12 @@ builder.Services.AddAuthentication(options =>
 // Configure CORS
 builder.Services.AddCors(options =>
 {
-    options.AddDefaultPolicy(policy =>
+    options.AddPolicy("AllowViteApp", policy =>
     {
-        policy.AllowAnyOrigin()
+        policy.WithOrigins("http://localhost:5173")
               .AllowAnyHeader()
-              .AllowAnyMethod();
+              .AllowAnyMethod()
+              .AllowCredentials();
     });
 });
 
@@ -76,7 +82,7 @@ using (var scope = app.Services.CreateScope())
     await DbSeeder.Seed(scope.ServiceProvider);
 }
 
-app.UseCors();
+app.UseCors("AllowViteApp");
 
 
 app.UseStaticFiles();
@@ -85,5 +91,6 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapHub<AnalyticsHub>("/analyticsHub");
 
 app.Run();

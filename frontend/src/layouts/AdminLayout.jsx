@@ -1,6 +1,6 @@
 import React from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, Briefcase, LogOut, Shield } from 'lucide-react';
+import { LayoutDashboard, Users, Briefcase, LogOut, Shield, Activity } from 'lucide-react';
 import AuthService from '../api/authService';
 
 const AdminLayout = () => {
@@ -48,6 +48,22 @@ const AdminLayout = () => {
                             }}>
                                 <LayoutDashboard size={20} />
                                 <span>Dashboard</span>
+                            </Link>
+                        </li>
+                        <li>
+                            <Link to="/admin/analytics" style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.75rem',
+                                padding: '0.75rem 1rem',
+                                borderRadius: '0.375rem',
+                                textDecoration: 'none',
+                                color: isActive('/admin/analytics') ? 'white' : '#9ca3af',
+                                backgroundColor: isActive('/admin/analytics') ? '#374151' : 'transparent',
+                                transition: 'all 0.2s'
+                            }}>
+                                <Activity size={20} />
+                                <span>Analytics</span>
                             </Link>
                         </li>
                         <li>

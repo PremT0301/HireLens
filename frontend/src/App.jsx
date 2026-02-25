@@ -33,6 +33,7 @@ import UserManagement from './pages/admin/UserManagement';
 import JobModeration from './pages/admin/JobModeration';
 import AdminProtectedRoute from './components/admin/AdminProtectedRoute';
 import SystemLogs from './pages/admin/SystemLogs';
+import AnalyticsDashboard from './pages/admin/AnalyticsDashboard';
 
 // AnimatedRoutes component to use useLocation hook inside Router
 const AnimatedRoutes = () => {
@@ -98,6 +99,7 @@ const AnimatedRoutes = () => {
           <Route path="users" element={<UserManagement />} />
           <Route path="jobs" element={<JobModeration />} />
           <Route path="logs" element={<SystemLogs />} />
+          <Route path="analytics" element={<AnalyticsDashboard />} />
         </Route>
 
         <Route path="*" element={<Landing />} />

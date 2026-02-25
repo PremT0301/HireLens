@@ -12,10 +12,21 @@ const AdminService = {
         }
     },
 
-    // Get all users
-    getUsers: async () => {
+    // Get system health
+    getHealth: async () => {
         try {
-            const response = await api.get("/admin/users");
+            const response = await api.get("/admin/health");
+            return response.data;
+        } catch (error) {
+            console.error("Error fetching admin health:", error);
+            throw error.response?.data || { message: "Failed to fetch health status" };
+        }
+    },
+
+    // Get all users (Paginated)
+    getUsers: async (params = { page: 1, pageSize: 10 }) => {
+        try {
+            const response = await api.get("/admin/users", { params });
             return response.data;
         } catch (error) {
             console.error("Error fetching users:", error);
@@ -34,10 +45,34 @@ const AdminService = {
         }
     },
 
-    // Get all jobs for moderation
-    getJobs: async () => {
+    // Update user role
+    updateUserRole: async (userId, role) => {
         try {
-            const response = await api.get("/admin/jobs");
+            const response = await api.put(`/admin/users/${userId}/role`, JSON.stringify(role), {
+                headers: { 'Content-Type': 'application/json' }
+            });
+            return response.data;
+        } catch (error) {
+            console.error("Error updating user role:", error);
+            throw error.response?.data || { message: "Failed to update user role" };
+        }
+    },
+
+    // Delete user (Soft delete)
+    deleteUser: async (userId) => {
+        try {
+            const response = await api.delete(`/admin/users/${userId}`);
+            return response.data;
+        } catch (error) {
+            console.error("Error deleting user:", error);
+            throw error.response?.data || { message: "Failed to delete user" };
+        }
+    },
+
+    // Get all jobs for moderation (Paginated)
+    getJobs: async (params = { page: 1, pageSize: 10 }) => {
+        try {
+            const response = await api.get("/admin/jobs", { params });
             return response.data;
         } catch (error) {
             console.error("Error fetching jobs:", error);

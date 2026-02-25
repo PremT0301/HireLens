@@ -13,12 +13,14 @@ The system operates on a 3-tier architecture:
 ```mermaid
 graph TD
     User((User))
+    Admin((Admin))
     Frontend[Frontend - React/Vite]
     Backend[Backend - .NET Core WebAPI]
     DB[(Database - MySQL)]
     AI[AI Service - Python/FastAPI]
 
     User -->|Interacts| Frontend
+    Admin -->|System Oversight| Frontend
     Frontend -->|API Calls (HTTP)| Backend
     Backend -->|Queries/Updates| DB
     Backend -->|Analysis Request| AI
@@ -28,11 +30,11 @@ graph TD
 ## 👤 User Journeys
 
 ### 1. Authentication Flow
-*   **User** authenticates via Login or Signup.
+*   **User/Admin** authenticates via Login or Signup.
 *   **Frontend** sends credentials to `AuthController`.
 *   **Backend** validates against `Users` table.
 *   **Result**: A JWT Token is returned and stored in the frontend key-value store.
-*   **Role Routing**: User is redirected to `ApplicantDashboard` or `RecruiterDashboard` based on their role.
+*   **Role Routing**: User is redirected to `ApplicantDashboard`, `RecruiterDashboard`, or `AdminDashboard` based on their role.
 
 ### 2. The Job Application Flow (Applicant)
 1.  **Profile Setup**: Applicant creates a profile and uploads a resume.
@@ -56,29 +58,42 @@ graph TD
     *   **Validation**: Backend checks if the candidate is already hired elsewhere and if the job has remaining openings.
     *   **Auto-Close**: If the hire fills the last opening (e.g., 3/3 hires), the job status is automatically updated to `Closed`.
 
+### 4. The Administrative Flow (Admin)
+1.  **System Oversight**: Admin monitors platform health and system uptime via `AdminDashboard`.
+2.  **Real-time Monitoring**:
+    - **SignalR Push**: Significant events (new registrations, job posts) trigger an immediate broadcast from the `AnalyticsHub`.
+    - **Polling Fallback**: The frontend maintains a 30s polling cycle for high-availability data.
+3.  **User Management**: Admin can enable/disable user accounts and modulate roles with full audit tracking.
+4.  **Job Moderation**: Admin can globally manage job statuses (Active/Closed) to maintain platform quality.
+5.  **Analytics**: Admin accesses `AnalyticsDashboard` for deep-dive metrics (User Growth, Hiring Funnels).
+    - **Backend Performance**: Data is aggregated via `IMemoryCache` (30s TTL) to prevent database bottlenecks during heavy usage.
+6.  **Auditability**: Every administrative action is logged in `SystemLogs` for transparency and security.
+
 ## 🧠 AI Intelligence Flow
 
 The "Brain" of the operation works as follows:
 
 1.  **Input**: Text data (Resume Text + Job Description).
 2.  **Processing (Python Service)**:
-    *   **NER Model (Spacy)**: Extracts entities like `SKILLS`, `EXPERIENCE`, `DESIGNATION`.
-    *   **Classification (BERT)**: Determines the domain/role of the resume.
+    - **NER Model (Spacy)**: Extracts entities like `SKILLS`, `EXPERIENCE`, `DESIGNATION`, `LOCATION`.
+    - **Classification (BERT)**: Determines the domain/role of the resume.
 3.  **Output**: Structured JSON data containing the fit score and recommendations, which the Backend relays to the Frontend.
 
 ## 📂 Key Controllers & Responsibilities
 
 | Controller | Responsibility |
 | :--- | :--- |
-| `AuthController` | Login, Signup, Token Generation. |
+| `AuthController` | Login, Signup, Token Generation (Standard & Admin). |
 | `ProfilesController` | Management of Applicant & Recruiter profiles. |
 | `JobsController` | Creating, editing, and listing job postings. |
 | `ApplicationsController` | Handling the act of applying and tracking status. |
 | `ResumesController` | Uploading and parsing resume files. |
 | `AnalysisController` | Bridge between .NET and Python AI Service. |
-| `InboxController` | Management of in-app notifications and messages. |
+| `InboxController` | Management of in-app notifications and SignalR hubs. |
+| `AdminController` | System oversight, User/Job moderation, and Health Checks. |
+| `AdminAnalyticsController` | Cached data aggregation for executive dashboards. |
 
 ## 🔗 Deep Links
-- [Frontend Codebase](file:///d:/HireLens/frontend)
-- [Backend Codebase](file:///d:/HireLens/backend/SmartHireAI.Backend)
-- [AI Service Codebase](file:///d:/HireLens/api)
+- [Frontend Codebase](file:///d:/EDU/INTERNSHIP/HireLens/frontend)
+- [Backend Codebase](file:///d:/EDU/INTERNSHIP/HireLens/backend/SmartHireAI.Backend)
+- [AI Service Codebase](file:///d:/EDU/INTERNSHIP/HireLens/api)
