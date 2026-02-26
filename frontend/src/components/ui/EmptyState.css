@@ -13,8 +13,27 @@
     padding: 40px 20px;
 }
 
-.empty-state--centered {
-    min-height: 100%;
+.empty-state--sidebar {
+    min-height: 200px;
+    padding: 20px 10px;
+}
+
+.empty-state--sidebar .empty-state__icon {
+    width: 48px;
+    height: 48px;
+}
+
+.empty-state--sidebar .empty-state__title {
+    font-size: 1.1rem;
+}
+
+.empty-state--sidebar .empty-state__description {
+    font-size: 0.85rem;
+}
+
+.empty-state--sidebar .empty-state__action {
+    padding: 8px 16px;
+    font-size: 0.9rem;
 }
 
 .empty-state__icon-wrapper {

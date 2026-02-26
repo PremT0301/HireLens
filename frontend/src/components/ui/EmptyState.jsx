@@ -95,13 +95,14 @@ export const NoMessagesState = () => (
     />
 );
 
-export const NoSessionsState = ({ onAction }) => (
+export const NoSessionsState = ({ onAction, variant = 'default' }) => (
     <EmptyState
         iconName="no-sessions"
         title="No interview sessions yet"
         description="Create your first interview practice session to start preparing for your dream job!"
         actionLabel="Create Session"
         onAction={onAction}
+        variant={variant}
     />
 );
 

@@ -34,7 +34,7 @@ const Footer = () => {
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
                                 <MapPin size={16} color="var(--primary)" />
-                                <span>Silicon Valley, California</span>
+                                <span>Gujarat, India</span>
                             </div>
                         </div>
                     </div>

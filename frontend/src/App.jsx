@@ -190,7 +190,7 @@ const AppContent = () => {
         <AnimatedRoutes />
       </div>
       {/* Gap before footer handled by margin-top: auto in Footer or here */}
-      {!shouldHide && <div style={{ height: '4rem' }}></div>}
+      {!shouldHide && <div style={{ height: '1rem' }}></div>}
       {!shouldHide && <Footer />}
     </div>
   );

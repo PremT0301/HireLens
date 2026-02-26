@@ -205,8 +205,8 @@ const Navbar = () => {
                 backgroundColor: isScrolled ? 'var(--glass-bg)' : 'transparent',
                 backdropFilter: isScrolled ? 'blur(var(--glass-blur))' : 'none',
                 WebkitBackdropFilter: isScrolled ? 'blur(var(--glass-blur))' : 'none',
-                borderBottom: isScrolled ? '1px solid var(--border-color)' : '1px solid transparent',
-                boxShadow: isScrolled ? '0 4px 20px rgba(0,0,0,0.05)' : 'none',
+                borderBottom: '1px solid var(--glass-border)',
+                boxShadow: isScrolled ? '0 4px 20px rgba(0,0,0,0.08)' : '0 2px 10px rgba(0,0,0,0.02)',
                 transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)'
             }}>
                 <div className="container" style={{

@@ -250,7 +250,7 @@ const InterviewCopilot = () => {
     };
 
     return (
-        <div style={{ height: 'calc(100vh - 140px)', display: 'flex', gap: '20px' }}>
+        <div style={{ height: 'calc(100vh - 180px)', display: 'flex', gap: '20px', marginBottom: '20px' }}>
 
             {/* Left Sidebar: Previous Chats */}
             <div className="glass-panel" style={{ width: '300px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
@@ -266,7 +266,7 @@ const InterviewCopilot = () => {
                             ))}
                         </div>
                     ) : sessions.length === 0 ? (
-                        <NoSessionsState onAction={startNewChat} />
+                        <NoSessionsState onAction={startNewChat} variant="sidebar" />
                     ) : (
                         sessions.map(session => (
                             <div
@@ -414,7 +414,12 @@ const InterviewCopilot = () => {
                     )}
                 </div>
 
-                <div style={{ padding: '20px', background: 'var(--glass-bg)', borderTop: '1px solid var(--glass-border)' }}>
+                <div style={{
+                    padding: '20px 20px 30px',
+                    background: 'var(--glass-bg)',
+                    borderTop: '1px solid var(--glass-border)',
+                    marginTop: 'auto'
+                }}>
                     <div style={{ display: 'flex', gap: '10px' }}>
                         <button className="btn-ghost" style={{ padding: '12px', borderRadius: '50%', border: '1px solid var(--glass-border)' }}>
                             <Mic size={20} />
