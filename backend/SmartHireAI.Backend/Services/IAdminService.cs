@@ -1,3 +1,4 @@
+#nullable enable
 using SmartHireAI.Backend.Models;
 using SmartHireAI.Backend.Data;
 using SmartHireAI.Backend.DTOs.Analytics;

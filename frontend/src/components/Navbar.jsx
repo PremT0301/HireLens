@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate, NavLink } from 'react-router-dom';
-import { Sun, Moon, Briefcase, LayoutDashboard, FileText, MessageSquare, Users, PlusCircle, TrendingUp, Menu, X, User, LogOut, Bell } from 'lucide-react';
+import { Sun, Moon, Briefcase, LayoutDashboard, FileText, MessageSquare, Users, PlusCircle, TrendingUp, Menu, X, User, LogOut, Bell, ChevronDown, ExternalLink } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import AuthService from '../api/authService';
 import ProfileService from '../api/profileService';
 
@@ -17,9 +18,13 @@ const Navbar = () => {
     const [isVisible, setIsVisible] = useState(true);
     const [lastScrollY, setLastScrollY] = useState(0);
 
-    // Profile Editor State
-    const [isProfileEditorOpen, setIsProfileEditorOpen] = useState(false);
+    // Product Dropdown State
+    const [isProductOpen, setIsProductOpen] = useState(false);
+    const [isAnnouncementVisible, setIsAnnouncementVisible] = useState(true);
+
+    // Profile States
     const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+    const [isProfileEditorOpen, setIsProfileEditorOpen] = useState(false);
 
     const location = useLocation();
     const navigate = useNavigate();
@@ -161,230 +166,220 @@ const Navbar = () => {
 
     const userImage = getUserImage();
 
+    const productLinks = [
+        { label: 'AI Resume Analysis', desc: 'Enterprise parsing intelligence', path: '#' },
+        { label: 'Interview Copilot', desc: 'Real-time AI voice coaching', path: '#' },
+        { label: 'Skill Gap Engine', desc: 'Predictive career mapping', path: '#' },
+    ];
+
     return (
-        <nav style={{
-            position: 'fixed', // Fixed to allow hiding/showing
-            top: 0,
-            width: '100%',
-            zIndex: 1000,
-            // Styling
-            backgroundColor: isScrolled ? 'var(--glass-bg)' : 'transparent',
-            backdropFilter: isScrolled ? 'blur(var(--glass-blur))' : 'none',
-            WebkitBackdropFilter: isScrolled ? 'blur(var(--glass-blur))' : 'none',
-            borderBottom: isScrolled ? '1px solid var(--border-color)' : '1px solid transparent',
-            // Smart Hide Animation
-            transform: isVisible ? 'translateY(0)' : 'translateY(-100%)',
-            transition: 'background-color 0.3s ease, border-color 0.3s ease, backdrop-filter 0.3s ease, transform 0.3s ease-in-out'
-        }}>
-            <div className="container" style={{
-                height: '70px',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center'
-            }}>
-
-                {/* Logo Section */}
-                <Link to={userRole === 'applicant' ? '/applicant/dashboard' : userRole === 'recruiter' ? '/recruiter/dashboard' : '/'}
-                    style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <img src="/logo.png" alt="HireLens Logo" style={{ width: '40px', height: '40px', objectFit: 'contain' }} />
-                    <span style={{
-                        fontSize: '1.25rem',
-                        fontWeight: '700',
-                        color: 'var(--text-primary)',
-                        letterSpacing: '-0.02em'
-                    }}>HireLens AI</span>
-                </Link>
-
-                {/* Desktop Navigation */}
-                <div className="desktop-menu" style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
-                    {userRole === 'applicant' && applicantLinks.map(link => (
-                        <NavItem key={link.path} to={link.path} label={link.label} />
-                    ))}
-
-                    {userRole === 'recruiter' && recruiterLinks.map(link => (
-                        <NavItem key={link.path} to={link.path} label={link.label} />
-                    ))}
-                </div>
-
-                {/* Right Actions */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-
-                    {/* Notifications */}
-                    {userRole && (
-                        <Link
-                            to={userRole === 'applicant' ? '/applicant/notifications' : '/recruiter/notifications'}
-                            className="btn-ghost"
-                            style={{ padding: '8px', borderRadius: '50%', color: 'var(--text-secondary)' }}
-                        >
-                            <Bell size={20} />
-                        </Link>
-                    )}
-
-                    {/* Landing Page Links */}
-                    {!userRole && isLandingPage && (
-                        <div style={{ display: 'flex', gap: '1rem' }}>
-                            <Link to="/login" className="btn-ghost">Log In</Link>
-                            <Link to="/signup" className="btn-primary">Sign Up</Link>
-                        </div>
-                    )}
-
-                    {/* Theme Toggle */}
-                    <button onClick={toggleTheme} className="btn-ghost" style={{ padding: '8px', borderRadius: '50%' }}>
-                        {isDark ? <Sun size={20} /> : <Moon size={20} />}
-                    </button>
-
-                    {/* Profile Dropdown */}
-                    {userRole && (
-                        <div style={{ position: 'relative' }}>
+        <>
+            {/* Announcement Bar */}
+            <AnimatePresence>
+                {isAnnouncementVisible && isLandingPage && (
+                    <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        className="announcement-bar"
+                    >
+                        <div className="container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', position: 'relative' }}>
+                            <span>Introducing AI Resume Copilot — Now Live 🚀</span>
+                            <Link to="#" className="announcement-link">Know More →</Link>
                             <button
-                                onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '10px',
-                                    background: 'transparent',
-                                    border: 'none',
-                                    padding: '4px 8px',
-                                    borderRadius: '30px',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s',
-                                    boxShadow: isProfileMenuOpen ? '0 0 0 2px var(--primary-light)' : 'none'
-                                }}
-                                onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-secondary)'}
-                                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                                onClick={() => setIsAnnouncementVisible(false)}
+                                style={{ position: 'absolute', right: 0, background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}
                             >
-                                {userImage ? (
-                                    <img
-                                        src={getProfileImageUrl(userImage)}
-                                        alt="Profile"
-                                        style={{
-                                            width: '32px',
-                                            height: '32px',
-                                            borderRadius: '50%',
-                                            objectFit: 'cover',
-                                            border: '2px solid var(--border-color)'
-                                        }}
-                                        onError={(e) => { e.target.style.display = 'none'; }}
-                                    />
-                                ) : (
-                                    <div style={{
-                                        width: '32px',
-                                        height: '32px',
-                                        borderRadius: '50%',
-                                        background: 'linear-gradient(135deg, var(--primary), var(--secondary))',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        color: 'white',
-                                        fontSize: '0.9rem',
-                                        fontWeight: '600',
-                                        boxShadow: '0 2px 5px rgba(0,0,0,0.1)'
-                                    }}>
-                                        {userProfile ? userProfile.fullName?.charAt(0) : userRole[0].toUpperCase()}
-                                    </div>
-                                )}
-                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', lineHeight: 1.2 }}>
-                                    <span style={{ fontSize: '0.9rem', color: 'var(--text-primary)', fontWeight: 600, maxWidth: '120px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                        {userProfile ? userProfile.fullName.split(' ')[0] : (userRole === 'applicant' ? 'Applicant' : 'Recruiter')}
-                                    </span>
-                                </div>
-                                <User size={16} color="var(--text-secondary)" />
+                                <X size={16} />
                             </button>
-
-                            {/* Dropdown Menu */}
-                            {isProfileMenuOpen && (
-                                <div className="glass-panel" style={{
-                                    position: 'absolute',
-                                    top: '120%',
-                                    right: 0,
-                                    width: '200px',
-                                    padding: '8px',
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    gap: '4px',
-                                    zIndex: 1100
-                                }}>
-                                    <button
-                                        onClick={() => { setIsProfileMenuOpen(false); setIsProfileEditorOpen(true); }}
-                                        className="btn-ghost"
-                                        style={{ justifyContent: 'flex-start', width: '100%' }}
-                                    >
-                                        <User size={16} /> My Profile
-                                    </button>
-                                    <div style={{ height: '1px', background: 'var(--border-color)', margin: '4px 0' }}></div>
-                                    <button
-                                        onClick={handleLogout}
-                                        className="btn-ghost"
-                                        style={{ justifyContent: 'flex-start', width: '100%', color: 'var(--error)' }}
-                                    >
-                                        <LogOut size={16} /> Log Out
-                                    </button>
-                                </div>
-                            )}
                         </div>
-                    )}
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
-                    {/* Mobile Toggle */}
-                    <div className="mobile-toggle" style={{ display: 'none' }}>
-                        <button onClick={() => setIsOpen(!isOpen)} className="btn-ghost">
-                            {isOpen ? <X /> : <Menu />}
+            <nav style={{
+                position: 'sticky',
+                top: 0,
+                width: '100%',
+                zIndex: 1000,
+                backgroundColor: isScrolled ? 'var(--glass-bg)' : 'transparent',
+                backdropFilter: isScrolled ? 'blur(var(--glass-blur))' : 'none',
+                WebkitBackdropFilter: isScrolled ? 'blur(var(--glass-blur))' : 'none',
+                borderBottom: isScrolled ? '1px solid var(--border-color)' : '1px solid transparent',
+                boxShadow: isScrolled ? '0 4px 20px rgba(0,0,0,0.05)' : 'none',
+                transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)'
+            }}>
+                <div className="container" style={{
+                    height: '80px',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    padding: '0 2rem'
+                }}>
+
+                    {/* Left: Logo & Nav Links */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4rem' }}>
+                        <Link to={userRole === 'applicant' ? '/applicant/dashboard' : userRole === 'recruiter' ? '/recruiter/dashboard' : '/'}
+                            style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <img src="/logo.png" alt="HireLens Logo" style={{ width: '34px', height: '34px', objectFit: 'contain' }} />
+                            <span style={{ fontSize: '1.4rem', fontWeight: '800', color: 'var(--text-primary)', letterSpacing: '-0.04em' }}>
+                                HireLens<span style={{ color: 'var(--primary)' }}>AI</span>
+                            </span>
+                        </Link>
+
+                        {/* Enterprise Links (Public Pages) */}
+                        {!userRole && (
+                            <div className="desktop-menu" style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
+                                <div
+                                    style={{ position: 'relative' }}
+                                    onMouseEnter={() => setIsProductOpen(true)}
+                                    onMouseLeave={() => setIsProductOpen(false)}
+                                >
+                                    <button className="nav-item-enterprise" style={{ background: 'none', border: 'none', cursor: 'pointer', gap: '6px' }}>
+                                        Product <ChevronDown size={14} />
+                                    </button>
+
+                                    <AnimatePresence>
+                                        {isProductOpen && (
+                                            <motion.div
+                                                initial={{ opacity: 0, y: 10 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                exit={{ opacity: 0, y: 10 }}
+                                                className="glass-panel"
+                                                style={{ position: 'absolute', top: '100%', left: 0, width: '300px', padding: '1.25rem', marginTop: '0.75rem', boxShadow: '0 10px 40px rgba(0,0,0,0.1)' }}
+                                            >
+                                                {productLinks.map((link, idx) => (
+                                                    <Link key={idx} to={link.path} className="btn-ghost" style={{ width: '100%', justifyContent: 'flex-start', padding: '14px', textAlign: 'left', marginBottom: '6px', borderRadius: '12px', border: 'none' }}>
+                                                        <div>
+                                                            <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.95rem', marginBottom: '2px' }}>{link.label}</div>
+                                                            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', opacity: 0.8 }}>{link.desc}</div>
+                                                        </div>
+                                                    </Link>
+                                                ))}
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+                                </div>
+                                <NavLink to="/enterprise" className="nav-item-enterprise">Enterprise</NavLink>
+                                <NavLink to="/blog" className="nav-item-enterprise">Blogs</NavLink>
+                                <NavLink to="/pricing" className="nav-item-enterprise">Pricing</NavLink>
+                                <NavLink to="/applicant/jobs" className="nav-item-enterprise" style={{ gap: '6px' }}>
+                                    Looking for a Job <ExternalLink size={14} />
+                                </NavLink>
+                            </div>
+                        )}
+
+                        {/* App Specific Links */}
+                        {userRole && (
+                            <div className="desktop-menu" style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
+                                {(userRole === 'applicant' ? applicantLinks : recruiterLinks).map(link => (
+                                    <NavItem key={link.path} to={link.path} label={link.label} />
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Right: Actions */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+                        {!userRole ? (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+                                <Link to="/login" className="btn-nav-text">Log In</Link>
+                                <Link to="/signup" className="btn-nav-primary">Sign Up</Link>
+                            </div>
+                        ) : userRole && (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+                                <Link
+                                    to={userRole === 'applicant' ? '/applicant/notifications' : '/recruiter/notifications'}
+                                    className="btn-ghost"
+                                    style={{ padding: '10px', borderRadius: '50%', color: 'var(--text-secondary)' }}
+                                >
+                                    <Bell size={20} />
+                                </Link>
+
+                                {/* Profile Dropdown */}
+                                <div style={{ position: 'relative' }}>
+                                    <button
+                                        onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
+                                        style={{
+                                            display: 'flex', alignItems: 'center', gap: '10px', background: 'transparent',
+                                            border: 'none', padding: '4px 6px', borderRadius: '30px', cursor: 'pointer',
+                                            transition: 'all 0.2s',
+                                            boxShadow: isProfileMenuOpen ? '0 0 0 2px var(--primary-light)' : 'none'
+                                        }}
+                                    >
+                                        {userImage ? (
+                                            <img src={getProfileImageUrl(userImage)} alt="Profile" style={{ width: '34px', height: '34px', borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--border-color)' }} />
+                                        ) : (
+                                            <div style={{ width: '34px', height: '34px', borderRadius: '50%', background: 'linear-gradient(135deg, var(--primary), var(--secondary))', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '0.85rem', fontWeight: '700' }}>
+                                                {userProfile ? userProfile.fullName?.charAt(0) : userRole[0].toUpperCase()}
+                                            </div>
+                                        )}
+                                        <ChevronDown size={14} color="var(--text-secondary)" />
+                                    </button>
+
+                                    <AnimatePresence>
+                                        {isProfileMenuOpen && (
+                                            <motion.div
+                                                initial={{ opacity: 0, y: 10 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                exit={{ opacity: 0, y: 10 }}
+                                                className="glass-panel"
+                                                style={{ position: 'absolute', top: '120%', right: 0, width: '220px', padding: '10px', display: 'flex', flexDirection: 'column', gap: '4px', zIndex: 1100, boxShadow: '0 10px 30px rgba(0,0,0,0.1)' }}
+                                            >
+                                                <button onClick={() => { setIsProfileMenuOpen(false); setIsProfileEditorOpen(true); }} className="btn-ghost" style={{ justifyContent: 'flex-start', width: '100%', padding: '12px', borderRadius: '8px', border: 'none' }}>
+                                                    <User size={16} /> <span style={{ marginLeft: '8px' }}>My Profile</span>
+                                                </button>
+                                                <div style={{ height: '1px', background: 'var(--border-color)', margin: '6px 0' }}></div>
+                                                <button onClick={handleLogout} className="btn-ghost" style={{ justifyContent: 'flex-start', width: '100%', color: 'var(--error)', padding: '12px', borderRadius: '8px', border: 'none' }}>
+                                                    <LogOut size={16} /> <span style={{ marginLeft: '8px' }}>Log Out</span>
+                                                </button>
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+                                </div>
+                            </div>
+                        )}
+
+                        <button onClick={toggleTheme} className="btn-ghost" style={{ padding: '10px', borderRadius: '50%', border: 'none' }}>
+                            {isDark ? <Sun size={20} /> : <Moon size={20} />}
                         </button>
+
+                        <div className="mobile-toggle" style={{ display: 'none' }}>
+                            <button onClick={() => setIsOpen(!isOpen)} className="btn-ghost" style={{ border: 'none' }}>
+                                {isOpen ? <X /> : <Menu />}
+                            </button>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            {/* Mobile Styles Injection */}
-            <style>{`
-                @media(max-width: 900px) {
-                    .desktop-menu { display: none !important; }
-                    .mobile-toggle { display: block !important; }
-                }
-            `}</style>
+                {/* Mobile Styles Injection */}
+                <style>{`
+                    @media(max-width: 900px) {
+                        .desktop-menu { display: none !important; }
+                        .mobile-toggle { display: block !important; }
+                    }
+                `}</style>
 
-            {/* Profile Modal */}
-            <ProfileEditor
-                isOpen={isProfileEditorOpen}
-                onClose={() => setIsProfileEditorOpen(false)}
-                userRole={userRole}
-                onProfileUpdate={refreshProfile}
-            />
-        </nav>
+                {/* Profile Modal */}
+                <ProfileEditor
+                    isOpen={isProfileEditorOpen}
+                    onClose={() => setIsProfileEditorOpen(false)}
+                    userRole={userRole}
+                    onProfileUpdate={refreshProfile}
+                />
+            </nav >
+        </>
     );
 };
 
-// Nav Item Component for consistent styling
+// Nav Item Component for consistent premium styling
 const NavItem = ({ to, label }) => (
     <NavLink
         to={to}
-        className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}
-        style={({ isActive }) => ({
-            color: isActive ? 'var(--primary)' : 'var(--text-secondary)',
-            textDecoration: 'none',
-            fontWeight: isActive ? 600 : 500,
-            fontSize: '0.95rem',
-            position: 'relative',
-            padding: '8px 0',
-            transition: 'color 0.2s'
-        })}
+        className={({ isActive }) => `nav-item-enterprise ${isActive ? 'active' : ''}`}
+        style={{ textDecoration: 'none' }}
     >
-        {({ isActive }) => (
-            <>
-                {label}
-                {isActive && (
-                    <span style={{
-                        position: 'absolute',
-                        bottom: '-24px', // Align with navbar border
-                        left: 0,
-                        width: '100%',
-                        height: '3px',
-                        background: 'var(--primary)',
-                        borderTopLeftRadius: '3px',
-                        borderTopRightRadius: '3px',
-
-                    }} />
-                )}
-            </>
-        )}
+        {label}
     </NavLink>
 );
 

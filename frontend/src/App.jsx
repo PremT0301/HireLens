@@ -35,6 +35,13 @@ import AdminProtectedRoute from './components/admin/AdminProtectedRoute';
 import SystemLogs from './pages/admin/SystemLogs';
 import AnalyticsDashboard from './pages/admin/AnalyticsDashboard';
 
+// New Pages
+import Pricing from './pages/Pricing';
+import Blog from './pages/Blog';
+import BlogDetail from './pages/BlogDetail';
+import ReleaseNotes from './pages/ReleaseNotes';
+import Enterprise from './pages/Enterprise';
+
 // AnimatedRoutes component to use useLocation hook inside Router
 const AnimatedRoutes = () => {
   const location = useLocation();
@@ -48,6 +55,11 @@ const AnimatedRoutes = () => {
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/verify-email" element={<VerifyEmail />} />
+          <Route path="/pricing" element={<Pricing />} />
+          <Route path="/blog" element={<Blog />} />
+          <Route path="/blog/:slug" element={<BlogDetail />} />
+          <Route path="/release-notes" element={<ReleaseNotes />} />
+          <Route path="/enterprise" element={<Enterprise />} />
         </Route>
 
         {/* Applicant Routes - PROTECTED */}
