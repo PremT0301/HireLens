@@ -28,32 +28,13 @@ public class AuthService : IAuthService
 
     public async Task<AuthResponseDto> RegisterAsync(UserRegisterRequest request)
     {
-        // 1. Check if user exists
-        // 1. Check if user exists
-        var existingUser = await _context.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
-        if (existingUser != null)
+        // 1. Validate OTP verification for both email and mobile
+        var emailVerification = await _context.OtpVerifications
+            .FirstOrDefaultAsync(v => v.Identifier == request.Email && v.Type == OtpType.Email && v.IsVerified);
+        
+        if (emailVerification == null)
         {
-            if (existingUser.IsEmailVerified)
-            {
-                throw new Exception("User with this email already exists.");
-            }
-            else
-            {
-                // User exists but not verified. Resend verification email and return success.
-                // This makes the endpoint idempotent for unverified users and prevents double-submission errors.
-                await ResendVerificationEmailAsync(existingUser.Email);
-
-                return new AuthResponseDto
-                {
-                    FullName = existingUser.FullName ?? string.Empty,
-                    Role = existingUser.Role.ToString(),
-                    PricingPlan = existingUser.PricingPlan,
-                    UserId = existingUser.UserId,
-                    Message = "Registration successful! Verification email resent.",
-                    RequiresVerification = true
-                };
-
-            }
+            throw new Exception("Email has not been verified via OTP.");
         }
 
         // 2. Hash Password
@@ -91,12 +72,10 @@ public class AuthService : IAuthService
             MobileNumber = request.MobileNumber,
             Location = request.Location,
             Role = Enum.Parse<UserRole>(request.Role.ToUpper()),
-            ProfileImage = profileImageUrl, // Set Profile Image
-            CreatedAt = DateTime.UtcNow,
+            ProfileImage = profileImageUrl,
             UpdatedAt = DateTime.UtcNow,
-            IsEmailVerified = false,
-            VerificationToken = Guid.NewGuid().ToString(),
-            VerificationTokenExpiry = DateTime.UtcNow.AddHours(24)
+            IsEmailVerified = true,
+            IsActive = true // Active immediately since verified
         };
 
         _context.Users.Add(user);
@@ -233,37 +212,10 @@ public class AuthService : IAuthService
             }
         }
 
+        // Cleanup used OTP records
+        _context.OtpVerifications.Remove(emailVerification);
+        
         await _context.SaveChangesAsync();
-        _logger.LogInformation("User {Email} registered successfully. Verification token: {Token}", user.Email, user.VerificationToken);
-
-        // 5. Send Verification Email
-        try
-        {
-            var baseUrl = _configuration["AppSettings:BaseUrl"] ?? "http://localhost:5173";
-            var verificationUrl = $"{baseUrl}/verify-email?userId={user.UserId}&token={user.VerificationToken}";
-            var emailBody = $@"
-                <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; borderRadius: 8px;'>
-                    <h2 style='color: #4f46e5;'>Welcome to HireLens AI!</h2>
-                    <p>Hello {user.FullName},</p>
-                    <p>Thank you for registering. Please verify your email address to activate your account:</p>
-                    <div style='text-align: center; margin: 30px 0;'>
-                        <a href='{verificationUrl}' style='background-color: #4f46e5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;'>Verify Email Address</a>
-                    </div>
-                    <p>If the button doesn't work, you can also click the link below or copy it into your browser:</p>
-                    <p><a href='{verificationUrl}'>{verificationUrl}</a></p>
-                    <p>This link will expire in 24 hours.</p>
-                    <hr style='border: 0; border-top: 1px solid #eee; margin: 20px 0;' />
-                    <p style='font-size: 12px; color: #666;'>If you did not create an account, no further action is required.</p>
-                </div>
-            ";
-            await _emailService.SendEmailAsync(user.Email, "Verify Your Email - HireLens AI", emailBody);
-        }
-        catch (Exception ex)
-        {
-            // If email fails, we should probably delete the user or at least inform them.
-            // For now, let's throw an exception so the user knows why it failed.
-            throw new Exception($"Account created, but verification email failed to send: {ex.Message}. Please check your SMTP settings (e.g. Google App Password).");
-        }
 
         // 6. Return response
         return new AuthResponseDto
@@ -272,8 +224,8 @@ public class AuthService : IAuthService
             Role = user.Role.ToString(),
             PricingPlan = user.PricingPlan,
             UserId = user.UserId,
-            Message = "Registration successful! Please check your email to verify your account.",
-            RequiresVerification = true
+            Message = "Registration successful!",
+            RequiresVerification = false
         };
 
     }
@@ -304,134 +256,116 @@ public class AuthService : IAuthService
             throw new Exception("Invalid credentials.");
         }
 
-        // 2.1 Check Email Verification
-        if (!user.IsEmailVerified)
+        // 2.1 Check Verification
+        if (!user.IsEmailVerified || !user.IsActive)
         {
-            throw new Exception("Your email is not verified. Please check your inbox for the verification link.");
+            throw new Exception("Account not fully verified.");
         }
 
         // 3. Generate Token
         return CreateAuthResponse(user);
     }
 
-    public async Task<VerificationResult> VerifyEmailAsync(string userId, string token)
+    public async Task<bool> SendOtpAsync(string identifier, OtpType type)
     {
-        _logger.LogInformation("Attempting to verify email for user {UserId} with token {Token}", userId, token);
-
-        if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(token))
+        // 1. Check if an active user already has this identifier (Email only)
+        if (type == OtpType.Email)
         {
-            _logger.LogWarning("Verification failed: UserId or Token is null/empty.");
-            return VerificationResult.Failure;
+            var existingUser = await _context.Users.AnyAsync(u => u.Email == identifier && u.IsActive);
+            if (existingUser) throw new Exception("Account with this email already exists.");
         }
 
-        if (!Guid.TryParse(userId, out var userGuid))
+        var verification = await _context.OtpVerifications.FirstOrDefaultAsync(v => v.Identifier == identifier && v.Type == type);
+        
+        if (verification != null && verification.LockedUntil > DateTime.UtcNow)
         {
-            _logger.LogWarning("Verification failed: Invalid UserId format {UserId}", userId);
-            return VerificationResult.Failure;
+            throw new Exception($"Too many attempts. Please try again after {verification.LockedUntil}.");
         }
 
-        var user = await _context.Users.FindAsync(userGuid);
-
-        if (user == null)
+        if (verification == null)
         {
-            _logger.LogWarning("Verification failed: No user found with id {UserId}", userId);
-            return VerificationResult.UserNotFound;
+            verification = new OtpVerification { OtpId = Guid.NewGuid(), Identifier = identifier, Type = type };
+            _context.OtpVerifications.Add(verification);
         }
 
-        if (user.IsEmailVerified)
-        {
-            _logger.LogInformation("User {Email} is already verified.", user.Email);
-            return VerificationResult.AlreadyVerified;
-        }
-
-        // Token Validation
-        if (user.VerificationToken != token)
-        {
-            _logger.LogWarning("Verification failed: Token mismatch for user {Email}. Expected {Expected}, Got {Actual}", user.Email, user.VerificationToken, token);
-            return VerificationResult.InvalidToken;
-        }
-
-        if (user.VerificationTokenExpiry < DateTime.UtcNow)
-        {
-            _logger.LogWarning("Verification failed: Token expired for user {Email}. Expiry: {Expiry}, Current UTC: {Now}",
-                user.Email, user.VerificationTokenExpiry, DateTime.UtcNow);
-            return VerificationResult.TokenExpired;
-        }
-
-        _logger.LogInformation("Token valid. Verifying email for user: {Email}", user.Email);
-        user.IsEmailVerified = true;
-        user.VerificationToken = null; // Clear token after verification
-        user.VerificationTokenExpiry = null;
+        string otp = new Random().Next(100000, 999999).ToString();
+        verification.OtpHash = HashOtp(otp);
+        verification.Expiry = DateTime.UtcNow.AddMinutes(5);
+        verification.Attempts = 0;
+        verification.IsVerified = false;
+        verification.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
-        _logger.LogInformation("Email verified successfully for user: {Email}", user.Email);
-        return VerificationResult.Success;
-    }
 
-    public async Task<bool> ResendVerificationEmailAsync(string email)
-    {
-        _logger.LogInformation("Attempting to resend verification email to: {Email}", email);
-        var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
-
-        if (user == null)
+        if (type == OtpType.Email)
         {
-            _logger.LogWarning("Resend failed: No user found with email {Email}", email);
-            return false;
-        }
-
-        if (user.IsEmailVerified)
-        {
-            _logger.LogInformation("Resend skipped: User {Email} is already verified.", email);
-            return true;
-        }
-
-        // Generate new token
-        user.VerificationToken = Guid.NewGuid().ToString();
-        user.VerificationTokenExpiry = DateTime.UtcNow.AddHours(24);
-        user.UpdatedAt = DateTime.UtcNow;
-
-        await _context.SaveChangesAsync();
-        _logger.LogInformation("New verification token generated for {Email}: {Token}", email, user.VerificationToken);
-
-        // Send Email
-        try
-        {
-            var baseUrl = _configuration["AppSettings:BaseUrl"] ?? "http://localhost:5173";
-            var verificationUrl = $"{baseUrl}/verify-email?userId={user.UserId}&token={user.VerificationToken}";
             var emailBody = $@"
                 <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;'>
-                    <h2 style='color: #4f46e5;'>New Verification Link - HireLens AI</h2>
-                    <p>Hello {user.FullName},</p>
-                    <p>You requested a new verification link. Please click below to activate your account:</p>
-                    <div style='text-align: center; margin: 30px 0;'>
-                        <a href='{verificationUrl}' style='background-color: #4f46e5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;'>Verify Email Address</a>
-                    </div>
-                    <p>If the button doesn't work, you can also copy this link into your browser:</p>
-                    <p><a href='{verificationUrl}'>{verificationUrl}</a></p>
-                    <p>This link will expire in 24 hours.</p>
-                    <hr style='border: 0; border-top: 1px solid #eee; margin: 20px 0;' />
-                    <p style='font-size: 12px; color: #666;'>If you did not request this, you can safely ignore this email.</p>
+                    <h2 style='color: #4f46e5;'>HireLens Verification Code</h2>
+                    <p>Your verification code is: <strong style='font-size: 24px; color: #4f46e5;'>{otp}</strong></p>
+                    <p>Valid for 5 minutes. Do not share this code.</p>
                 </div>
             ";
-            await _emailService.SendEmailAsync(user.Email, "New Verification Link - HireLens AI", emailBody);
-            _logger.LogInformation("Verification email resent to {Email}", email);
+            await _emailService.SendEmailAsync(identifier, "HireLens Verification Code", emailBody);
+        }
+
+        return true;
+    }
+
+    public async Task<bool> VerifyOtpAsync(string identifier, string otp, OtpType type)
+    {
+        var verification = await _context.OtpVerifications.FirstOrDefaultAsync(v => v.Identifier == identifier && v.Type == type);
+        if (verification == null) return false;
+
+        if (verification.LockedUntil > DateTime.UtcNow)
+        {
+            throw new Exception("Account is locked due to too many failed attempts. Try again later.");
+        }
+
+        if (verification.Expiry < DateTime.UtcNow)
+        {
+            throw new Exception("OTP has expired.");
+        }
+
+        if (VerifyOtp(otp, verification.OtpHash))
+        {
+            verification.IsVerified = true;
+            verification.OtpHash = ""; // Clear hash after success
+            verification.Attempts = 0;
+            await _context.SaveChangesAsync();
             return true;
         }
-        catch (Exception ex)
+        else
         {
-            _logger.LogError(ex, "Failed to resend verification email to {Email}", email);
-            throw new Exception($"Failed to send verification email: {ex.Message}");
+            verification.Attempts++;
+            if (verification.Attempts >= 5)
+            {
+                verification.LockedUntil = DateTime.UtcNow.AddMinutes(10);
+            }
+            await _context.SaveChangesAsync();
+            return false;
         }
     }
 
-    public async Task<bool> ResendVerificationEmailByUserIdAsync(string userId)
+    // Keep legacy signatures for interface compatibility if needed, or update interface
+    public Task<bool> SendEmailOtpAsync(string email) => SendOtpAsync(email, OtpType.Email);
+    public Task<bool> VerifyEmailOtpAsync(string email, string otp) => VerifyOtpAsync(email, otp, OtpType.Email);
+    public Task<bool> SendMobileOtpAsync(string mobileNumber) => Task.FromResult(false);
+    public Task<bool> VerifyMobileOtpAsync(string mobileNumber, string otp) => Task.FromResult(false);
+
+    private string HashOtp(string otp)
     {
-        if (!Guid.TryParse(userId, out var userGuid)) return false;
+        using (var sha256 = System.Security.Cryptography.SHA256.Create())
+        {
+            var bytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(otp));
+            return Convert.ToBase64String(bytes);
+        }
+    }
 
-        var user = await _context.Users.FindAsync(userGuid);
-        if (user == null) return false;
-
-        return await ResendVerificationEmailAsync(user.Email);
+    private bool VerifyOtp(string otp, string? hashedOtp)
+    {
+        if (hashedOtp == null) return false;
+        return HashOtp(otp) == hashedOtp;
     }
 
 

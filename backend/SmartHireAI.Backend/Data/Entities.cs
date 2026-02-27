@@ -13,6 +13,12 @@ namespace SmartHireAI.Backend.Data
         APPLICANT
     }
 
+    public enum OtpType
+    {
+        Email,
+        Mobile
+    }
+
     [Table("users")]
     public class User
     {
@@ -54,13 +60,6 @@ namespace SmartHireAI.Backend.Data
 
         [Column("is_active")]
         public bool IsActive { get; set; } = true;
-
-        [MaxLength(100)]
-        [Column("verification_token")]
-        public string? VerificationToken { get; set; }
-
-        [Column("verification_token_expiry")]
-        public DateTime? VerificationTokenExpiry { get; set; }
 
         [MaxLength(20)]
         [Column("mobile_number")]
@@ -802,5 +801,43 @@ namespace SmartHireAI.Backend.Data
         [ForeignKey("UserId")]
         public User User { get; set; } = null!;
     }
-}
 
+    [Table("otp_verifications")]
+    public class OtpVerification
+    {
+        [Key]
+        [Column("otp_id")]
+        public Guid OtpId { get; set; }
+
+        [Required]
+        [MaxLength(150)]
+        [Column("identifier")]
+        public string Identifier { get; set; } = string.Empty; // Email or Mobile
+
+        [Column("type")]
+        public OtpType Type { get; set; }
+
+        [Required]
+        [MaxLength(255)]
+        [Column("otp_hash")]
+        public string OtpHash { get; set; } = string.Empty;
+
+        [Column("expiry")]
+        public DateTime Expiry { get; set; }
+
+        [Column("attempts")]
+        public int Attempts { get; set; } = 0;
+
+        [Column("is_verified")]
+        public bool IsVerified { get; set; } = false;
+
+        [Column("locked_until")]
+        public DateTime? LockedUntil { get; set; }
+
+        [Column("created_at")]
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        [Column("updated_at")]
+        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+    }
+}

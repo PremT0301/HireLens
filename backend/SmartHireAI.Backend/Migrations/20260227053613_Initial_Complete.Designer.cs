@@ -8,11 +8,11 @@ using SmartHireAI.Backend.Data;
 
 #nullable disable
 
-namespace SmartHireAI.Backend.Data.Migrations
+namespace SmartHireAI.Backend.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251231094959_AddIsViewedByRecruiterToJobApplication")]
-    partial class AddIsViewedByRecruiterToJobApplication
+    [Migration("20260227053613_Initial_Complete")]
+    partial class Initial_Complete
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -136,6 +136,45 @@ namespace SmartHireAI.Backend.Data.Migrations
                     b.ToTable("application_messages");
                 });
 
+            modelBuilder.Entity("SmartHireAI.Backend.Data.AuditLog", b =>
+                {
+                    b.Property<Guid>("LogId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)")
+                        .HasColumnName("log_id");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasColumnType("longtext")
+                        .HasColumnName("action");
+
+                    b.Property<Guid>("ChangedBy")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("changed_by");
+
+                    b.Property<string>("NewRole")
+                        .HasColumnType("longtext")
+                        .HasColumnName("new_role");
+
+                    b.Property<string>("OldRole")
+                        .HasColumnType("longtext")
+                        .HasColumnName("old_role");
+
+                    b.Property<DateTime>("Timestamp")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("timestamp");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("LogId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("audit_logs");
+                });
+
             modelBuilder.Entity("SmartHireAI.Backend.Data.Education", b =>
                 {
                     b.Property<Guid>("EducationId")
@@ -179,6 +218,87 @@ namespace SmartHireAI.Backend.Data.Migrations
                     b.ToTable("education");
                 });
 
+            modelBuilder.Entity("SmartHireAI.Backend.Data.InboxMessage", b =>
+                {
+                    b.Property<Guid>("MessageId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)")
+                        .HasColumnName("message_id");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("longtext")
+                        .HasColumnName("content");
+
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("tinyint(1)")
+                        .HasColumnName("is_read");
+
+                    b.Property<Guid>("SenderId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("sender_id");
+
+                    b.Property<string>("SenderRole")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)")
+                        .HasColumnName("sender_role");
+
+                    b.Property<DateTime>("SentAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("sent_at");
+
+                    b.Property<Guid>("ThreadId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("thread_id");
+
+                    b.HasKey("MessageId");
+
+                    b.HasIndex("ThreadId");
+
+                    b.ToTable("inbox_messages");
+                });
+
+            modelBuilder.Entity("SmartHireAI.Backend.Data.InboxThread", b =>
+                {
+                    b.Property<Guid>("ThreadId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)")
+                        .HasColumnName("thread_id");
+
+                    b.Property<Guid>("ApplicantId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("applicant_id");
+
+                    b.Property<Guid>("ApplicationId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("application_id");
+
+                    b.Property<DateTime>("LastMessageAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("last_message_at");
+
+                    b.Property<Guid>("RecruiterId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("recruiter_id");
+
+                    b.Property<string>("Subject")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)")
+                        .HasColumnName("subject");
+
+                    b.HasKey("ThreadId");
+
+                    b.HasIndex("ApplicantId");
+
+                    b.HasIndex("ApplicationId");
+
+                    b.HasIndex("RecruiterId");
+
+                    b.ToTable("inbox_threads");
+                });
+
             modelBuilder.Entity("SmartHireAI.Backend.Data.JobApplication", b =>
                 {
                     b.Property<Guid>("ApplicationId")
@@ -210,10 +330,19 @@ namespace SmartHireAI.Backend.Data.Migrations
                         .HasColumnType("datetime(6)")
                         .HasColumnName("interview_date");
 
+                    b.Property<int?>("InterviewDuration")
+                        .HasColumnType("int")
+                        .HasColumnName("interview_duration");
+
                     b.Property<string>("InterviewMode")
                         .HasMaxLength(50)
                         .HasColumnType("varchar(50)")
                         .HasColumnName("interview_mode");
+
+                    b.Property<string>("InterviewNotes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("varchar(1000)")
+                        .HasColumnName("interview_notes");
 
                     b.Property<bool>("IsViewedByRecruiter")
                         .HasColumnType("tinyint(1)")
@@ -227,6 +356,11 @@ namespace SmartHireAI.Backend.Data.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("varchar(500)")
                         .HasColumnName("meeting_link");
+
+                    b.Property<string>("RoundId")
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)")
+                        .HasColumnName("round_id");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -323,6 +457,10 @@ namespace SmartHireAI.Backend.Data.Migrations
                     b.Property<string>("PerksAndBenefits")
                         .HasColumnType("longtext")
                         .HasColumnName("perks_benefits");
+
+                    b.Property<string>("ProbableSalary")
+                        .HasColumnType("longtext")
+                        .HasColumnName("probable_salary");
 
                     b.Property<Guid>("RecruiterId")
                         .HasColumnType("char(36)")
@@ -451,6 +589,105 @@ namespace SmartHireAI.Backend.Data.Migrations
                     b.HasIndex("ResumeId");
 
                     b.ToTable("match_results");
+                });
+
+            modelBuilder.Entity("SmartHireAI.Backend.Data.Notification", b =>
+                {
+                    b.Property<Guid>("NotificationId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)")
+                        .HasColumnName("notification_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("created_at");
+
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("tinyint(1)")
+                        .HasColumnName("is_read");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasColumnType("longtext")
+                        .HasColumnName("message");
+
+                    b.Property<Guid?>("ReferenceId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("reference_id");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)")
+                        .HasColumnName("title");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)")
+                        .HasColumnName("type");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("NotificationId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("notifications");
+                });
+
+            modelBuilder.Entity("SmartHireAI.Backend.Data.OtpVerification", b =>
+                {
+                    b.Property<Guid>("OtpId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)")
+                        .HasColumnName("otp_id");
+
+                    b.Property<int>("Attempts")
+                        .HasColumnType("int")
+                        .HasColumnName("attempts");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateTime>("Expiry")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("expiry");
+
+                    b.Property<string>("Identifier")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("varchar(150)")
+                        .HasColumnName("identifier");
+
+                    b.Property<bool>("IsVerified")
+                        .HasColumnType("tinyint(1)")
+                        .HasColumnName("is_verified");
+
+                    b.Property<DateTime?>("LockedUntil")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("locked_until");
+
+                    b.Property<string>("OtpHash")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)")
+                        .HasColumnName("otp_hash");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("int")
+                        .HasColumnName("type");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("OtpId");
+
+                    b.ToTable("otp_verifications");
                 });
 
             modelBuilder.Entity("SmartHireAI.Backend.Data.Recruiter", b =>
@@ -597,6 +834,77 @@ namespace SmartHireAI.Backend.Data.Migrations
                     b.ToTable("resume_entities");
                 });
 
+            modelBuilder.Entity("SmartHireAI.Backend.Data.SystemLog", b =>
+                {
+                    b.Property<Guid>("LogId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)")
+                        .HasColumnName("log_id");
+
+                    b.Property<string>("Level")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)")
+                        .HasColumnName("level");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasColumnType("longtext")
+                        .HasColumnName("message");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)")
+                        .HasColumnName("source");
+
+                    b.Property<DateTime>("Timestamp")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("timestamp");
+
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("LogId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("system_logs");
+                });
+
+            modelBuilder.Entity("SmartHireAI.Backend.Data.UsageTracking", b =>
+                {
+                    b.Property<Guid>("UsageId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)")
+                        .HasColumnName("usage_id");
+
+                    b.Property<string>("FeatureName")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)")
+                        .HasColumnName("feature_name");
+
+                    b.Property<int>("UsageCount")
+                        .HasColumnType("int")
+                        .HasColumnName("usage_count");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("user_id");
+
+                    b.Property<DateTime>("WeekResetDate")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("week_reset_date");
+
+                    b.HasKey("UsageId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("usage_tracking");
+                });
+
             modelBuilder.Entity("SmartHireAI.Backend.Data.User", b =>
                 {
                     b.Property<Guid>("UserId")
@@ -630,6 +938,10 @@ namespace SmartHireAI.Backend.Data.Migrations
                         .HasColumnType("varchar(100)")
                         .HasColumnName("google_id");
 
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("tinyint(1)")
+                        .HasColumnName("is_active");
+
                     b.Property<bool>("IsEmailVerified")
                         .HasColumnType("tinyint(1)")
                         .HasColumnName("is_email_verified");
@@ -649,6 +961,12 @@ namespace SmartHireAI.Backend.Data.Migrations
                         .HasColumnType("varchar(255)")
                         .HasColumnName("password_hash");
 
+                    b.Property<string>("PricingPlan")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)")
+                        .HasColumnName("pricing_plan");
+
                     b.Property<string>("ProfileImage")
                         .HasMaxLength(255)
                         .HasColumnType("varchar(255)")
@@ -656,25 +974,16 @@ namespace SmartHireAI.Backend.Data.Migrations
 
                     b.Property<string>("Role")
                         .IsRequired()
-                        .HasColumnType("longtext")
+                        .HasColumnType("varchar(50)")
                         .HasColumnName("role");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime(6)")
                         .HasColumnName("updated_at");
 
-                    b.Property<string>("VerificationToken")
-                        .HasMaxLength(100)
-                        .HasColumnType("varchar(100)")
-                        .HasColumnName("verification_token");
-
-                    b.Property<DateTime?>("VerificationTokenExpiry")
-                        .HasColumnType("datetime(6)")
-                        .HasColumnName("verification_token_expiry");
-
                     b.HasKey("UserId");
 
-                    b.HasIndex("Email")
+                    b.HasIndex("MobileNumber")
                         .IsUnique();
 
                     b.ToTable("users");
@@ -740,6 +1049,17 @@ namespace SmartHireAI.Backend.Data.Migrations
                     b.Navigation("JobApplication");
                 });
 
+            modelBuilder.Entity("SmartHireAI.Backend.Data.AuditLog", b =>
+                {
+                    b.HasOne("SmartHireAI.Backend.Data.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("SmartHireAI.Backend.Data.Education", b =>
                 {
                     b.HasOne("SmartHireAI.Backend.Data.Applicant", "Applicant")
@@ -749,6 +1069,44 @@ namespace SmartHireAI.Backend.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("Applicant");
+                });
+
+            modelBuilder.Entity("SmartHireAI.Backend.Data.InboxMessage", b =>
+                {
+                    b.HasOne("SmartHireAI.Backend.Data.InboxThread", "Thread")
+                        .WithMany("Messages")
+                        .HasForeignKey("ThreadId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Thread");
+                });
+
+            modelBuilder.Entity("SmartHireAI.Backend.Data.InboxThread", b =>
+                {
+                    b.HasOne("SmartHireAI.Backend.Data.Applicant", "Applicant")
+                        .WithMany()
+                        .HasForeignKey("ApplicantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SmartHireAI.Backend.Data.JobApplication", "JobApplication")
+                        .WithMany()
+                        .HasForeignKey("ApplicationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SmartHireAI.Backend.Data.Recruiter", "Recruiter")
+                        .WithMany()
+                        .HasForeignKey("RecruiterId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Applicant");
+
+                    b.Navigation("JobApplication");
+
+                    b.Navigation("Recruiter");
                 });
 
             modelBuilder.Entity("SmartHireAI.Backend.Data.JobApplication", b =>
@@ -822,6 +1180,17 @@ namespace SmartHireAI.Backend.Data.Migrations
                     b.Navigation("Resume");
                 });
 
+            modelBuilder.Entity("SmartHireAI.Backend.Data.Notification", b =>
+                {
+                    b.HasOne("SmartHireAI.Backend.Data.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("SmartHireAI.Backend.Data.Recruiter", b =>
                 {
                     b.HasOne("SmartHireAI.Backend.Data.User", "User")
@@ -866,6 +1235,26 @@ namespace SmartHireAI.Backend.Data.Migrations
                     b.Navigation("Resume");
                 });
 
+            modelBuilder.Entity("SmartHireAI.Backend.Data.SystemLog", b =>
+                {
+                    b.HasOne("SmartHireAI.Backend.Data.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("SmartHireAI.Backend.Data.UsageTracking", b =>
+                {
+                    b.HasOne("SmartHireAI.Backend.Data.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("SmartHireAI.Backend.Data.WorkExperience", b =>
                 {
                     b.HasOne("SmartHireAI.Backend.Data.Applicant", "Applicant")
@@ -884,6 +1273,11 @@ namespace SmartHireAI.Backend.Data.Migrations
                     b.Navigation("Resumes");
 
                     b.Navigation("WorkExperience");
+                });
+
+            modelBuilder.Entity("SmartHireAI.Backend.Data.InboxThread", b =>
+                {
+                    b.Navigation("Messages");
                 });
 
             modelBuilder.Entity("SmartHireAI.Backend.Data.JobDescription", b =>

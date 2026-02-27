@@ -58,23 +58,14 @@ public class AuthController : ControllerBase
             return BadRequest(new { message = ex.Message });
         }
     }
-    [HttpGet("verify-email")]
-    public async Task<IActionResult> VerifyEmail([FromQuery] string userId, [FromQuery] string token)
+    [HttpPost("send-email-otp")]
+    public async Task<IActionResult> SendEmailOtp([FromQuery] string email)
     {
-        _logger.LogInformation("Received VerifyEmail request for user {UserId} with token: {Token}", userId, token);
         try
         {
-            var result = await _authService.VerifyEmailAsync(userId, token);
-
-            return result switch
-            {
-                VerificationResult.Success => Ok(new { message = "Email verified successfully! You can now login.", status = "success" }),
-                VerificationResult.AlreadyVerified => Ok(new { message = "Email already verified. Please login.", status = "already_verified" }),
-                VerificationResult.TokenExpired => BadRequest(new { message = "Verification link expired.", status = "expired" }),
-                VerificationResult.InvalidToken => BadRequest(new { message = "Invalid verification link.", status = "invalid" }),
-                VerificationResult.UserNotFound => BadRequest(new { message = "Invalid verification link.", status = "invalid" }),
-                _ => BadRequest(new { message = "Verification failed.", status = "error" })
-            };
+            var result = await _authService.SendEmailOtpAsync(email);
+            if (result) return Ok(new { message = "OTP sent to email." });
+            return BadRequest(new { message = "Failed to send email OTP." });
         }
         catch (Exception ex)
         {
@@ -82,36 +73,19 @@ public class AuthController : ControllerBase
         }
     }
 
-    [HttpPost("resend-verification")]
-    public async Task<IActionResult> ResendVerification([FromQuery] string? email, [FromQuery] string? userId)
+    [HttpPost("verify-email-otp")]
+    public async Task<IActionResult> VerifyEmailOtp([FromBody] OtpVerificationDto request)
     {
         try
         {
-            if (string.IsNullOrEmpty(email) && string.IsNullOrEmpty(userId))
-            {
-                return BadRequest(new { message = "Email or UserId is required." });
-            }
-
-            bool result = false;
-
-            if (!string.IsNullOrEmpty(email))
-            {
-                result = await _authService.ResendVerificationEmailAsync(email);
-            }
-            else if (!string.IsNullOrEmpty(userId))
-            {
-                result = await _authService.ResendVerificationEmailByUserIdAsync(userId);
-            }
-
-            if (result)
-            {
-                return Ok(new { message = "Verification email sent successfully." });
-            }
-            return BadRequest(new { message = "User not found or already verified." });
+            var result = await _authService.VerifyEmailOtpAsync(request.Identifier, request.Otp);
+            if (result) return Ok(new { message = "Email verified successfully." });
+            return BadRequest(new { message = "Invalid or expired OTP." });
         }
         catch (Exception ex)
         {
             return BadRequest(new { message = ex.Message });
         }
     }
+
 }

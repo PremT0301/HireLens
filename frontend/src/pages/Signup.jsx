@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import HireLensLoader from '../components/ui/HireLensLoader';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
-import { User, Briefcase, ChevronRight, Upload, MapPin, Phone, Linkedin, Calendar, GraduationCap, Building, Trash2, Plus, Sun, Moon, ArrowLeft, Mail, AlertCircle } from 'lucide-react';
+import { User, Briefcase, ChevronRight, Upload, MapPin, Phone, Linkedin, Calendar, GraduationCap, Building, Trash2, Plus, Sun, Moon, ArrowLeft, Mail, AlertCircle, CheckCircle } from 'lucide-react';
 import AuthService from '../api/authService';
 import ProfileService from '../api/profileService';
 import axios from '../api/axios';
@@ -17,19 +17,24 @@ const Signup = () => {
     const [verificationSent, setVerificationSent] = useState(false);
     const [error, setError] = useState('');
 
+    // OTP Verification State
+    const [emailOtpSent, setEmailOtpSent] = useState(false);
+    const [emailVerified, setEmailVerified] = useState(false);
+    const [emailOtp, setEmailOtp] = useState('');
+    const [emailTimer, setEmailTimer] = useState(0);
+
     // Role (Only switchable in register mode)
     const [role, setRole] = useState('applicant');
 
     useEffect(() => {
-        // Sync theme state on mount
-        const currentTheme = document.documentElement.getAttribute('data-theme');
-        if (currentTheme === 'dark') setIsDark(true);
-        else if (currentTheme === 'light') setIsDark(false);
-        else {
-            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-            setIsDark(prefersDark);
+        let eTimer;
+        if (emailTimer > 0) {
+            eTimer = setInterval(() => setEmailTimer(prev => prev - 1), 1000);
         }
-    }, []);
+        return () => {
+            clearInterval(eTimer);
+        };
+    }, [emailTimer]);
 
     const toggleTheme = () => {
         setIsDark(!isDark);
@@ -284,6 +289,33 @@ const Signup = () => {
         }
     };
 
+    const handleSendOtp = async (type) => {
+        setError('');
+        try {
+            if (type === 'email') {
+                if (!formData.email) { setError('Please enter email'); return; }
+                await AuthService.sendEmailOtp(formData.email);
+                setEmailOtpSent(true);
+                setEmailTimer(60);
+            }
+        } catch (err) {
+            setError(err.message || "Failed to send OTP");
+        }
+    };
+
+    const handleVerifyOtp = async (type) => {
+        setError('');
+        try {
+            if (type === 'email') {
+                await AuthService.verifyEmailOtp(formData.email, emailOtp);
+                setEmailVerified(true);
+                setEmailOtpSent(false);
+            }
+        } catch (err) {
+            setError(err.message || "Invalid OTP");
+        }
+    };
+
     // Add/Remove Helpers
     const addEducation = () => setEducationList([...educationList, { collegeName: '', degree: '', specialization: '', completionYear: '', grade: '' }]);
     const removeEducation = (i) => setEducationList(educationList.filter((_, idx) => idx !== i));
@@ -446,7 +478,20 @@ const Signup = () => {
 
                             <div className="grid-2">
                                 <Input label="Full Name" name="fullName" value={formData.fullName} onChange={handleInputChange} required />
-                                <Input label="Email" name="email" value={formData.email} onChange={handleInputChange} required disabled={mode === 'complete'} />
+                                <div>
+                                    <Input label="Email" name="email" value={formData.email} onChange={handleInputChange} required disabled={mode === 'complete' || emailVerified || emailOtpSent} />
+                                    {!emailVerified && !emailOtpSent && (
+                                        <button type="button" onClick={() => handleSendOtp('email')} className="btn-ghost" style={{ fontSize: '0.8rem', padding: '4px 8px', marginTop: '4px' }}>Send OTP</button>
+                                    )}
+                                    {emailOtpSent && !emailVerified && (
+                                        <div style={{ marginTop: '8px', display: 'flex', gap: '8px' }}>
+                                            <input type="text" placeholder="6-digit OTP" value={emailOtp} onChange={(e) => setEmailOtp(e.target.value)} style={{ ...inputStyle, width: '120px' }} />
+                                            <button type="button" onClick={() => handleVerifyOtp('email')} className="btn-primary" style={{ padding: '4px 12px' }}>Verify</button>
+                                            {emailTimer > 0 ? <span style={{ fontSize: '0.8rem', alignSelf: 'center' }}>{emailTimer}s</span> : <button type="button" onClick={() => handleSendOtp('email')} style={{ fontSize: '0.8rem', background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer' }}>Resend</button>}
+                                        </div>
+                                    )}
+                                    {emailVerified && <span style={{ color: '#10b981', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '4px' }}><CheckCircle size={14} /> Verified</span>}
+                                </div>
                             </div>
 
                             {mode === 'register' && (
@@ -629,7 +674,7 @@ const Signup = () => {
                                 </>
                             )}
 
-                            <button type="submit" className="btn-primary" style={{ marginTop: '2rem' }} disabled={loading}>
+                            <button type="submit" className="btn-primary" style={{ marginTop: '2rem' }} disabled={loading || !emailVerified}>
                                 {loading ? 'Processing...' : (mode === 'complete' ? 'Complete Profile' : 'Sign Up')}
                             </button>
 

@@ -28,6 +28,7 @@ namespace SmartHireAI.Backend.Data
         public DbSet<SystemLog> SystemLogs { get; set; }
         public DbSet<UsageTracking> UsageTracking { get; set; }
         public DbSet<AuditLog> AuditLogs { get; set; }
+        public DbSet<OtpVerification> OtpVerifications { get; set; }
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -41,9 +42,9 @@ namespace SmartHireAI.Backend.Data
                 .Property(u => u.Role)
                 .HasConversion<string>();
 
-            // Unique index for User Email
+            // Unique index for User MobileNumber
             modelBuilder.Entity<User>()
-               .HasIndex(u => u.Email)
+               .HasIndex(u => u.MobileNumber)
                .IsUnique();
         }
     }

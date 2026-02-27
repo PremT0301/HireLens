@@ -184,6 +184,19 @@ const AuthService = {
             // Notify app about state change
             window.dispatchEvent(new Event("storage"));
         }
+    },
+
+    // ======================
+    // OTP VERIFICATION
+    // ======================
+    sendEmailOtp: async (email) => {
+        const response = await api.post(`/auth/send-email-otp?email=${email}`);
+        return response.data;
+    },
+
+    verifyEmailOtp: async (email, otp) => {
+        const response = await api.post("/auth/verify-email-otp", { identifier: email, otp });
+        return response.data;
     }
 };
 
