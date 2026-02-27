@@ -141,8 +141,8 @@ const ApplicantDashboard = () => {
     ];
 
     return (
-        <div className="container" style={{ paddingTop: '100px', paddingBottom: '4rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+        <div className="container" style={{ paddingTop: '2rem', paddingBottom: '3rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                 <div>
                     <h1 className="title-lg" style={{ marginBottom: '0.5rem' }}>
                         {loading ? 'Welcome back' : `Welcome back, ${profile?.fullName || 'Candidate'}`}
@@ -164,7 +164,7 @@ const ApplicantDashboard = () => {
             </div>
 
             {/* Stats Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem', marginBottom: '3rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
                 {loading ? (
                     // Skeleton loaders for stats
                     [1, 2, 3].map((i) => (
@@ -186,7 +186,7 @@ const ApplicantDashboard = () => {
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: i * 0.1 }}
                                 className="glass-panel"
-                                style={{ padding: '2rem', display: 'flex', alignItems: 'center', gap: '1.5rem', height: '100%' }}
+                                style={{ padding: '1.25rem', display: 'flex', alignItems: 'center', gap: '1.25rem', height: '100%' }}
                             >
                                 <div style={{ padding: '15px', borderRadius: '12px', background: `${stat.color}15`, color: stat.color }}>
                                     {stat.icon}
@@ -210,7 +210,7 @@ const ApplicantDashboard = () => {
                     {...getRootProps()}
                     className="glass-panel"
                     style={{
-                        padding: '4rem',
+                        padding: '2.5rem',
                         textAlign: 'center',
                         border: `2px dashed ${isDragActive ? 'var(--primary)' : 'var(--glass-border)'}`,
                         background: isDragActive ? 'var(--primary-light)' : 'var(--glass-bg)',
@@ -324,7 +324,7 @@ const ApplicantDashboard = () => {
             }
 
             {/* Recently Applied Jobs Mock */}
-            <div style={{ marginBottom: '3rem' }}>
+            <div style={{ marginBottom: '2rem' }}>
                 <h3 style={{ marginBottom: '1rem', fontSize: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <Briefcase size={24} /> Recently Applied
                 </h3>

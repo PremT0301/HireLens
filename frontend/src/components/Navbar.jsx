@@ -278,7 +278,7 @@ const Navbar = () => {
                         {/* App Specific Links */}
                         {userRole && userRole !== 'ADMIN' && (
                             <div className="desktop-menu" style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
-                                {(userRole === 'applicant' ? applicantLinks : recruiterLinks).map(link => (
+                                {(userRole === 'APPLICANT' ? applicantLinks : recruiterLinks).map(link => (
                                     <NavItem
                                         key={link.path}
                                         to={link.path}

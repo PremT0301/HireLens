@@ -3,7 +3,7 @@ import { Outlet } from 'react-router-dom';
 
 const ApplicantLayout = () => {
     return (
-        <div style={{ minHeight: '100vh', paddingTop: '80px' }}>
+        <div style={{ minHeight: '100vh' }}>
             {/* Main Content */}
             <main style={{
                 width: '100%',

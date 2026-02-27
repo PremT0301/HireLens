@@ -58,10 +58,10 @@ const RecruiterDashboard = () => {
         loadDashboardData();
     }, []);
     return (
-        <div className="container page-transition" style={{ paddingTop: '100px', paddingBottom: '4rem' }}>
+        <div className="container page-transition" style={{ paddingTop: '2rem', paddingBottom: '3rem' }}>
 
             {/* Header */}
-            <div style={{ marginBottom: '3rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+            <div style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
                     {profile && profile.companyLogo && (
                         <div style={{
@@ -90,7 +90,7 @@ const RecruiterDashboard = () => {
             </div>
 
             {/* Stats Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', marginBottom: '3rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
                 {loading ? (
                     [1, 2, 3].map((i) => (
                         <div key={i} className="glass-panel" style={{ padding: '1.5rem' }}>
