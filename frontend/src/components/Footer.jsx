@@ -3,6 +3,76 @@ import { Link } from 'react-router-dom';
 import { Mail, MapPin, Linkedin, Twitter, Github } from 'lucide-react';
 
 const Footer = () => {
+    const userRole = (sessionStorage.getItem('userRole') || '').toUpperCase();
+    const isLoggedIn = !!userRole;
+
+    if (isLoggedIn && userRole === 'APPLICANT') {
+        return (
+            <footer style={{
+                background: 'var(--bg-secondary)',
+                borderTop: '1px solid var(--border-color)',
+                padding: '3rem 0 1.5rem',
+                position: 'relative',
+                zIndex: 10
+            }}>
+                <div className="container">
+                    <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        flexWrap: 'wrap',
+                        gap: '2rem',
+                        marginBottom: '2rem'
+                    }}>
+                        {/* Left: Brand */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <img src="/logo.png" alt="HireLens AI" style={{ height: '28px' }} />
+                            <span style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)' }}>HireLens <span style={{ color: 'var(--primary)' }}>AI</span></span>
+                        </div>
+
+                        {/* Center: Quick Links */}
+                        <div style={{ display: 'flex', gap: '2rem' }}>
+                            <Link to="/applicant/dashboard" className="portal-footer-link">Dashboard</Link>
+                            <Link to="/applicant/interview-copilot" className="portal-footer-link">Copilot</Link>
+                            <Link to="/applicant/jobs" className="portal-footer-link">Matches</Link>
+                            <Link to="/settings" className="portal-footer-link">Settings</Link>
+                            <Link to="/support" className="portal-footer-link">Support</Link>
+                        </div>
+
+                        {/* Right: Account */}
+                        <div style={{ display: 'flex', gap: '1.5rem' }}>
+                            <Link to="/privacy" className="portal-footer-link" style={{ fontSize: '0.85rem', opacity: 0.8 }}>Privacy</Link>
+                            <Link to="/security" className="portal-footer-link" style={{ fontSize: '0.85rem', opacity: 0.8 }}>Security</Link>
+                            <button className="portal-footer-link" style={{ fontSize: '0.85rem', opacity: 0.8, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--error)' }}>Delete Account</button>
+                        </div>
+                    </div>
+
+                    <div style={{
+                        paddingTop: '1.5rem',
+                        borderTop: '1px solid var(--border-color)',
+                        textAlign: 'center'
+                    }}>
+                        <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', opacity: 0.7 }}>
+                            © 2026 HireLens AI — Applicant Portal
+                        </p>
+                    </div>
+                </div>
+                <style>{`
+                    .portal-footer-link {
+                        color: var(--text-secondary);
+                        text-decoration: none;
+                        font-size: 0.9rem;
+                        font-weight: 500;
+                        transition: color 0.2s ease;
+                    }
+                    .portal-footer-link:hover {
+                        color: var(--primary);
+                    }
+                `}</style>
+            </footer>
+        );
+    }
+
     return (
         <footer style={{
             background: 'var(--bg-secondary)',

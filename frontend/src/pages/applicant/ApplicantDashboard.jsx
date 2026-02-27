@@ -1,89 +1,55 @@
-import React, { useCallback, useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import { useDropzone } from 'react-dropzone';
-import { useNavigate } from 'react-router-dom';
+import {
+    TrendingUp, FileText, CheckCircle, UploadCloud,
+    User as UserIcon, MapPin, Briefcase, Trash2,
+    ChevronRight, Sparkles, Brain, Target, Activity,
+    AlertCircle, Info, ArrowUpRight, Plus, Clock
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+    ResponsiveContainer, LineChart, Line, XAxis, YAxis,
+    CartesianGrid, Tooltip as RechartsTooltip, AreaChart, Area
+} from 'recharts';
 
-import { TrendingUp, FileText, CheckCircle, UploadCloud, Loader2, User as UserIcon, MapPin, Briefcase, Trash2 } from 'lucide-react';
-import { motion } from 'framer-motion';
-import { endpoints } from '../../api/config';
+import DashboardService from '../../api/dashboardService';
 import ProfileService from '../../api/profileService';
 import ResumeService from '../../api/resumeService';
-import JobMatcher from '../../components/applicant/JobMatcher';
-import NewsSection from '../../components/NewsSection';
+import ApplicationService from '../../api/applicationService';
 import ThreeDTiltCard from '../../components/ui/ThreeDTiltCard';
-import ATSScoreDisplay from '../../components/applicant/ATSScoreDisplay';
 import HireLensLoader from '../../components/ui/HireLensLoader';
 import Skeleton, { SkeletonTable } from '../../components/ui/Skeleton';
+import NewsSection from '../../components/NewsSection';
 import { NoApplicationsState } from '../../components/ui/EmptyState';
-import ApplicationService from '../../api/applicationService';
 
 const ApplicantDashboard = () => {
     const navigate = useNavigate();
-    const [analyzing, setAnalyzing] = useState(false);
-    const [result, setResult] = useState(() => {
-        // Load from local storage on init
-        const saved = localStorage.getItem('resumeResult');
-        return saved ? JSON.parse(saved) : null;
-    });
-
-    const handleUploadSuccess = (data) => {
-        setResult(data);
-        localStorage.setItem('resumeResult', JSON.stringify(data));
-    };
-
-    const handleRemoveResume = () => {
-        setResult(null);
-        localStorage.removeItem('resumeResult');
-    };
-
-    const navigateToGapAnalysis = () => {
-        // Navigate with state
-        // assuming navigate is imported from somewhere, wait, need to add useNavigate
-    };
-
-    // ... inside useDropzone onDrop ...
-    // replace setResult(data) with handleUploadSuccess(data)
+    const [data, setData] = useState(null);
     const [profile, setProfile] = useState(null);
     const [applications, setApplications] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [analyzing, setAnalyzing] = useState(false);
 
     useEffect(() => {
-        const loadProfile = async () => {
-            try {
-                const data = await ProfileService.getMyProfile();
-                setProfile(data);
-            } catch (error) {
-                console.error("Failed to load profile", error);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        const loadApplications = async () => {
-            try {
-                const data = await ApplicationService.getMyApplications();
-                setApplications(data);
-            } catch (error) {
-                console.error("Failed to load applications", error);
-            }
-        };
-
-        loadProfile();
-        loadApplications();
+        loadDashboardData();
     }, []);
 
-    const handleAcceptInterview = async (applicationId) => {
+    const loadDashboardData = async () => {
+        setLoading(true);
         try {
-            await ApplicationService.acceptInterview(applicationId);
-            // Update local state
-            setApplications(prev => prev.map(app =>
-                app.applicationId === applicationId
-                    ? { ...app, status: 'Interview Accepted' }
-                    : app
-            ));
-            // alert("Interview Accepted!"); // Ideally use a Toast here if available
+            const [summary, userProfile, userApplications] = await Promise.all([
+                DashboardService.getApplicantSummary(),
+                ProfileService.getMyProfile(),
+                ApplicationService.getMyApplications()
+            ]);
+            setData(summary);
+            setProfile(userProfile);
+            setApplications(userApplications || []);
         } catch (error) {
-            console.error("Failed to accept interview", error);
-            alert("Failed to accept interview. Please try again.");
+            console.error("Failed to load dashboard data", error);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -92,305 +58,539 @@ const ApplicantDashboard = () => {
         if (!file) return;
 
         setAnalyzing(true);
-        setResult(null);
-
         try {
-            // Use real ResumeService
-            const data = await ResumeService.uploadResume(file);
-            // Save and Update State
-            setResult(data);
-            localStorage.setItem('resumeResult', JSON.stringify(data));
-
-            console.log("Analysis Result:", data);
+            await ResumeService.uploadResume(file);
+            await loadDashboardData();
         } catch (error) {
-            console.error("Analysis Failed:", error);
-            // Optionally set error state to show in UI
+            console.error("Upload failed", error);
         } finally {
             setAnalyzing(false);
         }
     }, []);
 
-
-
-    const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop });
-
-    // Derive stats from analysis result
-    const profileStrength = result ? result.analysis.ats_score : 0;
-    const interviewReadiness = result ? (result.analysis.classification.confidence * 100).toFixed(0) : 0;
-    const readinessLabel = interviewReadiness >= 80 ? 'High' : interviewReadiness >= 50 ? 'Medium' : 'Low';
-
-    const stats = [
-        {
-            label: 'Profile Strength (ATS)',
-            value: result ? `${profileStrength}%` : '-',
-            icon: <TrendingUp size={24} />,
-            color: profileStrength >= 70 ? 'var(--success)' : 'var(--primary)'
+    const { getRootProps, getInputProps, isDragActive, open } = useDropzone({
+        onDrop,
+        accept: {
+            'application/pdf': ['.pdf'],
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx']
         },
-        {
-            label: 'Role Fit Confidence',
-            value: result ? `${interviewReadiness}%` : '-',
-            icon: <CheckCircle size={24} />,
-            color: interviewReadiness >= 80 ? 'var(--success)' : 'var(--warning)'
-        },
-        {
-            label: 'Jobs Applied',
-            value: applications.length || 0,
-            icon: <FileText size={24} />,
-            color: 'var(--text-secondary)'
-        },
-    ];
+        multiple: false,
+        noClick: true // We will use a button for explicit click
+    });
+
+    if (loading) {
+        return (
+            <div className="container" style={{ paddingTop: '2rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 350px', gap: '2rem' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                        <Skeleton variant="title" width="400px" height="40px" />
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem' }}>
+                            {[1, 2, 3, 4].map(i => <Skeleton key={i} variant="panel" height="120px" />)}
+                        </div>
+                        <Skeleton variant="panel" height="400px" />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                        <Skeleton variant="panel" height="300px" />
+                        <Skeleton variant="panel" height="400px" />
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
-        <div className="container" style={{ paddingTop: '2rem', paddingBottom: '3rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                <div>
-                    <h1 className="title-lg" style={{ marginBottom: '0.5rem' }}>
-                        {loading ? 'Welcome back' : `Welcome back, ${profile?.fullName || 'Candidate'}`}
-                    </h1>
-                    <p style={{ color: 'var(--text-secondary)' }}>Track your progress and optimize your profile</p>
+        <div className="dashboard-wrapper">
+            <div className="container" style={{ paddingTop: '2rem', paddingBottom: '4rem' }}>
+
+                {/* 1. WELCOME HEADER */}
+                <div className="dashboard-header" style={{ marginBottom: '2.5rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                        <div>
+                            <div style={{ marginBottom: '8px' }}>
+                                <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Updated {data?.resumeHealth?.lastAnalyzed || 'Recently'}</span>
+                            </div>
+                            <h1 className="title-xl" style={{ margin: 0, letterSpacing: '-0.02em' }}>
+                                Master your career, {profile?.fullName?.split(' ')[0] || 'Candidate'}
+                            </h1>
+                        </div>
+                        <div style={{ textAlign: 'right', display: 'flex', gap: '1rem' }}>
+                            <button onClick={open} className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 24px' }}>
+                                <UploadCloud size={18} /> Update Intelligence
+                            </button>
+                            <Link to="/applicant/jobs" className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 24px' }}>
+                                Browse All Jobs <ArrowUpRight size={18} />
+                            </Link>
+                        </div>
+                    </div>
                 </div>
-                {profile && (
-                    <div className="glass-panel" style={{ padding: '1rem 1.5rem', display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <Briefcase size={16} color="var(--primary)" />
-                            <span style={{ fontSize: '0.9rem' }}>{profile.currentRole || 'Open to Work'}</span>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <MapPin size={16} color="var(--text-secondary)" />
-                            <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{profile.location || 'Remote'}</span>
-                        </div>
-                    </div>
-                )}
-            </div>
 
-            {/* Stats Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
-                {loading ? (
-                    // Skeleton loaders for stats
-                    [1, 2, 3].map((i) => (
-                        <div key={i} className="glass-panel" style={{ padding: '2rem' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-                                <Skeleton variant="circle" width="60px" height="60px" />
-                                <div style={{ flex: 1 }}>
-                                    <Skeleton variant="title" width="80px" height="32px" style={{ marginBottom: '8px' }} />
-                                    <Skeleton variant="text" width="120px" height="16px" />
-                                </div>
+                {/* 2. DYNAMIC LAYOUT GRID */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 350px', gap: '2rem' }}>
+
+                    {/* LEFT COLUMN */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+
+                        {/* QUICK STATS ROW */}
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem' }}>
+                            <StatCard
+                                label="Profile Completion"
+                                value={`${data?.quickStats?.profileCompletion || 0}%`}
+                                icon={<UserIcon size={20} />}
+                                color="#8b5cf6"
+                                trend="+5% this week"
+                            />
+                            <StatCard
+                                label="ATS Health Score"
+                                value={`${data?.quickStats?.atsScore || 0}/100`}
+                                icon={<Brain size={20} />}
+                                color="#3b82f6"
+                                trend="Top 15% in cohort"
+                            />
+                            <StatCard
+                                label="Applications Sent"
+                                value={data?.quickStats?.applicationsSent || 0}
+                                icon={<FileText size={20} />}
+                                color="#10b981"
+                                trend={`${applications.filter(a => a.status === 'Interview Scheduled').length} active tracking`}
+                            />
+                            <StatCard
+                                label="Avg. Role Match"
+                                value={`${data?.quickStats?.roleMatchPercentage || 0}%`}
+                                icon={<Target size={20} />}
+                                color="#f59e0b"
+                                trend="AI Optimized"
+                            />
+                        </div>
+
+                        {/* RECOMMENDED JOBS SECTION */}
+                        <div className="glass-panel" style={{ padding: '2rem' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                                <h3 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 700 }}>Recommended For You</h3>
+                                <Link to="/applicant/jobs" style={{ fontSize: '0.9rem', color: 'var(--primary)', fontWeight: 600, textDecoration: 'none' }}>View Match Engine →</Link>
                             </div>
-                        </div>
-                    ))
-                ) : (
-                    stats.map((stat, i) => (
-                        <ThreeDTiltCard key={i}>
-                            <motion.div
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: i * 0.1 }}
-                                className="glass-panel"
-                                style={{ padding: '1.25rem', display: 'flex', alignItems: 'center', gap: '1.25rem', height: '100%' }}
-                            >
-                                <div style={{ padding: '15px', borderRadius: '12px', background: `${stat.color}15`, color: stat.color }}>
-                                    {stat.icon}
-                                </div>
-                                <div>
-                                    <div style={{ fontSize: '2rem', fontWeight: 'bold' }}>{stat.value}</div>
-                                    <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>{stat.label}</div>
-                                </div>
-                            </motion.div>
-                        </ThreeDTiltCard>
-                    ))
-                )}
-            </div>
 
-
-
-            {/* Upload Zone */}
-            <h3 style={{ marginBottom: '1rem', fontSize: '1.5rem' }}>Resume Analysis</h3>
-            <ThreeDTiltCard>
-                <div
-                    {...getRootProps()}
-                    className="glass-panel"
-                    style={{
-                        padding: '2.5rem',
-                        textAlign: 'center',
-                        border: `2px dashed ${isDragActive ? 'var(--primary)' : 'var(--glass-border)'}`,
-                        background: isDragActive ? 'var(--primary-light)' : 'var(--glass-bg)',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s'
-                    }}
-                >
-                    <input {...getInputProps()} />
-                    <div style={{ color: isDragActive ? 'var(--primary)' : 'var(--text-secondary)', marginBottom: '1rem', display: 'flex', justifyContent: 'center' }}>
-                        <UploadCloud size={64} />
-                    </div>
-                    <h4 style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>
-                        {isDragActive ? 'Drop your resume here' : 'Upload your latest resume'}
-                    </h4>
-                    <p style={{ color: 'var(--text-secondary)' }}>
-                        {result ? `Analysis Complete: ${result.analysis.classification.predictedRole} (${(result.analysis.classification.confidence * 100).toFixed(1)}%)` : 'Drag & drop PDF or DOCX (Text only for now)'}
-                    </p>
-                </div>
-            </ThreeDTiltCard>
-
-            {/* Full Screen Loader */}
-            {analyzing && (
-                <HireLensLoader
-                    text="Analyzing Resume..."
-                    subtext="Extracting skills, experience, and calculating fit score."
-                />
-            )}
-
-            {/* Analysis Results */}
-            {result && (
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="glass-panel"
-                    style={{ marginTop: '2rem', padding: '2rem' }}
-                >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem', color: 'var(--success)' }}>
-                        <CheckCircle size={32} />
-                        <div>
-                            <h3 style={{ margin: 0, color: 'var(--text-primary)' }}>Resume Analyzed & Saved</h3>
-                            <p style={{ margin: 0, fontSize: '0.9rem' }}>Your resume has been indexed for job matching.</p>
-                        </div>
-                    </div>
-
-                    <ATSScoreDisplay
-                        score={result.analysis.ats_score || 0}
-                        level={result.analysis.ats_level || 'Low'}
-                        feedback={result.analysis.feedback || []}
-                    />
-
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '2rem', marginTop: '2rem' }}>
-                        <div>
-                            <h4 style={{ color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>Predicted Role</h4>
-                            <div className="badge-primary" style={{ fontSize: '1.2rem', display: 'inline-block' }}>
-                                {result.analysis.classification.predictedRole}
-                            </div>
-                            <div style={{ marginTop: '0.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-                                Confidence: {(result.analysis.classification.confidence * 100).toFixed(1)}%
-                            </div>
-                        </div>
-
-                        <div>
-                            <h4 style={{ color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>Top Skills Detected</h4>
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-                                {result?.analysis?.ner_results?.skills && result.analysis.ner_results.skills.length > 0 ? (
-                                    result.analysis.ner_results.skills.slice(0, 15).map((skill, i) => (
-                                        <span key={i} style={{
-                                            background: 'rgba(255,255,255,0.05)',
-                                            border: '1px solid var(--glass-border)',
-                                            padding: '4px 10px',
-                                            borderRadius: '20px',
-                                            fontSize: '0.9rem'
-                                        }}>
-                                            {skill}
-                                        </span>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.25rem' }}>
+                                {data?.recommendedJobs?.length > 0 ? (
+                                    data.recommendedJobs.map((job, idx) => (
+                                        <JobMatchCard key={idx} job={job} />
                                     ))
                                 ) : (
-                                    <span style={{ color: 'var(--text-secondary)' }}>No specific skills detected</span>
+                                    <div style={{ gridColumn: 'span 2', textAlign: 'center', padding: '3rem 2rem' }}>
+                                        <div style={{ marginBottom: '1.5rem', color: 'var(--text-secondary)' }}>
+                                            No matches yet. Upload your resume to start matching your skills with jobs.
+                                        </div>
+                                        <button onClick={open} className="btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                                            <UploadCloud size={18} /> Upload Resume Now
+                                        </button>
+                                    </div>
                                 )}
                             </div>
                         </div>
-                    </div>
-                </motion.div>
-            )
-            }
 
-            {/* Action Buttons */}
-            {
-                result && (
-                    <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem', justifyContent: 'center' }}>
-                        <motion.button
-                            whileHover={{ scale: 1.05, backgroundColor: 'rgba(239, 68, 68, 0.1)' }}
-                            whileTap={{ scale: 0.95 }}
-                            onClick={handleRemoveResume}
-                            className="btn-ghost"
+                        {/* RECENT APPLICATIONS */}
+                        <div className="glass-panel" style={{ padding: '2rem' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                                <h3 style={{ margin: 0, fontSize: '1.3rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                    <Clock size={20} color="var(--primary)" /> Recent Applications
+                                </h3>
+                                <Link to="/applicant/applications" style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>View All</Link>
+                            </div>
+
+                            {applications.length > 0 ? (
+                                <div style={{ overflowX: 'auto' }}>
+                                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                        <thead>
+                                            <tr style={{ textAlign: 'left', borderBottom: '1px solid var(--border-color)', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                                                <th style={{ padding: '12px 8px' }}>Target Job</th>
+                                                <th style={{ padding: '12px 8px' }}>Company</th>
+                                                <th style={{ padding: '12px 8px' }}>Applied</th>
+                                                <th style={{ padding: '12px 8px', textAlign: 'right' }}>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {applications.slice(0, 5).map((app, idx) => (
+                                                <tr key={idx} style={{ borderBottom: idx < 4 ? '1px solid rgba(255,255,255,0.03)' : 'none', fontSize: '0.9rem' }}>
+                                                    <td style={{ padding: '16px 8px', fontWeight: 600 }}>{app.jobTitle}</td>
+                                                    <td style={{ padding: '16px 8px', color: 'var(--text-secondary)' }}>{app.companyName}</td>
+                                                    <td style={{ padding: '16px 8px', color: 'var(--text-secondary)' }}>{new Date(app.appliedDate).toLocaleDateString()}</td>
+                                                    <td style={{ padding: '16px 8px', textAlign: 'right' }}>
+                                                        <span className={`status-pill ${app.status.toLowerCase().replace(' ', '-')}`}>
+                                                            {app.status}
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            ) : (
+                                <div style={{ padding: '2rem 0' }}>
+                                    <NoApplicationsState onAction={() => navigate('/applicant/jobs')} />
+                                </div>
+                            )}
+                        </div>
+
+                        {/* WEEKLY PROGRESS WIDGET */}
+                        <div className="glass-panel" style={{ padding: '2rem' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                                <div>
+                                    <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700 }}>Weekly Profile Strength</h3>
+                                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: '4px 0 0' }}>Activity tracked across indexable channels</p>
+                                </div>
+                                <div style={{ display: 'flex', gap: '8px' }}>
+                                    <div className="chart-legend" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem' }}>
+                                        <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--primary)' }}></span> Strength
+                                    </div>
+                                </div>
+                            </div>
+                            <div style={{ height: '300px', width: '100%' }}>
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <AreaChart data={data?.weeklyProgress}>
+                                        <defs>
+                                            <linearGradient id="colorStrength" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="5%" stopColor="var(--primary)" stopOpacity={0.3} />
+                                                <stop offset="95%" stopColor="var(--primary)" stopOpacity={0} />
+                                            </linearGradient>
+                                        </defs>
+                                        <XAxis
+                                            dataKey="day"
+                                            axisLine={false}
+                                            tickLine={false}
+                                            tick={{ fill: 'var(--text-secondary)', fontSize: 12 }}
+                                            dy={10}
+                                        />
+                                        <YAxis hide domain={[0, 100]} />
+                                        <RechartsTooltip
+                                            contentStyle={{
+                                                backgroundColor: 'rgba(20, 20, 25, 0.9)',
+                                                border: '1px solid var(--glass-border)',
+                                                borderRadius: '12px',
+                                                backdropFilter: 'blur(10px)'
+                                            }}
+                                            itemStyle={{ color: 'white' }}
+                                        />
+                                        <Area
+                                            type="monotone"
+                                            dataKey="strength"
+                                            stroke="var(--primary)"
+                                            strokeWidth={3}
+                                            fillOpacity={1}
+                                            fill="url(#colorStrength)"
+                                            animationDuration={2000}
+                                        />
+                                    </AreaChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    {/* RIGHT COLUMN (SIDEBAR) */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+
+                        {/* RESUME HEALTH BREAKDOWN */}
+                        <div
+                            {...getRootProps()}
+                            className={`glass-panel upload-zone ${isDragActive ? 'active' : ''}`}
                             style={{
-                                color: 'var(--error)',
-                                border: '1px solid var(--error)',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '0.5rem',
-                                padding: '0.8rem 1.5rem',
-                                fontSize: '1rem'
+                                padding: '1.5rem',
+                                position: 'relative',
+                                overflow: 'hidden',
+                                cursor: 'default', // Don't show hand cursor on whole panel
+                                transition: 'all 0.3s ease',
+                                border: isDragActive ? '2px dashed var(--primary)' : '1px solid var(--border-color)'
                             }}
                         >
-                            <Trash2 size={18} />
-                            Remove Resume
-                        </motion.button>
-                    </div>
-                )
-            }
+                            <input {...getInputProps()} />
+                            <div style={{ position: 'absolute', top: '-20px', right: '-20px', width: '100px', height: '100px', borderRadius: '50%', background: 'var(--primary)', opacity: 0.1, filter: 'blur(30px)' }}></div>
 
-            {/* Recently Applied Jobs Mock */}
-            <div style={{ marginBottom: '2rem' }}>
-                <h3 style={{ marginBottom: '1rem', fontSize: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <Briefcase size={24} /> Recently Applied
-                </h3>
-                <div className="glass-panel" style={{ padding: '0' }}>
-                    {loading ? (
-                        <div style={{ padding: '2rem' }}>
-                            <SkeletonTable rows={5} columns={4} />
-                        </div>
-                    ) : applications.length > 0 ? (
-                        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-                            <thead>
-                                <tr style={{ borderBottom: '1px solid var(--glass-border)', color: 'var(--text-secondary)' }}>
-                                    <th style={{ padding: '1rem' }}>Job Title</th>
-                                    <th style={{ padding: '1rem' }}>Company</th>
-                                    <th style={{ padding: '1rem' }}>Date Applied</th>
-                                    <th style={{ padding: '1rem' }}>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {applications.slice(0, 5).map((app, i) => (
-                                    <tr key={i} style={{ borderBottom: i < applications.length - 1 ? '1px solid var(--glass-border)' : 'none' }}>
-                                        <td style={{ padding: '1rem', fontWeight: '500' }}>{app.jobTitle}</td>
-                                        <td style={{ padding: '1rem', color: 'var(--text-secondary)' }}>{app.companyName}</td>
-                                        <td style={{ padding: '1rem', color: 'var(--text-secondary)' }}>{app.appliedDate}</td>
-                                        <td style={{ padding: '1rem' }}>
-                                            <span style={{
-                                                padding: '4px 12px',
-                                                borderRadius: '20px',
-                                                fontSize: '0.85rem',
-                                                background: ['Interview Scheduled', 'Interview Accepted', 'Hired', 'Reapplied'].includes(app.status) ? 'rgba(76, 175, 80, 0.1)' : 'rgba(59, 130, 246, 0.1)',
-                                                color: ['Interview Scheduled', 'Interview Accepted', 'Hired', 'Reapplied'].includes(app.status) ? 'var(--success)' : 'var(--primary)',
-                                                border: `1px solid ${['Interview Scheduled', 'Interview Accepted', 'Hired', 'Reapplied'].includes(app.status) ? 'rgba(76, 175, 80, 0.3)' : 'rgba(59, 130, 246, 0.3)'}`
-                                            }}>
-                                                {app.status}
-                                            </span>
-                                        </td>
-                                    </tr>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                                <h4 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                    <AlertCircle size={18} color="var(--primary)" /> Resume Insights
+                                </h4>
+                                <button onClick={open} className="btn-icon-only" title="Upload New Resume" style={{ background: 'rgba(139, 92, 246, 0.1)', color: 'var(--primary)', padding: '6px', borderRadius: '8px' }}>
+                                    <UploadCloud size={18} />
+                                </button>
+                            </div>
+
+                            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '2rem' }}>
+                                <div style={{ position: 'relative', width: '120px', height: '120px' }}>
+                                    <svg width="120" height="120" viewBox="0 0 120 120">
+                                        <circle cx="60" cy="60" r="54" fill="none" stroke="var(--border-color)" strokeWidth="8" />
+                                        <circle cx="60" cy="60" r="54" fill="none" stroke="var(--primary)" strokeWidth="8"
+                                            strokeDasharray={`${((data?.resumeHealth?.atsScore || 0) / 100) * 339} 339`}
+                                            strokeLinecap="round"
+                                            transform="rotate(-90 60 60)"
+                                            style={{ transition: 'stroke-dasharray 1s ease-out' }}
+                                        />
+                                    </svg>
+                                    <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                                        <span style={{ fontSize: '1.75rem', fontWeight: 800 }}>{data?.resumeHealth?.atsScore || 0}</span>
+                                        <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px' }}>ATS SCORE</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                {Object.entries(data?.resumeHealth?.sectionCompleteness || {
+                                    "Contact Info": false,
+                                    "Skills": false,
+                                    "Experience": false,
+                                    "Education": false
+                                }).map(([section, complete]) => (
+                                    <div key={section} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.9rem' }}>
+                                        <span style={{ color: 'var(--text-secondary)' }}>{section} Check</span>
+                                        {complete ? <CheckCircle size={16} color="var(--success)" /> : <AlertCircle size={16} color="var(--warning)" />}
+                                    </div>
                                 ))}
-                            </tbody>
-                        </table>
-                    ) : (
-                        <div style={{ padding: '3rem' }}>
-                            <NoApplicationsState onAction={() => navigate('/applicant/jobs')} />
+                            </div>
+
+                            <div style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border-color)' }}>
+                                <h5 style={{ margin: '0 0 10px', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Improvement Tip:</h5>
+                                <p style={{ fontSize: '0.9rem', fontStyle: 'italic', color: 'var(--text-primary)', lineHeight: 1.5 }}>
+                                    "{data?.resumeHealth?.improvementTips?.[0] || 'Upload resume for AI analysis.'}"
+                                </p>
+                            </div>
+
+                            <button onClick={open} className="btn-secondary" style={{ width: '100%', marginTop: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                                <UploadCloud size={16} /> Refresh Resume Data
+                            </button>
+
+                            <div className="upload-overlay" style={{
+                                position: 'absolute',
+                                inset: 0,
+                                background: 'rgba(20, 20, 25, 0.9)',
+                                display: isDragActive ? 'flex' : 'none',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                zIndex: 10,
+                                borderRadius: '16px'
+                            }}>
+                                <UploadCloud size={40} color="var(--primary)" />
+                                <span style={{ fontWeight: 600, marginTop: '8px' }}>Drop to Update Intelligence</span>
+                            </div>
                         </div>
-                    )}
+
+                        {/* SKILL GAP INSIGHTS */}
+                        <div className="glass-panel" style={{ padding: '1.5rem' }}>
+                            <h4 style={{ margin: '0 0 1rem', fontSize: '1.1rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <Brain size={18} color="var(--secondary)" /> Skill Matrix
+                            </h4>
+
+                            <div style={{ marginBottom: '1.5rem' }}>
+                                <label style={{ display: 'block', fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: '8px', letterSpacing: '0.5px' }}>Detected Core Skills</label>
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                                    {data?.skillGapInsights?.detectedSkills?.length > 0 ? (
+                                        data.skillGapInsights.detectedSkills.slice(0, 6).map(skill => (
+                                            <span key={skill} className="skill-chip">{skill}</span>
+                                        ))
+                                    ) : (
+                                        <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>None detected yet.</span>
+                                    )}
+                                    {data?.skillGapInsights?.detectedSkills?.length > 6 && <span style={{ fontSize: '0.8rem', color: 'var(--primary)', alignSelf: 'center', paddingLeft: '4px' }}>+{data.skillGapInsights.detectedSkills.length - 6} more</span>}
+                                </div>
+                            </div>
+
+                            <div style={{ marginBottom: '1.5rem' }}>
+                                <label style={{ display: 'block', fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: '8px', letterSpacing: '0.5px' }}>Top Gaps for Current Roles</label>
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                                    {data?.skillGapInsights?.missingSkills?.length > 0 ? (
+                                        data.skillGapInsights.missingSkills.map(skill => (
+                                            <span key={skill} className="skill-chip gap">{skill}</span>
+                                        ))
+                                    ) : (
+                                        <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>No gaps identified.</span>
+                                    )}
+                                </div>
+                            </div>
+
+                            <button className="btn-secondary" style={{ width: '100%', padding: '10px', fontSize: '0.9rem' }}>
+                                {data?.skillGapInsights?.improvementCta || 'Learn with AI Copilot'}
+                            </button>
+                        </div>
+
+                        {/* ACTIVITY TIMELINE */}
+                        <div className="glass-panel" style={{ padding: '1.5rem' }}>
+                            <h4 style={{ margin: '0 0 1.5rem', fontSize: '1.1rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <Activity size={18} color="var(--primary)" /> Activity
+                            </h4>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                                {data?.activityTimeline?.length > 0 ? (
+                                    data.activityTimeline.map((item, idx) => (
+                                        <div key={idx} style={{ display: 'flex', gap: '12px', position: 'relative' }}>
+                                            {idx < data.activityTimeline.length - 1 && <div style={{ position: 'absolute', left: '10px', top: '22px', bottom: '-15px', width: '1px', background: 'var(--border-color)' }}></div>}
+                                            <div style={{ width: '22px', height: '22px', borderRadius: '50%', background: 'var(--primary-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1 }}>
+                                                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--primary)' }}></div>
+                                            </div>
+                                            <div>
+                                                <div style={{ fontSize: '0.9rem', fontWeight: 600 }}>{item.event}</div>
+                                                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{new Date(item.date).toLocaleDateString()}</div>
+                                            </div>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', textAlign: 'center' }}>No recent activity.</div>
+                                )}
+                            </div>
+                        </div>
+
+                    </div>
+
                 </div>
+
+                {/* 3. FULL WIDTH NEWS & INSIGHTS */}
+                <div style={{ marginTop: '2rem' }}>
+                    <NewsSection query="technology career trends AI" title="Industry Intelligence" />
+                </div>
+
+                {/* MODAL - ANALYZING LOADER */}
+                <AnimatePresence>
+                    {analyzing && (
+                        <HireLensLoader text="Updating Profile Intelligence..." subtext="AI is recalibrating your market value and matching scores." />
+                    )}
+                </AnimatePresence>
+
             </div>
 
-            {/* News Feed */}
-            <NewsSection query="technology career advice" title="Insights & Career News" />
-
-            <div style={{ height: '2rem' }}></div>
-
             <style>{`
-                .spin { animation: spin 1s linear infinite; }
-                @keyframes spin { 100% { transform: rotate(360deg); } }
-                .badge-primary {
-                    background: var(--primary);
+                .btn-ai-action {
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(59, 130, 246, 0.1));
+                    border: 1px solid rgba(139, 92, 246, 0.3);
                     color: white;
-                    padding: 0.5rem 1rem;
-                    border-radius: 8px;
-                    font-weight: 500;
+                    padding: 10px 20px;
+                    border-radius: 12px;
+                    font-weight: 600;
+                    cursor: pointer;
+                    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                    backdrop-filter: blur(10px);
+                    position: relative;
+                    overflow: hidden;
+                }
+                .btn-ai-action:hover {
+                    background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(59, 130, 246, 0.2));
+                    border-color: rgba(139, 92, 246, 0.5);
+                    transform: translateY(-2px);
+                    box-shadow: 0 8px 20px rgba(139, 92, 246, 0.15);
+                }
+                .btn-ai-action:active {
+                    transform: translateY(0);
+                }
+                .btn-ai-action::after {
+                    content: '';
+                    position: absolute;
+                    top: -50%;
+                    left: -50%;
+                    width: 200%;
+                    height: 200%;
+                    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+                    opacity: 0;
+                    transition: opacity 0.3s;
+                }
+                .btn-ai-action:hover::after {
+                    opacity: 1;
+                }
+
+                .badge-ai {
+                    background: rgba(139, 92, 246, 0.1);
+                    color: #8b5cf6;
+                    padding: 4px 12px;
+                    border-radius: 20px;
+                    font-size: 0.75rem;
+                    font-weight: 700;
+                    text-transform: uppercase;
+                    display: flex;
+                    align-items: center;
+                    gap: 6px;
+                    border: 1px solid rgba(139, 92, 246, 0.2);
+                }
+Status.skill-chip {
+                    background: rgba(255, 255, 255, 0.05);
+                    border: 1px solid var(--border-color);
+                    padding: 4px 10px;
+                    border-radius: 6px;
+                    font-size: 0.8rem;
+                    color: var(--text-primary);
+                }
+                .skill-chip.gap {
+                    background: rgba(245, 158, 11, 0.05);
+                    border-color: rgba(245, 158, 11, 0.2);
+                    color: #f59e0b;
+                }
+                .status-pill {
+                    padding: 4px 12px;
+                    border-radius: 20px;
+                    font-size: 0.75rem;
+                    font-weight: 600;
+                    background: rgba(255,255,255,0.05);
+                    border: 1px solid var(--border-color);
+                }
+                .status-pill.applied { color: var(--primary); border-color: rgba(59, 130, 246, 0.3); background: rgba(59, 130, 246, 0.05); }
+                .status-pill.interview-scheduled, .status-pill.interview-accepted { color: var(--success); border-color: rgba(76, 175, 80, 0.3); background: rgba(76, 175, 80, 0.05); }
+                .status-pill.rejected { color: var(--error); border-color: rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.05); }
+
+                .dashboard-wrapper {
+                    background: radial-gradient(circle at top right, rgba(139, 92, 246, 0.03), transparent 50%),
+                                radial-gradient(circle at bottom left, rgba(59, 130, 246, 0.03), transparent 50%);
+                }
+                .upload-zone:hover {
+                    box-shadow: 0 0 20px rgba(139, 92, 246, 0.1);
+                    border-color: var(--primary);
                 }
             `}</style>
-        </div >
+        </div>
     );
 };
+
+// --- SUB-COMPONENTS ---
+
+const StatCard = ({ label, value, icon, color, trend }) => (
+    <ThreeDTiltCard>
+        <div className="glass-panel" style={{ padding: '1.25rem', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div style={{ padding: '10px', borderRadius: '10px', background: `${color}15`, color: color }}>
+                    {icon}
+                </div>
+                <div style={{ fontSize: '0.75rem', color: '#10b981', fontWeight: 600 }}>{trend}</div>
+            </div>
+            <div style={{ marginTop: '1rem' }}>
+                <div style={{ fontSize: '1.75rem', fontWeight: 800 }}>{value}</div>
+                <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>{label}</div>
+            </div>
+        </div>
+    </ThreeDTiltCard>
+);
+
+const JobMatchCard = ({ job }) => (
+    <div className="job-match-card" style={{
+        padding: '1.25rem',
+        borderRadius: '16px',
+        background: 'rgba(255,255,255,0.03)',
+        border: '1px solid var(--border-color)',
+        transition: 'all 0.3s ease'
+    }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+            <div>
+                <h4 style={{ margin: '0 0 4px', fontSize: '1.05rem', fontWeight: 700 }}>{job.title}</h4>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                    <span>{job.companyName}</span>
+                    <span style={{ width: '3px', height: '3px', borderRadius: '50%', background: 'var(--text-secondary)' }}></span>
+                    <span>{job.location}</span>
+                </div>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+                <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--primary)' }}>{job.matchPercentage}%</div>
+                <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Match</div>
+            </div>
+        </div>
+        <div style={{ display: 'flex', gap: '8px' }}>
+            <Link to={`/applicant/jobs/${job.jobId}`} className="btn-ghost" style={{ flex: 1, padding: '8px', fontSize: '0.85rem' }}>View Details</Link>
+            <button className="btn-nav-primary" style={{ flex: 0.5, padding: '8px', fontSize: '0.85rem', borderRadius: '8px' }}>Apply</button>
+        </div>
+    </div>
+);
 
 export default ApplicantDashboard;

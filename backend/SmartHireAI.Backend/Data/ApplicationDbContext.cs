@@ -29,6 +29,7 @@ namespace SmartHireAI.Backend.Data
         public DbSet<UsageTracking> UsageTracking { get; set; }
         public DbSet<AuditLog> AuditLogs { get; set; }
         public DbSet<OtpVerification> OtpVerifications { get; set; }
+        public DbSet<ResumeAnalysis> ResumeAnalysis { get; set; }
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

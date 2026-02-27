@@ -81,9 +81,53 @@ namespace SmartHireAI.Backend.Data
         [Column("pricing_plan")]
         public string PricingPlan { get; set; } = "FREE"; // FREE, PRO, ELITE_PLUS
 
+        [MaxLength(500)]
+        [Column("resume_path")]
+        public string? ResumePath { get; set; }
+
+        [Column("resume_uploaded_at")]
+        public DateTime? ResumeUploadedAt { get; set; }
+
+        [Column("profile_completion_percentage")]
+        public int ProfileCompletionPercentage { get; set; } = 0;
+
         public Applicant? ApplicantProfile { get; set; }
 
         public Recruiter? RecruiterProfile { get; set; }
+
+        public ResumeAnalysis? ResumeAnalysis { get; set; }
+    }
+
+    [Table("resume_analysis")]
+    public class ResumeAnalysis
+    {
+        [Key]
+        [Column("id")]
+        public Guid Id { get; set; }
+
+        [Column("user_id")]
+        public Guid UserId { get; set; }
+
+        [Column("ats_score")]
+        public int AtsScore { get; set; }
+
+        [Column("detected_skills")]
+        public string? DetectedSkills { get; set; } // JSON or CSV
+
+        [Column("missing_skills")]
+        public string? MissingSkills { get; set; } // JSON or CSV
+
+        [Column("feedback")]
+        public string? Feedback { get; set; } // JSON
+
+        [Column("confidence_score")]
+        public double ConfidenceScore { get; set; }
+
+        [Column("created_at")]
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        [ForeignKey("UserId")]
+        public User User { get; set; } = null!;
     }
 
     [Table("applicants")]

@@ -16,13 +16,15 @@ public class AuthService : IAuthService
     private readonly ApplicationDbContext _context;
     private readonly IConfiguration _configuration;
     private readonly IEmailService _emailService;
+    private readonly IAnalysisService _analysisService;
     private readonly ILogger<AuthService> _logger;
 
-    public AuthService(ApplicationDbContext context, IConfiguration configuration, IEmailService emailService, ILogger<AuthService> logger)
+    public AuthService(ApplicationDbContext context, IConfiguration configuration, IEmailService emailService, IAnalysisService analysisService, ILogger<AuthService> logger)
     {
         _context = context;
         _configuration = configuration;
         _emailService = emailService;
+        _analysisService = analysisService;
         _logger = logger;
     }
 
@@ -174,6 +176,23 @@ public class AuthService : IAuthService
                 UpdatedAt = DateTime.UtcNow
             };
             _context.Applicants.Add(applicant);
+
+            // Save changes first to get User/Applicant IDs in DB
+            await _context.SaveChangesAsync();
+
+            // Trigger Resume Analysis if resume exists
+            if (request.Resume != null && request.Resume.Length > 0)
+            {
+                try
+                {
+                    await _analysisService.AnalyzeResumeAsync(user.UserId, request.Resume);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to analyze resume during registration for user {Email}", user.Email);
+                    // We don't throw here to avoid failing registration if AI service is down
+                }
+            }
 
             // Add Education
             if (request.Education != null)

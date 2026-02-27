@@ -28,8 +28,10 @@ builder.Services.AddScoped<IResumeParserService, ResumeParserService>();
 builder.Services.AddHttpClient<IAIService, AIService>();
 builder.Services.AddScoped<IAdminAnalyticsService, AdminAnalyticsService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
+builder.Services.AddScoped<IAnalysisService, AnalysisService>();
 builder.Services.AddScoped<IUserPlanService, UserPlanService>();
 builder.Services.AddScoped<IUsageTrackingService, UsageTrackingService>();
+builder.Services.AddHttpClient();
 builder.Services.AddMemoryCache();
 
 builder.Services.AddSignalR();
