@@ -6,6 +6,13 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SmartHireAI.Backend.Data
 {
+    public enum UserRole
+    {
+        ADMIN,
+        RECRUITER,
+        APPLICANT
+    }
+
     [Table("users")]
     public class User
     {
@@ -68,10 +75,15 @@ namespace SmartHireAI.Backend.Data
         public string? ProfileImage { get; set; }
 
         [Required]
-        [Column("role")]
-        public string Role { get; set; } = string.Empty;
+        [Column("role", TypeName = "varchar(50)")]
+        public UserRole Role { get; set; } = UserRole.APPLICANT;
+
+        [MaxLength(20)]
+        [Column("pricing_plan")]
+        public string PricingPlan { get; set; } = "FREE"; // FREE, PRO, ELITE_PLUS
 
         public Applicant? ApplicantProfile { get; set; }
+
         public Recruiter? RecruiterProfile { get; set; }
     }
 
@@ -731,4 +743,64 @@ namespace SmartHireAI.Backend.Data
         [ForeignKey("UserId")]
         public User? User { get; set; }
     }
+
+    [Table("usage_tracking")]
+    public class UsageTracking
+    {
+        [Key]
+        [Column("usage_id")]
+        public Guid UsageId { get; set; }
+
+        [Required]
+        [Column("user_id")]
+        public Guid UserId { get; set; }
+
+        [Required]
+        [MaxLength(50)]
+        [Column("feature_name")]
+        public string FeatureName { get; set; } = string.Empty;
+
+        [Column("usage_count")]
+        public int UsageCount { get; set; } = 0;
+
+        [Column("week_reset_date")]
+        public DateTime WeekResetDate { get; set; } = DateTime.UtcNow;
+
+        [ForeignKey("UserId")]
+        public User User { get; set; } = null!;
+    }
+
+    [Table("audit_logs")]
+    public class AuditLog
+    {
+        [Key]
+        [Column("log_id")]
+        public Guid LogId { get; set; }
+
+        [Required]
+        [Column("timestamp")]
+        public DateTime Timestamp { get; set; } = DateTime.UtcNow;
+
+        [Required]
+        [Column("action")]
+        public string Action { get; set; } = string.Empty;
+
+        [Required]
+        [Column("user_id")]
+        public Guid UserId { get; set; } // The user whose role was changed
+
+        [Required]
+        [Column("changed_by")]
+        public Guid ChangedBy { get; set; } // The admin who changed it
+
+        [Column("old_role")]
+        public string? OldRole { get; set; }
+
+        [Column("new_role")]
+        public string? NewRole { get; set; }
+
+        [ForeignKey("UserId")]
+        public User User { get; set; } = null!;
+    }
 }
+

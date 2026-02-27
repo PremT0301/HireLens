@@ -1,4 +1,5 @@
 #nullable enable
+using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using SmartHireAI.Backend.Data;
@@ -12,6 +13,7 @@ public class AdminService : IAdminService
     private readonly ApplicationDbContext _context;
     private readonly IMemoryCache _cache;
     private readonly IAIService _aiService;
+    private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly ILogger<AdminService> _logger;
     private static readonly DateTime _startTime = DateTime.UtcNow;
 
@@ -21,11 +23,13 @@ public class AdminService : IAdminService
         ApplicationDbContext context, 
         IMemoryCache cache, 
         IAIService aiService,
+        IHttpContextAccessor httpContextAccessor,
         ILogger<AdminService> logger)
     {
         _context = context;
         _cache = cache;
         _aiService = aiService;
+        _httpContextAccessor = httpContextAccessor;
         _logger = logger;
     }
 
@@ -68,7 +72,8 @@ public class AdminService : IAdminService
 
         if (!string.IsNullOrEmpty(role))
         {
-            query = query.Where(u => u.Role == role);
+            var roleEnum = Enum.Parse<UserRole>(role.ToUpper());
+            query = query.Where(u => u.Role == roleEnum);
         }
 
         return await query
@@ -80,7 +85,7 @@ public class AdminService : IAdminService
                 UserId = u.UserId,
                 Email = u.Email,
                 FullName = u.FullName,
-                Role = u.Role,
+                Role = u.Role.ToString(),
                 IsActive = u.IsActive,
                 CreatedAt = u.CreatedAt
             })
@@ -90,7 +95,7 @@ public class AdminService : IAdminService
     public async Task<bool> ToggleUserStatusAsync(Guid userId)
     {
         var user = await _context.Users.FindAsync(userId);
-        if (user == null || user.Role == "Admin") return false;
+        if (user == null || user.Role == UserRole.ADMIN) return false;
 
         user.IsActive = !user.IsActive;
         await LogActionAsync("Admin", $"User {user.Email} was {(user.IsActive ? "Enabled" : "Disabled")}", userId);
@@ -101,11 +106,41 @@ public class AdminService : IAdminService
     public async Task<bool> UpdateUserRoleAsync(Guid userId, string newRole)
     {
         var user = await _context.Users.FindAsync(userId);
-        if (user == null || user.Role == "Admin") return false;
+        if (user == null) return false;
 
-        var oldRole = user.Role;
-        user.Role = newRole;
-        await LogActionAsync("Admin", $"User {user.Email} role changed from {oldRole} to {newRole}", userId);
+        // Security Check: Cannot modify an Admin or change someone to Admin without special logic 
+        // (For this task, we allow promoting to ADMIN but with audit)
+        // However, we should prevent changing an existing ADMIN's role to something else via this general method for safety
+        if (user.Role == UserRole.ADMIN) return false;
+
+        var oldRole = user.Role.ToString();
+        var targetRole = Enum.Parse<UserRole>(newRole.ToUpper());
+        user.Role = targetRole; // Ensure consistent case
+        
+        // Full Admin Rights: If promoted to ADMIN, give them the ADMIN plan and verify email
+        if (targetRole == UserRole.ADMIN)
+        {
+            user.PricingPlan = "ADMIN";
+            user.IsEmailVerified = true;
+        }
+
+        // Audit Logging
+        var currentUserId = _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
+        Guid.TryParse(currentUserId, out var changedByGuid);
+
+        var auditLog = new AuditLog
+        {
+            LogId = Guid.NewGuid(),
+            Timestamp = DateTime.UtcNow,
+            Action = "ROLE_CHANGE",
+            UserId = userId,
+            ChangedBy = changedByGuid,
+            OldRole = oldRole,
+            NewRole = user.Role.ToString()
+        };
+        _context.AuditLogs.Add(auditLog);
+
+        await LogActionAsync("Admin", $"User {user.Email} role changed from {oldRole} to {user.Role}. Plan updated if Admin.", userId);
         await _context.SaveChangesAsync();
         return true;
     }
@@ -113,7 +148,7 @@ public class AdminService : IAdminService
     public async Task<bool> DeleteUserAsync(Guid userId)
     {
         var user = await _context.Users.FindAsync(userId);
-        if (user == null || user.Role == "Admin") return false;
+        if (user == null || user.Role == UserRole.ADMIN) return false;
 
         // Soft delete recommendation: Implementation depends on schema. 
         // For now, let's just disable as per requirement or actually delete if preferred.

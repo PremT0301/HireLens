@@ -46,11 +46,13 @@ public class AuthService : IAuthService
                 return new AuthResponseDto
                 {
                     FullName = existingUser.FullName ?? string.Empty,
-                    Role = existingUser.Role,
+                    Role = existingUser.Role.ToString(),
+                    PricingPlan = existingUser.PricingPlan,
                     UserId = existingUser.UserId,
                     Message = "Registration successful! Verification email resent.",
                     RequiresVerification = true
                 };
+
             }
         }
 
@@ -88,7 +90,7 @@ public class AuthService : IAuthService
             FullName = request.FullName,
             MobileNumber = request.MobileNumber,
             Location = request.Location,
-            Role = request.Role,
+            Role = Enum.Parse<UserRole>(request.Role.ToUpper()),
             ProfileImage = profileImageUrl, // Set Profile Image
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow,
@@ -267,11 +269,13 @@ public class AuthService : IAuthService
         return new AuthResponseDto
         {
             FullName = user.FullName ?? string.Empty,
-            Role = user.Role,
+            Role = user.Role.ToString(),
+            PricingPlan = user.PricingPlan,
             UserId = user.UserId,
             Message = "Registration successful! Please check your email to verify your account.",
             RequiresVerification = true
         };
+
     }
 
     public async Task<AuthResponseDto> LoginAsync(UserLoginDto request)
@@ -438,9 +442,11 @@ public class AuthService : IAuthService
         {
             Token = token,
             FullName = user.FullName ?? string.Empty,
-            Role = user.Role,
+            Role = user.Role.ToString(),
+            PricingPlan = user.PricingPlan,
             UserId = user.UserId
         };
+
     }
 
     private string GenerateJwtToken(User user)
@@ -452,9 +458,11 @@ public class AuthService : IAuthService
         {
             new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
             new Claim(ClaimTypes.Email, user.Email),
-            new Claim(ClaimTypes.Role, user.Role),
-            new Claim("FullName", user.FullName ?? "")
+            new Claim(ClaimTypes.Role, user.Role.ToString()),
+            new Claim("FullName", user.FullName ?? ""),
+            new Claim("PricingPlan", user.PricingPlan)
         };
+
 
         var tokenDescriptor = new SecurityTokenDescriptor
         {

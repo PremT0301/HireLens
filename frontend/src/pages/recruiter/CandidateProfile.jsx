@@ -9,6 +9,7 @@ import {
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from 'recharts';
 import HireLensLoader from '../../components/ui/HireLensLoader';
 import ApplicationService from '../../api/applicationService';
+import PlanGate from '../../components/ui/PlanGate';
 import { useToast } from '../../context/ToastContext';
 import api from '../../api/axios';
 
@@ -228,35 +229,37 @@ const CandidateProfile = () => {
                 {/* Right Column: AI Insights & Details - Removed overflow/height to allow scroll */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', paddingRight: '0.5rem' }}>
 
-                    {/* Match Score Card */}
-                    <div className="glass-panel" style={{ padding: '1.5rem 2rem', display: 'flex', alignItems: 'center', gap: '2rem' }}>
-                        <div style={{ position: 'relative', width: '100px', height: '100px' }}>
-                            <svg width="100" height="100" viewBox="0 0 160 160">
-                                <circle cx="80" cy="80" r="70" fill="none" stroke="var(--bg-secondary)" strokeWidth="12" />
-                                <circle
-                                    cx="80" cy="80" r="70"
-                                    fill="none"
-                                    stroke={Math.round(gapAnalysis?.matchSummary?.matchPercentage ?? candidate.score) >= 70 ? 'var(--success)' : Math.round(gapAnalysis?.matchSummary?.matchPercentage ?? candidate.score) >= 40 ? 'var(--primary)' : 'var(--error)'}
-                                    strokeWidth="12"
-                                    strokeDasharray={`${(Math.round(gapAnalysis?.matchSummary?.matchPercentage ?? candidate.score) / 100) * 439.8} 439.8`}
-                                    strokeDashoffset="0"
-                                    transform="rotate(-90 80 80)"
-                                    strokeLinecap="round"
-                                />
-                            </svg>
-                            <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
-                                <span style={{ fontSize: '1.8rem', fontWeight: '800', color: 'var(--text-primary)' }}>
-                                    {Math.round(gapAnalysis?.matchSummary?.matchPercentage ?? candidate.score)}%
-                                </span>
+                    {/* Match Score Card - Gated for ELITE+ because it uses gapAnalysis */}
+                    <PlanGate requiredPlan="ELITE_PLUS" featureName="AI Match Score">
+                        <div className="glass-panel" style={{ padding: '1.5rem 2rem', display: 'flex', alignItems: 'center', gap: '2rem' }}>
+                            <div style={{ position: 'relative', width: '100px', height: '100px' }}>
+                                <svg width="100" height="100" viewBox="0 0 160 160">
+                                    <circle cx="80" cy="80" r="70" fill="none" stroke="var(--bg-secondary)" strokeWidth="12" />
+                                    <circle
+                                        cx="80" cy="80" r="70"
+                                        fill="none"
+                                        stroke={Math.round(gapAnalysis?.matchSummary?.matchPercentage ?? candidate.score) >= 70 ? 'var(--success)' : Math.round(gapAnalysis?.matchSummary?.matchPercentage ?? candidate.score) >= 40 ? 'var(--primary)' : 'var(--error)'}
+                                        strokeWidth="12"
+                                        strokeDasharray={`${(Math.round(gapAnalysis?.matchSummary?.matchPercentage ?? candidate.score) / 100) * 439.8} 439.8`}
+                                        strokeDashoffset="0"
+                                        transform="rotate(-90 80 80)"
+                                        strokeLinecap="round"
+                                    />
+                                </svg>
+                                <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
+                                    <span style={{ fontSize: '1.8rem', fontWeight: '800', color: 'var(--text-primary)' }}>
+                                        {Math.round(gapAnalysis?.matchSummary?.matchPercentage ?? candidate.score)}%
+                                    </span>
+                                </div>
+                            </div>
+                            <div>
+                                <h3 className="title-sm" style={{ marginBottom: '0.25rem' }}>AI Match Score</h3>
+                                <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: '1.4' }}>
+                                    Based on skill overlap, experience, and job requirements.
+                                </p>
                             </div>
                         </div>
-                        <div>
-                            <h3 className="title-sm" style={{ marginBottom: '0.25rem' }}>AI Match Score</h3>
-                            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: '1.4' }}>
-                                Based on skill overlap, experience, and job requirements.
-                            </p>
-                        </div>
-                    </div>
+                    </PlanGate>
 
                     {/* Education Summary */}
                     <div className="glass-panel" style={{ padding: '1.5rem 2rem' }}>
@@ -374,18 +377,20 @@ const CandidateProfile = () => {
                         </div>
 
                         {gapAnalysis && gapAnalysis.skillAnalysis?.missingSkills?.length > 0 && (
-                            <div style={{ padding: '1rem', background: 'rgba(239, 68, 68, 0.05)', borderRadius: '8px', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
-                                <h4 style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--error)', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                    <XCircle size={14} /> Missing Critical Skills
-                                </h4>
-                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
-                                    {gapAnalysis.skillAnalysis.missingSkills.map((skill, index) => (
-                                        <span key={index} style={{ fontSize: '0.8rem', padding: '2px 8px', borderRadius: '4px', background: 'rgba(239, 68, 68, 0.1)', color: 'var(--error)', fontWeight: '600' }}>
-                                            {skill}
-                                        </span>
-                                    ))}
+                            <PlanGate requiredPlan="ELITE_PLUS" featureName="Missing Critical Skills Analysis">
+                                <div style={{ padding: '1rem', background: 'rgba(239, 68, 68, 0.05)', borderRadius: '8px', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
+                                    <h4 style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--error)', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                        <XCircle size={14} /> Missing Critical Skills
+                                    </h4>
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+                                        {gapAnalysis.skillAnalysis.missingSkills.map((skill, index) => (
+                                            <span key={index} style={{ fontSize: '0.8rem', padding: '2px 8px', borderRadius: '4px', background: 'rgba(239, 68, 68, 0.1)', color: 'var(--error)', fontWeight: '600' }}>
+                                                {skill}
+                                            </span>
+                                        ))}
+                                    </div>
                                 </div>
-                            </div>
+                            </PlanGate>
                         )}
                     </div>
 

@@ -43,11 +43,10 @@ const Login = () => {
 
             // Redirect based on the actual role returned/decoded, not just the UI toggle
             // Ideally, backend should enforce role, but for now we trust the stored role
-            const storedRole = sessionStorage.getItem('userRole');
-
-            if (storedRole === 'applicant') navigate('/applicant/dashboard');
-            else if (storedRole === 'recruiter') navigate('/recruiter/dashboard');
-            else if (storedRole === 'admin') navigate('/admin/dashboard');
+            const storedRole = (sessionStorage.getItem('userRole') || '').toUpperCase();
+            if (storedRole === 'APPLICANT') navigate('/applicant/dashboard');
+            else if (storedRole === 'RECRUITER') navigate('/recruiter/dashboard');
+            else if (storedRole === 'ADMIN') navigate('/admin/dashboard');
             else navigate('/'); // Fallback
 
         } catch (err) {

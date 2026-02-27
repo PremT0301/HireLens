@@ -1,5 +1,8 @@
 import axios from "axios";
 
+
+
+
 /**
  * Axios instance for SmartHire AI Frontend
  * Communicates ONLY with ASP.NET Core backend
@@ -57,7 +60,15 @@ api.interceptors.response.use(
             // window.dispatchEvent(new Event("storage"));
         }
 
+        // Plan Limit / Forbidden
+        if (error.response.status === 403) {
+            console.warn("🚫 [Axios] 403 Forbidden received. Likely Plan Limit.");
+            // We can dispatch a custom event if we want a global modal
+            window.dispatchEvent(new CustomEvent("plan-limit", { detail: error.response.data }));
+        }
+
         // Pass backend error forward
+
         return Promise.reject(error);
     }
 );

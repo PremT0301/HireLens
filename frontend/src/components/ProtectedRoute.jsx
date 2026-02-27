@@ -4,17 +4,23 @@ import AuthService from '../api/authService';
 
 const ProtectedRoute = ({ children, requiredRole }) => {
     const isAuthenticated = AuthService.isAuthenticated();
-    const userRole = sessionStorage.getItem('userRole'); // Simple role check
+    const userRole = (sessionStorage.getItem('userRole') || '').toUpperCase();
     const location = useLocation();
 
     if (!isAuthenticated) {
-        // Redirect to login while saving the attempted location
         return <Navigate to="/login" state={{ from: location }} replace />;
     }
 
-    if (requiredRole && userRole !== requiredRole) {
-        // Role mismatch - redirect to home or unauthorized page
-        // For now, just send to home
+    // STRICT RBAC:
+    // 1. ADMIN is ONLY allowed in /admin routes (handled by AdminProtectedRoute)
+    // 2. Cross-portal access between Applicant and Recruiter is forbidden
+    if (userRole === 'ADMIN') {
+        // Admins should not be in Applicant or Recruiter portals
+        return <Navigate to="/admin/dashboard" replace />;
+    }
+
+    if (requiredRole && userRole !== requiredRole.toUpperCase()) {
+        // Role mismatch
         return <Navigate to="/" replace />;
     }
 

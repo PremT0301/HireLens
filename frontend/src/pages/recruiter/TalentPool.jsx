@@ -8,6 +8,8 @@ import { NoCandidatesState, NoSearchResultsState } from '../../components/ui/Emp
 
 import ApplicationService from '../../api/applicationService';
 import { useNavigate } from 'react-router-dom';
+import HireLensLoader from '../../components/ui/HireLensLoader';
+import PlanGate from '../../components/ui/PlanGate';
 import { useToast } from '../../context/ToastContext';
 
 const TalentPool = () => {
@@ -457,94 +459,7 @@ const TalentPool = () => {
                                                                     transformOrigin: 'top right',
                                                                     textAlign: 'left'
                                                                 }}>
-                                                                    <button
-                                                                        style={{
-                                                                            width: '100%',
-                                                                            textAlign: 'left',
-                                                                            padding: '12px 16px',
-                                                                            background: 'transparent',
-                                                                            border: 'none',
-                                                                            color: 'var(--text-primary)',
-                                                                            cursor: 'pointer',
-                                                                            fontSize: '0.9rem',
-                                                                            fontWeight: '500',
-                                                                            display: 'flex',
-                                                                            alignItems: 'center',
-                                                                            gap: '12px',
-                                                                            borderRadius: '10px',
-                                                                            transition: 'all 0.2s'
-                                                                        }}
-                                                                        onMouseEnter={(e) => {
-                                                                            e.target.style.background = 'var(--primary-light)';
-                                                                            e.target.style.color = 'var(--text-primary)';
-                                                                        }}
-                                                                        onMouseLeave={(e) => {
-                                                                            e.target.style.background = 'transparent';
-                                                                            e.target.style.color = 'var(--text-primary)';
-                                                                        }}
-                                                                        onClick={() => { setOpenMenuId(null); navigate(`/recruiter/candidate/${candidate.id}`); }}
-                                                                    >
-                                                                        <User size={18} /> View Profile
-                                                                    </button>
-                                                                    <button
-                                                                        style={{
-                                                                            width: '100%',
-                                                                            textAlign: 'left',
-                                                                            padding: '12px 16px',
-                                                                            background: 'transparent',
-                                                                            border: 'none',
-                                                                            color: 'var(--text-primary)',
-                                                                            cursor: 'pointer',
-                                                                            fontSize: '0.9rem',
-                                                                            fontWeight: '500',
-                                                                            display: 'flex',
-                                                                            alignItems: 'center',
-                                                                            gap: '12px',
-                                                                            borderRadius: '10px',
-                                                                            transition: 'all 0.2s'
-                                                                        }}
-                                                                        onMouseEnter={(e) => {
-                                                                            e.target.style.background = 'var(--primary-light)';
-                                                                            e.target.style.color = 'var(--text-primary)';
-                                                                        }}
-                                                                        onMouseLeave={(e) => {
-                                                                            e.target.style.background = 'transparent';
-                                                                            e.target.style.color = 'var(--text-primary)';
-                                                                        }}
-                                                                        onClick={() => { setOpenMenuId(null); navigate(`/recruiter/schedule/${candidate.id}`); }}
-                                                                    >
-                                                                        <Calendar size={18} /> Schedule Interview
-                                                                    </button>
-                                                                    <button
-                                                                        style={{
-                                                                            width: '100%',
-                                                                            textAlign: 'left',
-                                                                            padding: '12px 16px',
-                                                                            background: 'transparent',
-                                                                            border: 'none',
-                                                                            color: 'var(--text-primary)',
-                                                                            cursor: 'pointer',
-                                                                            fontSize: '0.9rem',
-                                                                            fontWeight: '500',
-                                                                            display: 'flex',
-                                                                            alignItems: 'center',
-                                                                            gap: '12px',
-                                                                            borderRadius: '10px',
-                                                                            transition: 'all 0.2s'
-                                                                        }}
-                                                                        onMouseEnter={(e) => {
-                                                                            e.target.style.background = 'var(--primary-light)';
-                                                                            e.target.style.color = 'var(--primary)';
-                                                                        }}
-                                                                        onMouseLeave={(e) => {
-                                                                            e.target.style.background = 'transparent';
-                                                                            e.target.style.color = 'var(--text-primary)';
-                                                                        }}
-                                                                        onClick={() => { setOpenMenuId(null); navigate(`/recruiter/contact/${candidate.id}`); }}
-                                                                    >
-                                                                        <Mail size={18} /> Contact Candidate
-                                                                    </button>
-                                                                    {candidate.status === 'Interview Accepted' && (
+                                                                    <PlanGate requiredPlan="PRO" featureName="Detailed Candidate Actions">
                                                                         <button
                                                                             style={{
                                                                                 width: '100%',
@@ -552,10 +467,128 @@ const TalentPool = () => {
                                                                                 padding: '12px 16px',
                                                                                 background: 'transparent',
                                                                                 border: 'none',
-                                                                                color: 'var(--success)',
+                                                                                color: 'var(--text-primary)',
                                                                                 cursor: 'pointer',
                                                                                 fontSize: '0.9rem',
-                                                                                fontWeight: '700',
+                                                                                fontWeight: '500',
+                                                                                display: 'flex',
+                                                                                alignItems: 'center',
+                                                                                gap: '12px',
+                                                                                borderRadius: '10px',
+                                                                                transition: 'all 0.2s'
+                                                                            }}
+                                                                            onMouseEnter={(e) => {
+                                                                                e.target.style.background = 'var(--primary-light)';
+                                                                                e.target.style.color = 'var(--text-primary)';
+                                                                            }}
+                                                                            onMouseLeave={(e) => {
+                                                                                e.target.style.background = 'transparent';
+                                                                                e.target.style.color = 'var(--text-primary)';
+                                                                            }}
+                                                                            onClick={() => { setOpenMenuId(null); navigate(`/recruiter/candidate/${candidate.id}`); }}
+                                                                        >
+                                                                            <User size={18} /> View Profile
+                                                                        </button>
+                                                                        <button
+                                                                            style={{
+                                                                                width: '100%',
+                                                                                textAlign: 'left',
+                                                                                padding: '12px 16px',
+                                                                                background: 'transparent',
+                                                                                border: 'none',
+                                                                                color: 'var(--text-primary)',
+                                                                                cursor: 'pointer',
+                                                                                fontSize: '0.9rem',
+                                                                                fontWeight: '500',
+                                                                                display: 'flex',
+                                                                                alignItems: 'center',
+                                                                                gap: '12px',
+                                                                                borderRadius: '10px',
+                                                                                transition: 'all 0.2s'
+                                                                            }}
+                                                                            onMouseEnter={(e) => {
+                                                                                e.target.style.background = 'var(--primary-light)';
+                                                                                e.target.style.color = 'var(--text-primary)';
+                                                                            }}
+                                                                            onMouseLeave={(e) => {
+                                                                                e.target.style.background = 'transparent';
+                                                                                e.target.style.color = 'var(--text-primary)';
+                                                                            }}
+                                                                            onClick={() => { setOpenMenuId(null); navigate(`/recruiter/schedule/${candidate.id}`); }}
+                                                                        >
+                                                                            <Calendar size={18} /> Schedule Interview
+                                                                        </button>
+                                                                        <button
+                                                                            style={{
+                                                                                width: '100%',
+                                                                                textAlign: 'left',
+                                                                                padding: '12px 16px',
+                                                                                background: 'transparent',
+                                                                                border: 'none',
+                                                                                color: 'var(--text-primary)',
+                                                                                cursor: 'pointer',
+                                                                                fontSize: '0.9rem',
+                                                                                fontWeight: '500',
+                                                                                display: 'flex',
+                                                                                alignItems: 'center',
+                                                                                gap: '12px',
+                                                                                borderRadius: '10px',
+                                                                                transition: 'all 0.2s'
+                                                                            }}
+                                                                            onMouseEnter={(e) => {
+                                                                                e.target.style.background = 'var(--primary-light)';
+                                                                                e.target.style.color = 'var(--primary)';
+                                                                            }}
+                                                                            onMouseLeave={(e) => {
+                                                                                e.target.style.background = 'transparent';
+                                                                                e.target.style.color = 'var(--text-primary)';
+                                                                            }}
+                                                                            onClick={() => { setOpenMenuId(null); navigate(`/recruiter/contact/${candidate.id}`); }}
+                                                                        >
+                                                                            <Mail size={18} /> Contact Candidate
+                                                                        </button>
+                                                                        {candidate.status === 'Interview Accepted' && (
+                                                                            <button
+                                                                                style={{
+                                                                                    width: '100%',
+                                                                                    textAlign: 'left',
+                                                                                    padding: '12px 16px',
+                                                                                    background: 'transparent',
+                                                                                    border: 'none',
+                                                                                    color: 'var(--success)',
+                                                                                    cursor: 'pointer',
+                                                                                    fontSize: '0.9rem',
+                                                                                    fontWeight: '700',
+                                                                                    display: 'flex',
+                                                                                    alignItems: 'center',
+                                                                                    gap: '12px',
+                                                                                    borderRadius: '10px',
+                                                                                    transition: 'all 0.2s',
+                                                                                    marginTop: '4px',
+                                                                                    borderTop: '1px solid var(--border-color)'
+                                                                                }}
+                                                                                onMouseEnter={(e) => {
+                                                                                    e.target.style.background = 'rgba(34, 197, 94, 0.1)';
+                                                                                }}
+                                                                                onMouseLeave={(e) => {
+                                                                                    e.target.style.background = 'transparent';
+                                                                                }}
+                                                                                onClick={() => handleHire(candidate)}
+                                                                            >
+                                                                                <Briefcase size={18} /> Hire Candidate
+                                                                            </button>
+                                                                        )}
+                                                                        <button
+                                                                            style={{
+                                                                                width: '100%',
+                                                                                textAlign: 'left',
+                                                                                padding: '12px 16px',
+                                                                                background: 'transparent',
+                                                                                border: 'none',
+                                                                                color: 'var(--error)',
+                                                                                cursor: 'pointer',
+                                                                                fontSize: '0.9rem',
+                                                                                fontWeight: '500',
                                                                                 display: 'flex',
                                                                                 alignItems: 'center',
                                                                                 gap: '12px',
@@ -565,45 +598,16 @@ const TalentPool = () => {
                                                                                 borderTop: '1px solid var(--border-color)'
                                                                             }}
                                                                             onMouseEnter={(e) => {
-                                                                                e.target.style.background = 'rgba(34, 197, 94, 0.1)';
+                                                                                e.target.style.background = 'rgba(239, 68, 68, 0.1)';
                                                                             }}
                                                                             onMouseLeave={(e) => {
                                                                                 e.target.style.background = 'transparent';
                                                                             }}
-                                                                            onClick={() => handleHire(candidate)}
+                                                                            onClick={() => handleReject(candidate)}
                                                                         >
-                                                                            <Briefcase size={18} /> Hire Candidate
+                                                                            <XCircle size={18} /> Reject Candidate
                                                                         </button>
-                                                                    )}
-                                                                    <button
-                                                                        style={{
-                                                                            width: '100%',
-                                                                            textAlign: 'left',
-                                                                            padding: '12px 16px',
-                                                                            background: 'transparent',
-                                                                            border: 'none',
-                                                                            color: 'var(--error)',
-                                                                            cursor: 'pointer',
-                                                                            fontSize: '0.9rem',
-                                                                            fontWeight: '500',
-                                                                            display: 'flex',
-                                                                            alignItems: 'center',
-                                                                            gap: '12px',
-                                                                            borderRadius: '10px',
-                                                                            transition: 'all 0.2s',
-                                                                            marginTop: '4px',
-                                                                            borderTop: '1px solid var(--border-color)'
-                                                                        }}
-                                                                        onMouseEnter={(e) => {
-                                                                            e.target.style.background = 'rgba(239, 68, 68, 0.1)';
-                                                                        }}
-                                                                        onMouseLeave={(e) => {
-                                                                            e.target.style.background = 'transparent';
-                                                                        }}
-                                                                        onClick={() => handleReject(candidate)}
-                                                                    >
-                                                                        <XCircle size={18} /> Reject Candidate
-                                                                    </button>
+                                                                    </PlanGate>
                                                                 </div>
                                                             </>
                                                         )}
@@ -649,26 +653,26 @@ const TalentPool = () => {
                                 ×
                             </button>
                         </div>
-                        <div style={{ width: '100%', height: '320px' }}>
-                            <ResponsiveContainer width="100%" height="100%">
-                                <RadarChart cx="50%" cy="50%" outerRadius="60%" data={getData(activeCandidate)}>
-                                    <PolarGrid stroke="var(--glass-border)" />
-                                    <PolarAngleAxis
-                                        dataKey="subject"
-                                        tick={{ fill: 'var(--text-secondary)', fontSize: 11 }}
-                                    />
-                                    <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
-                                    <Radar
-                                        name="Skills"
-                                        dataKey="A"
-                                        stroke="var(--primary)"
-                                        strokeWidth={3}
-                                        fill="var(--primary)"
-                                        fillOpacity={0.3}
-                                    />
-                                </RadarChart>
-                            </ResponsiveContainer>
-                        </div>
+                        {/* Skill Distribution - Gated for PRO+ */}
+                        <PlanGate requiredPlan="PRO" featureName="Skill Analytics Radar">
+                            <div style={{ height: '350px', marginBottom: '1.5rem', width: '100%', minWidth: '0' }}>
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <RadarChart cx="50%" cy="50%" outerRadius="80%" data={getData(activeCandidate)}>
+                                        <PolarGrid stroke="var(--glass-border)" />
+                                        <PolarAngleAxis dataKey="subject" tick={{ fill: 'var(--text-secondary)', fontSize: 12 }} />
+                                        <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
+                                        <Radar
+                                            name="Skills"
+                                            dataKey="A"
+                                            stroke="var(--primary)"
+                                            strokeWidth={3}
+                                            fill="var(--primary)"
+                                            fillOpacity={0.5}
+                                        />
+                                    </RadarChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </PlanGate>
                     </motion.div>
                 )}
             </AnimatePresence>

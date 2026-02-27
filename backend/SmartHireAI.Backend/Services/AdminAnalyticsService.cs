@@ -41,8 +41,8 @@ namespace SmartHireAI.Backend.Services
                 .Select(g => new UserGrowthDto
                 {
                     Date = new DateTime(g.Key.Year, g.Key.Month, 1),
-                    Applicants = g.Where(x => x.Role == "Applicant").Sum(x => x.Count),
-                    Recruiters = g.Where(x => x.Role == "Recruiter").Sum(x => x.Count)
+                    Applicants = g.Where(x => x.Role == UserRole.APPLICANT).Sum(x => x.Count),
+                    Recruiters = g.Where(x => x.Role == UserRole.RECRUITER).Sum(x => x.Count)
                 })
                 .OrderBy(x => x.Date)
                 .ToList();

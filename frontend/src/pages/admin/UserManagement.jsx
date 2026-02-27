@@ -116,9 +116,9 @@ const UserManagement = () => {
                         }}
                     >
                         <option value="">All Roles</option>
-                        <option value="Applicant">Applicant</option>
-                        <option value="Recruiter">Recruiter</option>
-                        <option value="Admin">Admin</option>
+                        <option value="APPLICANT">Applicant</option>
+                        <option value="RECRUITER">Recruiter</option>
+                        <option value="ADMIN">Admin</option>
                     </select>
                 </div>
             </div>
@@ -159,16 +159,26 @@ const UserManagement = () => {
                                         </div>
                                     </td>
                                     <td style={{ padding: '1.25rem 1.5rem' }}>
-                                        {user.role === 'Admin' ? (
+                                        {user.role === 'ADMIN' ? (
                                             <span style={{ padding: '0.375rem 0.75rem', borderRadius: '0.375rem', fontSize: '0.75rem', fontWeight: '700', backgroundColor: '#eff6ff', color: '#2563eb' }}>ADMIN</span>
                                         ) : (
                                             <select
                                                 value={user.role}
-                                                onChange={(e) => handleRoleChange(user.userId, e.target.value)}
+                                                onChange={(e) => {
+                                                    const newRole = e.target.value;
+                                                    if (newRole === 'ADMIN') {
+                                                        if (window.confirm("Grant full admin privileges? This will restrict portal access to Admin only and revoke Applicant/Recruiter portal access.")) {
+                                                            handleRoleChange(user.userId, newRole);
+                                                        }
+                                                    } else {
+                                                        handleRoleChange(user.userId, newRole);
+                                                    }
+                                                }}
                                                 style={{ border: '1px solid #e2e8f0', borderRadius: '0.375rem', padding: '0.25rem 0.5rem', fontSize: '0.875rem' }}
                                             >
-                                                <option value="Applicant">Applicant</option>
-                                                <option value="Recruiter">Recruiter</option>
+                                                <option value="APPLICANT">Applicant</option>
+                                                <option value="RECRUITER">Recruiter</option>
+                                                <option value="ADMIN">Admin</option>
                                             </select>
                                         )}
                                     </td>
@@ -185,7 +195,7 @@ const UserManagement = () => {
                                     </td>
                                     <td style={{ padding: '1.25rem 1.5rem', textAlign: 'right' }}>
                                         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
-                                            {user.role !== 'Admin' && (
+                                            {user.role !== 'ADMIN' && (
                                                 <>
                                                     <button
                                                         onClick={() => handleToggleUserStatus(user)}

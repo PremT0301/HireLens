@@ -4,7 +4,7 @@ import AuthService from '../../api/authService';
 
 const AdminProtectedRoute = ({ children }) => {
     const isAuthenticated = AuthService.isAuthenticated();
-    const userRole = sessionStorage.getItem('userRole');
+    const userRole = (sessionStorage.getItem('userRole') || '').toUpperCase();
     const location = useLocation();
 
     // Check if user is logged in
@@ -12,12 +12,12 @@ const AdminProtectedRoute = ({ children }) => {
         return <Navigate to="/login" state={{ from: location }} replace />;
     }
 
-    // Check if user has 'admin' role
-    if (userRole !== 'admin') {
+    // Check if user has 'ADMIN' role
+    if (userRole !== 'ADMIN') {
         // Redirect non-admins to their respective dashboards or home
-        if (userRole === 'recruiter') {
+        if (userRole === 'RECRUITER') {
             return <Navigate to="/recruiter/dashboard" replace />;
-        } else if (userRole === 'applicant') {
+        } else if (userRole === 'APPLICANT') {
             return <Navigate to="/applicant/dashboard" replace />;
         } else {
             return <Navigate to="/" replace />;

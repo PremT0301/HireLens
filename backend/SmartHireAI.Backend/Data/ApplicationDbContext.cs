@@ -26,6 +26,9 @@ namespace SmartHireAI.Backend.Data
         public DbSet<InboxMessage> InboxMessages { get; set; }
         public DbSet<Notification> Notifications { get; set; }
         public DbSet<SystemLog> SystemLogs { get; set; }
+        public DbSet<UsageTracking> UsageTracking { get; set; }
+        public DbSet<AuditLog> AuditLogs { get; set; }
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -33,6 +36,11 @@ namespace SmartHireAI.Backend.Data
 
             // Configure relationships and indexes here if needed, 
             // but Data Annotations in Entities.cs cover most of it.
+            // Configure UserRole enum to string conversion
+            modelBuilder.Entity<User>()
+                .Property(u => u.Role)
+                .HasConversion<string>();
+
             // Unique index for User Email
             modelBuilder.Entity<User>()
                .HasIndex(u => u.Email)

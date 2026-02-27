@@ -4,6 +4,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SmartHireAI.Backend.Data;
 using SmartHireAI.Backend.Models;
+using SmartHireAI.Backend.Services; // Added
+using SmartHireAI.Backend.Filters; // Added
+using Microsoft.Extensions.Logging; // Added
 
 namespace SmartHireAI.Backend.Controllers;
 
@@ -12,15 +15,21 @@ namespace SmartHireAI.Backend.Controllers;
 public class ApplicationsController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
-    private readonly Services.IAIService _aiService;
-    private readonly Services.IEmailService _emailService;
+    private readonly IAIService _aiService;
+    private readonly IEmailService _emailService;
+    private readonly global::SmartHireAI.Backend.Services.IUsageTrackingService _usageService;
+    private readonly ILogger<ApplicationsController> _logger;
 
-    public ApplicationsController(ApplicationDbContext context, Services.IAIService aiService, Services.IEmailService emailService)
+
+    public ApplicationsController(ApplicationDbContext context, IAIService aiService, IEmailService emailService, global::SmartHireAI.Backend.Services.IUsageTrackingService usageService, ILogger<ApplicationsController> logger)
     {
         _context = context;
         _aiService = aiService;
         _emailService = emailService;
+        _usageService = usageService;
+        _logger = logger;
     }
+
 
     // GET: api/applications/my
     [HttpGet("my")]
@@ -184,7 +193,15 @@ public class ApplicationsController : ControllerBase
 
         if (latestResume != null && !string.IsNullOrWhiteSpace(latestResume.ResumeText) && !string.IsNullOrWhiteSpace(job.Description))
         {
+            // Perform Match
             var matchResult = await _aiService.MatchJobAsync(latestResume.ResumeText, job.Description);
+            
+            // Increment Usage
+            if (Guid.TryParse(userIdString, out var parsedUserId))
+            {
+                await _usageService.IncrementUsageAsync(parsedUserId, "Matches");
+            }
+
             if (matchResult != null)
             {
                 finalScore = matchResult.MatchSummary.MatchPercentage;
@@ -440,9 +457,9 @@ public class ApplicationsController : ControllerBase
         {
             var term = filter.SearchTerm.ToLower();
             query = query.Where(a =>
-                a.Applicant.User.FullName.ToLower().Contains(term) ||
-                a.JobDescription.Title.ToLower().Contains(term) ||
-                a.Applicant.Resumes.Any(r => r.ResumeText.ToLower().Contains(term))
+                (a.Applicant.User.FullName != null && a.Applicant.User.FullName.ToLower().Contains(term)) ||
+                (a.JobDescription.Title != null && a.JobDescription.Title.ToLower().Contains(term)) ||
+                a.Applicant.Resumes.Any(r => r.ResumeText != null && r.ResumeText.ToLower().Contains(term))
             );
         }
 

@@ -1,14 +1,64 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Check, ArrowRight, Star, X, Info } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Check, ArrowRight, Star, X, Info, LayoutDashboard, TrendingUp } from 'lucide-react';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { applicantPlans, recruiterPlans, comparisonData } from '../data/pricingData';
+import AuthService from '../api/authService';
+import { useToast } from '../context/ToastContext';
 
 const Pricing = () => {
-    const [isAnnual, setIsAnnual] = useState(false);
-    const [userType, setUserType] = useState('applicant'); // 'applicant' | 'recruiter'
+    const [searchParams] = useSearchParams();
+    const navigate = useNavigate();
+    const { addToast } = useToast();
+    const source = searchParams.get('source');
 
+    const [isAnnual, setIsAnnual] = useState(false);
+    const [userType, setUserType] = useState(source === 'recruiter' ? 'recruiter' : 'applicant');
+    const [currentUser, setCurrentUser] = useState(AuthService.getCurrentUser());
+    const [isUpgrading, setIsUpgrading] = useState(null);
+
+    const userPlan = currentUser?.plan || 'FREE';
     const currentPlans = userType === 'applicant' ? applicantPlans : recruiterPlans;
+
+    // Map UI plan names to backend plan IDs
+    const planMapping = {
+        'Explorer': 'FREE',
+        'Pro Applicant': 'PRO',
+        'Elite Career+': 'ELITE_PLUS',
+        'Starter Recruiter': 'FREE',
+        'Growth Recruiter': 'PRO',
+        'Enterprise Recruiter': 'ELITE_PLUS'
+    };
+
+    useEffect(() => {
+        // Refresh user data on mount to ensure plan is up to date
+        const user = AuthService.getCurrentUser();
+        setCurrentUser(user);
+    }, []);
+
+    const handleUpgrade = async (planName) => {
+        const targetPlan = planMapping[planName];
+
+        if (!currentUser) {
+            navigate('/signup');
+            return;
+        }
+
+        if (targetPlan === userPlan) return;
+
+        setIsUpgrading(planName);
+        try {
+            await AuthService.upgradePlan(targetPlan);
+            addToast(`Successfully upgraded to ${planName}!`, "success");
+
+            // Re-fetch user to update UI
+            setCurrentUser(AuthService.getCurrentUser());
+        } catch (error) {
+            addToast(error.response?.data?.message || "Upgrade failed. Please try again.", "error");
+        } finally {
+            setIsUpgrading(null);
+        }
+    };
 
     const getPriceDisplay = (plan) => {
         if (plan.price === 'Custom') return 'Custom';
@@ -37,9 +87,49 @@ const Pricing = () => {
         return isAnnual ? 'year' : 'month';
     };
 
+    const isCurrentPlan = (planName) => {
+        return planMapping[planName] === userPlan;
+    };
+
     return (
-        <div className="page-transition aurora-bg" style={{ minHeight: '100vh', paddingTop: '120px', paddingBottom: '100px' }}>
+        <div className="page-transition aurora-bg" style={{ minHeight: '100vh', paddingTop: '100px', paddingBottom: '100px' }}>
             <div className="container">
+                {/* Context Header */}
+                {(source || currentUser) && (
+                    <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        marginBottom: '2rem',
+                        padding: '0 1rem'
+                    }}>
+                        <button
+                            onClick={() => navigate(-1)}
+                            className="btn-ghost"
+                            style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 600 }}
+                        >
+                            <ArrowRight size={18} style={{ transform: 'rotate(180deg)' }} />
+                            Back to Dashboard
+                        </button>
+
+                        {currentUser && (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <span className="text-subtle">Current Plan:</span>
+                                <span style={{
+                                    padding: '4px 12px',
+                                    background: 'var(--primary-light)',
+                                    color: 'var(--primary)',
+                                    borderRadius: '100px',
+                                    fontWeight: 700,
+                                    fontSize: '0.85rem'
+                                }}>
+                                    {userPlan.replace('_', '+')}
+                                </span>
+                            </div>
+                        )}
+                    </div>
+                )}
+
                 {/* Hero section */}
                 <div style={{ textAlign: 'center', marginBottom: '4rem' }}>
                     <motion.div
@@ -48,6 +138,12 @@ const Pricing = () => {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.6 }}
                     >
+                        {currentUser && userType === 'applicant' && (
+                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'var(--bg-secondary)', padding: '6px 16px', borderRadius: '100px', border: '1px solid var(--border-color)', marginBottom: '1.5rem', fontSize: '0.9rem', color: 'var(--primary)', fontWeight: 600 }}>
+                                <TrendingUp size={14} /> Upgrade your Applicant Plan
+                            </div>
+                        )}
+
                         <h1 style={{ fontSize: 'clamp(2.5rem, 5vw, 3.5rem)', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '1rem' }}>
                             Simple, Transparent <span className="gradient-text">Pricing</span>
                         </h1>
@@ -60,47 +156,49 @@ const Pricing = () => {
 
                     {/* Toggles Container */}
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem' }}>
-                        {/* User Type Toggle */}
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            transition={{ delay: 0.1 }}
-                            style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                background: 'var(--bg-secondary)',
-                                padding: '0.5rem',
-                                borderRadius: '100px',
-                                border: '1px solid var(--border-color)',
-                                boxShadow: 'var(--shadow-sm)',
-                                position: 'relative'
-                            }}
-                        >
-                            <button
-                                onClick={() => setUserType('applicant')}
+                        {/* User Type Toggle - Hidden if in strict context */}
+                        {!source && (
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.9 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                transition={{ delay: 0.1 }}
                                 style={{
-                                    padding: '10px 24px', borderRadius: '100px', border: 'none', cursor: 'pointer', fontWeight: 600,
-                                    background: userType === 'applicant' ? 'var(--primary)' : 'transparent',
-                                    color: userType === 'applicant' ? 'white' : 'var(--text-secondary)',
-                                    transition: 'all 0.3s',
-                                    zIndex: 1
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    background: 'var(--bg-secondary)',
+                                    padding: '0.5rem',
+                                    borderRadius: '100px',
+                                    border: '1px solid var(--border-color)',
+                                    boxShadow: 'var(--shadow-sm)',
+                                    position: 'relative'
                                 }}
                             >
-                                Applicant
-                            </button>
-                            <button
-                                onClick={() => setUserType('recruiter')}
-                                style={{
-                                    padding: '10px 24px', borderRadius: '100px', border: 'none', cursor: 'pointer', fontWeight: 600,
-                                    background: userType === 'recruiter' ? 'var(--primary)' : 'transparent',
-                                    color: userType === 'recruiter' ? 'white' : 'var(--text-secondary)',
-                                    transition: 'all 0.3s',
-                                    zIndex: 1
-                                }}
-                            >
-                                Recruiter
-                            </button>
-                        </motion.div>
+                                <button
+                                    onClick={() => setUserType('applicant')}
+                                    style={{
+                                        padding: '10px 24px', borderRadius: '100px', border: 'none', cursor: 'pointer', fontWeight: 600,
+                                        background: userType === 'applicant' ? 'var(--primary)' : 'transparent',
+                                        color: userType === 'applicant' ? 'white' : 'var(--text-secondary)',
+                                        transition: 'all 0.3s',
+                                        zIndex: 1
+                                    }}
+                                >
+                                    Applicant
+                                </button>
+                                <button
+                                    onClick={() => setUserType('recruiter')}
+                                    style={{
+                                        padding: '10px 24px', borderRadius: '100px', border: 'none', cursor: 'pointer', fontWeight: 600,
+                                        background: userType === 'recruiter' ? 'var(--primary)' : 'transparent',
+                                        color: userType === 'recruiter' ? 'white' : 'var(--text-secondary)',
+                                        transition: 'all 0.3s',
+                                        zIndex: 1
+                                    }}
+                                >
+                                    Recruiter
+                                </button>
+                            </motion.div>
+                        )}
 
                         {/* Billing Toggle */}
                         <motion.div
@@ -150,94 +248,112 @@ const Pricing = () => {
                             marginBottom: '8rem'
                         }}
                     >
-                        {currentPlans.map((plan, idx) => (
-                            <motion.div
-                                key={plan.name}
-                                whileHover={{ y: -10 }}
-                                className="glass-panel"
-                                style={{
-                                    padding: '3rem 2rem',
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    gap: '2rem',
-                                    border: plan.highlight ? '2px solid var(--primary)' : '1px solid var(--glass-border)',
-                                    boxShadow: plan.highlight ? '0 0 30px rgba(37, 99, 235, 0.15)' : 'var(--shadow-md)',
-                                    position: 'relative'
-                                }}
-                            >
-                                {plan.highlight && (
-                                    <div style={{
-                                        position: 'absolute', top: '0', left: '50%', transform: 'translate(-50%, -50%)',
-                                        background: 'var(--primary)', color: 'white', padding: '6px 20px', borderRadius: '100px',
-                                        fontWeight: 700, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em'
-                                    }}>
-                                        Most Popular
-                                    </div>
-                                )}
-
-                                <div>
-                                    <h3 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '1rem' }}>{plan.name}</h3>
-                                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
-                                        <span style={{ fontSize: '2.5rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-                                            {plan.price !== 'Custom' && '₹'}{getPriceDisplay(plan)}
-                                        </span>
-                                        {plan.price !== 'Custom' && (
-                                            <span style={{ fontSize: '1rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
-                                                /{getDurationLabel(plan)}
-                                            </span>
-                                        )}
-                                    </div>
-                                </div>
-
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', flex: 1 }}>
-                                    {plan.features.map((feature, fIdx) => (
-                                        <div key={fIdx} style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', fontSize: '0.95rem', color: 'var(--text-primary)' }}>
-                                            <div style={{ marginTop: '4px', width: '18px', height: '18px', borderRadius: '50%', background: 'var(--primary-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)', flexShrink: 0 }}>
-                                                <Check size={10} strokeWidth={4} />
-                                            </div>
-                                            {feature}
-                                        </div>
-                                    ))}
-                                    {plan.notIncluded && plan.notIncluded.map((feature, fIdx) => (
-                                        <div key={`not-${fIdx}`} style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', fontSize: '0.95rem', color: 'var(--text-subtle)', opacity: 0.6 }}>
-                                            <div style={{ marginTop: '4px', width: '18px', height: '18px', borderRadius: '50%', background: 'var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-subtle)', flexShrink: 0 }}>
-                                                <X size={10} strokeWidth={3} />
-                                            </div>
-                                            {feature}
-                                        </div>
-                                    ))}
-                                </div>
-
-                                {plan.limitations && (
-                                    <div style={{
-                                        padding: '1rem',
-                                        background: 'rgba(255, 255, 255, 0.03)',
-                                        borderRadius: '12px',
-                                        fontSize: '0.85rem',
-                                        color: 'var(--text-secondary)',
-                                        border: '1px dashed var(--border-color)'
-                                    }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', fontWeight: 600 }}>
-                                            <Info size={14} /> Limitations
-                                        </div>
-                                        <ul style={{ paddingLeft: '1.2rem', margin: 0 }}>
-                                            {plan.limitations.map((limit, lIdx) => <li key={lIdx}>{limit}</li>)}
-                                        </ul>
-                                    </div>
-                                )}
-
-                                <Link
-                                    to={plan.ctaLink}
-                                    className={plan.highlight ? 'btn-primary' : 'btn-nav-outline'}
+                        {currentPlans.map((plan, idx) => {
+                            const active = isCurrentPlan(plan.name);
+                            return (
+                                <motion.div
+                                    key={plan.name}
+                                    whileHover={{ y: -10 }}
+                                    className="glass-panel"
                                     style={{
-                                        textAlign: 'center', width: '100%', padding: '16px', borderRadius: '12px', fontSize: '1.1rem',
-                                        justifyContent: 'center'
+                                        padding: '3rem 2rem',
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        gap: '2rem',
+                                        border: active ? '2px solid var(--primary)' : (plan.highlight ? '1px solid var(--primary)' : '1px solid var(--glass-border)'),
+                                        boxShadow: active ? '0 0 40px rgba(37, 99, 235, 0.25)' : (plan.highlight ? '0 0 30px rgba(37, 99, 235, 0.15)' : 'var(--shadow-md)'),
+                                        position: 'relative',
+                                        background: active ? 'rgba(37, 99, 235, 0.03)' : 'var(--glass-bg)'
                                     }}
                                 >
-                                    {plan.btnText}
-                                </Link>
-                            </motion.div>
-                        ))}
+                                    {(plan.highlight || active) && (
+                                        <div style={{
+                                            position: 'absolute', top: '0', left: '50%', transform: 'translate(-50%, -50%)',
+                                            background: active ? 'var(--success)' : 'var(--primary)', color: 'white', padding: '6px 20px', borderRadius: '100px',
+                                            fontWeight: 700, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em',
+                                            display: 'flex', alignItems: 'center', gap: '6px'
+                                        }}>
+                                            {active ? <Star size={12} fill="white" /> : null}
+                                            {active ? 'Current Plan' : 'Most Popular'}
+                                        </div>
+                                    )}
+
+                                    <div>
+                                        <h3 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '1rem' }}>{plan.name}</h3>
+                                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+                                            <span style={{ fontSize: '2.5rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                                                {plan.price !== 'Custom' && '₹'}{getPriceDisplay(plan)}
+                                            </span>
+                                            {plan.price !== 'Custom' && (
+                                                <span style={{ fontSize: '1rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
+                                                    /{getDurationLabel(plan)}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', flex: 1 }}>
+                                        {plan.features.map((feature, fIdx) => (
+                                            <div key={fIdx} style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', fontSize: '0.95rem', color: 'var(--text-primary)' }}>
+                                                <div style={{ marginTop: '4px', width: '18px', height: '18px', borderRadius: '50%', background: 'var(--primary-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)', flexShrink: 0 }}>
+                                                    <Check size={10} strokeWidth={4} />
+                                                </div>
+                                                {feature}
+                                            </div>
+                                        ))}
+                                        {plan.notIncluded && plan.notIncluded.map((feature, fIdx) => (
+                                            <div key={`not-${fIdx}`} style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', fontSize: '0.95rem', color: 'var(--text-subtle)', opacity: 0.6 }}>
+                                                <div style={{ marginTop: '4px', width: '18px', height: '18px', borderRadius: '50%', background: 'var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-subtle)', flexShrink: 0 }}>
+                                                    <X size={10} strokeWidth={3} />
+                                                </div>
+                                                {feature}
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    {plan.limitations && (
+                                        <div style={{
+                                            padding: '1rem',
+                                            background: 'rgba(255, 255, 255, 0.03)',
+                                            borderRadius: '12px',
+                                            fontSize: '0.85rem',
+                                            color: 'var(--text-secondary)',
+                                            border: '1px dashed var(--border-color)'
+                                        }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', fontWeight: 600 }}>
+                                                <Info size={14} /> Limitations
+                                            </div>
+                                            <ul style={{ paddingLeft: '1.2rem', margin: 0 }}>
+                                                {plan.limitations.map((limit, lIdx) => <li key={lIdx}>{limit}</li>)}
+                                            </ul>
+                                        </div>
+                                    )}
+
+                                    <button
+                                        onClick={() => handleUpgrade(plan.name)}
+                                        disabled={active || isUpgrading === plan.name}
+                                        className={active ? 'btn-nav-outline' : (plan.highlight ? 'btn-primary' : 'btn-nav-outline')}
+                                        style={{
+                                            textAlign: 'center', width: '100%', padding: '16px', borderRadius: '12px', fontSize: '1.1rem',
+                                            justifyContent: 'center', cursor: active ? 'default' : 'pointer',
+                                            opacity: active ? 0.7 : 1,
+                                            border: active ? '1px solid var(--border-color)' : undefined
+                                        }}
+                                    >
+                                        {isUpgrading === plan.name ? (
+                                            <motion.div
+                                                animate={{ rotate: 360 }}
+                                                transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+                                            >
+                                                <TrendingUp size={20} />
+                                            </motion.div>
+                                        ) : (
+                                            active ? 'Current Plan' : (currentUser ? 'Select Plan' : plan.btnText)
+                                        )}
+                                    </button>
+                                </motion.div>
+                            );
+                        })}
                     </motion.div>
                 </AnimatePresence>
 
@@ -343,3 +459,4 @@ const Pricing = () => {
 };
 
 export default Pricing;
+

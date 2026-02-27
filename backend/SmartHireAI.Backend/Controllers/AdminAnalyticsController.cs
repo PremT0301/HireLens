@@ -8,7 +8,7 @@ namespace SmartHireAI.Backend.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    // [Authorize(Roles = "Admin")] // Uncomment when Admin role is fully set up and you want to enforce it
+    [Authorize(Roles = "ADMIN")]
     public class AdminAnalyticsController : ControllerBase
     {
         private readonly IAdminAnalyticsService _analyticsService;

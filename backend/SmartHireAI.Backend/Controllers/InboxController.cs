@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SmartHireAI.Backend.Data;
+using SmartHireAI.Backend.Models;
+using SmartHireAI.Backend.Filters;
 
 namespace SmartHireAI.Backend.Controllers;
 
@@ -22,7 +24,10 @@ public class InboxController : ControllerBase
 
     // GET: api/inbox/threads
     [HttpGet("threads")]
+    [Authorize]
+    [SmartHireAI.Backend.Filters.PlanRequirement("PriorityInbox")]
     public async Task<ActionResult<IEnumerable<object>>> GetThreads()
+
     {
         void Log(string msg)
         {
@@ -55,7 +60,7 @@ public class InboxController : ControllerBase
             .Include(t => t.Applicant)
             .ThenInclude(a => a.User);
 
-        if (string.Equals(user.Role, "Recruiter", StringComparison.OrdinalIgnoreCase))
+        if (user.Role == UserRole.RECRUITER)
         {
             var recruiter = await _context.Recruiters.FirstOrDefaultAsync(r => r.User.UserId == userId);
             if (recruiter == null)
@@ -66,7 +71,7 @@ public class InboxController : ControllerBase
             Log($"[Inbox] Recruiter found: {recruiter.RecruiterId}");
             query = query.Where(t => t.RecruiterId == recruiter.RecruiterId);
         }
-        else if (string.Equals(user.Role, "Applicant", StringComparison.OrdinalIgnoreCase))
+        else if (user.Role == UserRole.APPLICANT)
         {
             var applicant = await _context.Applicants.FirstOrDefaultAsync(a => a.User.UserId == userId);
             if (applicant == null)
@@ -95,8 +100,8 @@ public class InboxController : ControllerBase
                     t.ThreadId,
                     t.Subject,
                     t.LastMessageAt,
-                    OtherPartyName = user.Role == "Recruiter" ? (t.Applicant?.User?.FullName ?? "Unknown Applicant") : (t.Recruiter?.CompanyName ?? "Unknown Company"),
-                    OtherPartyImage = user.Role == "Recruiter" ? (t.Applicant?.User?.ProfileImage) : (t.Recruiter?.CompanyLogo),
+                    OtherPartyName = user.Role == UserRole.RECRUITER ? (t.Applicant?.User?.FullName ?? "Unknown Applicant") : (t.Recruiter?.CompanyName ?? "Unknown Company"),
+                    OtherPartyImage = user.Role == UserRole.RECRUITER ? (t.Applicant?.User?.ProfileImage) : (t.Recruiter?.CompanyLogo),
                     HasUnread = t.Messages.Any(m => !m.IsRead && m.SenderId != userId)
                 })
                 .ToList();
@@ -191,7 +196,7 @@ public class InboxController : ControllerBase
             MessageId = Guid.NewGuid(),
             ThreadId = threadId,
             SenderId = userId,
-            SenderRole = user.Role,
+            SenderRole = user.Role.ToString(),
             Content = input.Content,
             SentAt = DateTime.UtcNow,
             IsRead = false
@@ -205,7 +210,7 @@ public class InboxController : ControllerBase
         Guid recipientUserId;
         // We already have Recruiter User ID and Applicant userID from 'thread' variable
 
-        if (string.Equals(user.Role, "Recruiter", StringComparison.OrdinalIgnoreCase))
+        if (user.Role == UserRole.RECRUITER)
         {
             recipientUserId = thread.Applicant.User.UserId;
         }
@@ -233,7 +238,7 @@ public class InboxController : ControllerBase
         {
             // Determine sender name safely
             string senderName = user.FullName ?? "A user";
-            if (user.Role == "Recruiter")
+            if (user.Role == UserRole.RECRUITER)
             {
                 // If sender is recruiter, try to get company name? 
                 // Fetching complex objects again might be heavy, stick to name for now.

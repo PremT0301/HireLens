@@ -10,8 +10,10 @@ import ProfileEditor from './profile/ProfileEditor';
 const Navbar = () => {
     const [isDark, setIsDark] = useState(true);
     const [isOpen, setIsOpen] = useState(false);
-    const [userRole, setUserRole] = useState(sessionStorage.getItem('userRole'));
+    const [userRole, setUserRole] = useState((sessionStorage.getItem('userRole') || '').toUpperCase());
     const [userProfile, setUserProfile] = useState(null);
+    const [userPlan, setUserPlan] = useState('FREE');
+
 
     // Scroll & Visibility State
     const [isScrolled, setIsScrolled] = useState(false);
@@ -68,15 +70,19 @@ const Navbar = () => {
     // Auth check
     useEffect(() => {
         const checkAuth = async () => {
-            const role = sessionStorage.getItem('userRole');
+            const role = (sessionStorage.getItem('userRole') || '').toUpperCase();
             setUserRole(role);
+
+            const user = AuthService.getCurrentUser();
+            setUserPlan(user?.plan || 'FREE');
+
 
             if (role) {
                 try {
                     let profileData = null;
-                    if (role === 'recruiter') {
+                    if (role === 'RECRUITER') {
                         profileData = await ProfileService.getRecruiterProfile();
-                    } else if (role === 'applicant') {
+                    } else if (role === 'APPLICANT') {
                         profileData = await ProfileService.getMyProfile();
                     }
                     if (profileData) {
@@ -110,17 +116,17 @@ const Navbar = () => {
     // Navigation Links Configuration
     const applicantLinks = [
         { label: 'Dashboard', path: '/applicant/dashboard', icon: LayoutDashboard },
-        { label: 'Copilot', path: '/applicant/interview-copilot', icon: MessageSquare },
+        { label: 'Copilot', path: '/applicant/interview-copilot', icon: MessageSquare, requiredPlan: 'PRO' },
         { label: 'Matches', path: '/applicant/jobs', icon: Briefcase },
-        { label: 'Inbox', path: '/applicant/inbox', icon: MessageSquare },
+        { label: 'Inbox', path: '/applicant/inbox', icon: MessageSquare, requiredPlan: 'ELITE_PLUS' },
     ];
 
     const recruiterLinks = [
         { label: 'Dashboard', path: '/recruiter/dashboard', icon: LayoutDashboard },
-        { label: 'Talent Pool', path: '/recruiter/talent-pool', icon: Users },
+        { label: 'Talent Pool', path: '/recruiter/talent-pool', icon: Users, requiredPlan: 'PRO' },
         { label: 'Post Job', path: '/recruiter/create-job', icon: PlusCircle },
         { label: 'Jobs', path: '/recruiter/jobs', icon: FileText },
-        { label: 'Inbox', path: '/recruiter/inbox', icon: MessageSquare },
+        { label: 'Inbox', path: '/recruiter/inbox', icon: MessageSquare, requiredPlan: 'ELITE_PLUS' },
     ];
 
     // Helper to constructing full image URL
@@ -137,9 +143,9 @@ const Navbar = () => {
         if (userRole) {
             try {
                 let profileData = null;
-                if (userRole === 'recruiter') {
+                if (userRole === 'RECRUITER') {
                     profileData = await ProfileService.getRecruiterProfile();
-                } else if (userRole === 'applicant') {
+                } else if (userRole === 'APPLICANT') {
                     profileData = await ProfileService.getMyProfile();
                 }
                 if (profileData) {
@@ -219,7 +225,7 @@ const Navbar = () => {
 
                     {/* Left: Logo & Nav Links */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '4rem' }}>
-                        <Link to={userRole === 'applicant' ? '/applicant/dashboard' : userRole === 'recruiter' ? '/recruiter/dashboard' : '/'}
+                        <Link to={userRole === 'APPLICANT' ? '/applicant/dashboard' : userRole === 'RECRUITER' ? '/recruiter/dashboard' : userRole === 'ADMIN' ? '/admin/dashboard' : '/'}
                             style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '12px' }}>
                             <img src="/logo.png" alt="HireLens Logo" style={{ width: '34px', height: '34px', objectFit: 'contain' }} />
                             <span style={{ fontSize: '1.4rem', fontWeight: '800', color: 'var(--text-primary)', letterSpacing: '-0.04em' }}>
@@ -270,10 +276,16 @@ const Navbar = () => {
                         )}
 
                         {/* App Specific Links */}
-                        {userRole && (
+                        {userRole && userRole !== 'ADMIN' && (
                             <div className="desktop-menu" style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
                                 {(userRole === 'applicant' ? applicantLinks : recruiterLinks).map(link => (
-                                    <NavItem key={link.path} to={link.path} label={link.label} />
+                                    <NavItem
+                                        key={link.path}
+                                        to={link.path}
+                                        label={link.label}
+                                        requiredPlan={link.requiredPlan}
+                                        currentPlan={userPlan}
+                                    />
                                 ))}
                             </div>
                         )}
@@ -288,13 +300,15 @@ const Navbar = () => {
                             </div>
                         ) : userRole && (
                             <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-                                <Link
-                                    to={userRole === 'applicant' ? '/applicant/notifications' : '/recruiter/notifications'}
-                                    className="btn-ghost"
-                                    style={{ padding: '10px', borderRadius: '50%', color: 'var(--text-secondary)' }}
-                                >
-                                    <Bell size={20} />
-                                </Link>
+                                {userRole !== 'ADMIN' && (
+                                    <Link
+                                        to={userRole === 'APPLICANT' ? '/applicant/notifications' : '/recruiter/notifications'}
+                                        className="btn-ghost"
+                                        style={{ padding: '10px', borderRadius: '50%', color: 'var(--text-secondary)' }}
+                                    >
+                                        <Bell size={20} />
+                                    </Link>
+                                )}
 
                                 {/* Profile Dropdown */}
                                 <div style={{ position: 'relative' }}>
@@ -314,7 +328,24 @@ const Navbar = () => {
                                                 {userProfile ? userProfile.fullName?.charAt(0) : userRole[0].toUpperCase()}
                                             </div>
                                         )}
+
+                                        {userPlan !== 'FREE' && (
+                                            <span style={{
+                                                fontSize: '0.65rem',
+                                                fontWeight: '800',
+                                                padding: '2px 6px',
+                                                borderRadius: '6px',
+                                                background: userPlan === 'ELITE_PLUS' ? 'linear-gradient(45deg, #f59e0b, #ef4444)' : 'linear-gradient(45deg, #8b5cf6, #3b82f6)',
+                                                color: 'white',
+                                                textTransform: 'uppercase',
+                                                boxShadow: '0 2px 5px rgba(0,0,0,0.2)'
+                                            }}>
+                                                {userPlan.replace('_', '+')}
+                                            </span>
+                                        )}
+
                                         <ChevronDown size={14} color="var(--text-secondary)" />
+
                                     </button>
 
                                     <AnimatePresence>
@@ -329,6 +360,11 @@ const Navbar = () => {
                                                 <button onClick={() => { setIsProfileMenuOpen(false); setIsProfileEditorOpen(true); }} className="btn-ghost" style={{ justifyContent: 'flex-start', width: '100%', padding: '12px', borderRadius: '8px', border: 'none' }}>
                                                     <User size={16} /> <span style={{ marginLeft: '8px' }}>My Profile</span>
                                                 </button>
+                                                {userPlan !== 'ELITE_PLUS' && (
+                                                    <Link to={`/pricing?source=${userRole}`} onClick={() => setIsProfileMenuOpen(false)} className="btn-ghost" style={{ justifyContent: 'flex-start', width: '100%', padding: '12px', borderRadius: '8px', border: 'none', color: 'var(--primary)', fontWeight: '700' }}>
+                                                        <TrendingUp size={16} /> <span style={{ marginLeft: '8px' }}>Upgrade Plan</span>
+                                                    </Link>
+                                                )}
                                                 <div style={{ height: '1px', background: 'var(--border-color)', margin: '6px 0' }}></div>
                                                 <button onClick={handleLogout} className="btn-ghost" style={{ justifyContent: 'flex-start', width: '100%', color: 'var(--error)', padding: '12px', borderRadius: '8px', border: 'none' }}>
                                                     <LogOut size={16} /> <span style={{ marginLeft: '8px' }}>Log Out</span>
@@ -373,14 +409,26 @@ const Navbar = () => {
 };
 
 // Nav Item Component for consistent premium styling
-const NavItem = ({ to, label }) => (
-    <NavLink
-        to={to}
-        className={({ isActive }) => `nav-item-enterprise ${isActive ? 'active' : ''}`}
-        style={{ textDecoration: 'none' }}
-    >
-        {label}
-    </NavLink>
-);
+const NavItem = ({ to, label, requiredPlan, currentPlan }) => {
+    const isLocked = requiredPlan && (
+        (requiredPlan === 'PRO' && currentPlan === 'FREE') ||
+        (requiredPlan === 'ELITE_PLUS' && (currentPlan === 'FREE' || currentPlan === 'PRO'))
+    );
+
+    return (
+        <NavLink
+            to={to}
+            className={({ isActive }) => `nav-item-enterprise ${isActive ? 'active' : ''} ${isLocked ? 'locked' : ''}`}
+            style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}
+        >
+            {label}
+            {isLocked && (
+                <span title={`Requires ${requiredPlan.replace('_', '+')} Plan`} style={{ opacity: 0.6 }}>
+                    <TrendingUp size={12} />
+                </span>
+            )}
+        </NavLink>
+    );
+};
 
 export default Navbar;

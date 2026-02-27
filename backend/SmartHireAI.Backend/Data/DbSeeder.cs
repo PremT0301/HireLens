@@ -26,7 +26,7 @@ public static class DbSeeder
                 Email = "recruiter@hirelens.ai",
                 FullName = "Sarah Recruiter",
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword("password"), // Use proper hashing in prod
-                Role = "Recruiter",
+                Role = UserRole.RECRUITER,
                 IsActive = true,
                 CreatedAt = DateTime.UtcNow
             };
@@ -58,7 +58,7 @@ public static class DbSeeder
                 Email = "admin@hirelens.ai",
                 FullName = "System Admin",
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword("admin123"),
-                Role = "Admin",
+                Role = UserRole.ADMIN,
                 IsActive = true,
                 IsEmailVerified = true,
                 CreatedAt = DateTime.UtcNow
@@ -99,7 +99,7 @@ public static class DbSeeder
                 Email = "applicant@hirelens.ai",
                 FullName = "Alex Candidate",
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword("password"),
-                Role = "Applicant",
+                Role = UserRole.APPLICANT,
                 CreatedAt = DateTime.UtcNow
             };
             context.Users.Add(applicantUser);

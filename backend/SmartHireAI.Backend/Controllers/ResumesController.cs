@@ -4,6 +4,8 @@ using SmartHireAI.Backend.Models;
 using SmartHireAI.Backend.Services;
 using SmartHireAI.Backend.Data;
 using Microsoft.EntityFrameworkCore;
+using SmartHireAI.Backend.Filters;
+
 
 namespace SmartHireAI.Backend.Controllers;
 
@@ -14,23 +16,29 @@ public class ResumesController : ControllerBase
     private readonly IResumeParserService _parserService;
     private readonly IAIService _aiService;
     private readonly ApplicationDbContext _context;
-
+    private readonly IUsageTrackingService _usageService;
     private readonly ILogger<ResumesController> _logger;
 
     public ResumesController(
         IResumeParserService parserService,
         IAIService aiService,
         ApplicationDbContext context,
+        IUsageTrackingService usageService,
         ILogger<ResumesController> logger)
     {
         _parserService = parserService;
         _aiService = aiService;
         _context = context;
+        _usageService = usageService;
         _logger = logger;
     }
 
+
     [HttpPost("upload")]
     [Authorize] // Requires login
+    [PlanRequirement("ResumeAnalysis")]
+
+
     public async Task<ActionResult<AnalyzeResumeOutput>> UploadResume(IFormFile file)
     {
         if (file == null || file.Length == 0)
@@ -196,11 +204,15 @@ public class ResumesController : ControllerBase
                 // Don't fail the request, just log it
             }
 
+            // Increment Match/Analysis Usage
+            await _usageService.IncrementUsageAsync(userId, "Matches");
+
             return Ok(new
             {
                 resumeId = resume.ResumeId,
                 analysis = analysisResult
             });
+
         }
         catch (Exception ex)
         {
@@ -304,6 +316,8 @@ public class ResumesController : ControllerBase
     }
     [HttpPost("match")]
     [Authorize]
+    [PlanRequirement("GapAnalysis")]
+
     public async Task<ActionResult<GapAnalysisOutput>> MatchJob([FromBody] JobMatchRequest request)
     {
         if (request == null || string.IsNullOrWhiteSpace(request.JobDescription) || request.ResumeId == Guid.Empty)

@@ -4,6 +4,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SmartHireAI.Backend.Data;
 using SmartHireAI.Backend.Models;
+using SmartHireAI.Backend.Services;
+using SmartHireAI.Backend.Filters;
+
 
 namespace SmartHireAI.Backend.Controllers;
 
@@ -12,11 +15,14 @@ namespace SmartHireAI.Backend.Controllers;
 public class JobsController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
+    private readonly IUsageTrackingService _usageService;
 
-    public JobsController(ApplicationDbContext context)
+    public JobsController(ApplicationDbContext context, IUsageTrackingService usageService)
     {
         _context = context;
+        _usageService = usageService;
     }
+
 
     // GET: api/jobs
     [HttpGet]
@@ -198,7 +204,9 @@ public class JobsController : ControllerBase
     // POST: api/jobs
     [HttpPost]
     [Authorize(Roles = "Recruiter")]
+    [PlanRequirement("JobPosting")]
     public async Task<ActionResult<JobDto>> CreateJob(CreateJobDto request)
+
     {
         var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
@@ -264,7 +272,14 @@ public class JobsController : ControllerBase
         _context.JobDescriptions.Add(job);
         await _context.SaveChangesAsync();
 
+        // Increment Usage
+        if (Guid.TryParse(userIdString, out var userIdParsed))
+        {
+            await _usageService.IncrementUsageAsync(userIdParsed, "JobPosting");
+        }
+
         return CreatedAtAction(nameof(GetJob), new { id = job.JobId }, new JobDto
+
         {
             JobId = job.JobId,
             Title = job.Title,

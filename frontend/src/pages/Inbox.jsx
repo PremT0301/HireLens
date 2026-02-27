@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MessageSquare, Search, Send, MoreVertical, Briefcase, User, Phone } from 'lucide-react';
-import axios from 'axios';
+import api from '../api/axios';
 import { API_BASE_URL } from '../api/config';
 import { useToast } from '../context/ToastContext';
 import HireLensLoader from '../components/ui/HireLensLoader';
+import PlanGate from '../components/ui/PlanGate';
 import './Inbox.css';
 
 const Inbox = () => {
@@ -76,9 +77,7 @@ const Inbox = () => {
     // API Actions
     const fetchThreads = async () => {
         try {
-            const response = await axios.get(`${API_BASE_URL}/inbox/threads`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const response = await api.get('/inbox/threads');
             setThreads(response.data);
             if (!searchTerm) setFilteredThreads(response.data);
         } catch (error) {
@@ -89,9 +88,7 @@ const Inbox = () => {
     const fetchMessages = async (threadId, showLoader = true) => {
         if (showLoader) setLoadingMessages(true);
         try {
-            const response = await axios.get(`${API_BASE_URL}/inbox/threads/${threadId}/messages`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const response = await api.get(`/inbox/threads/${threadId}/messages`);
             setMessages(response.data);
 
             // Optimistic Local Mark as Read
@@ -111,9 +108,8 @@ const Inbox = () => {
         if (!newMessage.trim() || !selectedThread) return;
 
         try {
-            await axios.post(`${API_BASE_URL}/inbox/threads/${selectedThread.threadId}/message`,
-                { content: newMessage },
-                { headers: { Authorization: `Bearer ${token}` } }
+            await api.post(`/inbox/threads/${selectedThread.threadId}/message`,
+                { content: newMessage }
             );
             setNewMessage('');
             fetchMessages(selectedThread.threadId, false);
@@ -144,174 +140,177 @@ const Inbox = () => {
             </div>
 
             {/* 2. OUTER CONTAINER (MATCH COPILOT - SPLIT GLASS PANELS) */}
-            <div className="inbox-grid-container">
+            <PlanGate requiredPlan="ELITE_PLUS" featureName="Priority & AI Inbox">
+                <div className="inbox-grid-container">
 
-                {/* LEFT PANEL: CONVERSATION LIST */}
-                <div className="inbox-sidebar glass-panel">
-                    <div className="sidebar-header">
-                        <div className="search-container">
-                            <Search size={18} className="text-subtle" />
-                            <input
-                                type="text"
-                                className="search-input"
-                                placeholder="Search conversations..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                            />
+                    {/* LEFT PANEL: CONVERSATION LIST */}
+                    <div className="inbox-sidebar glass-panel">
+                        <div className="sidebar-header">
+                            <div className="search-container">
+                                <Search size={18} className="text-subtle" />
+                                <input
+                                    type="text"
+                                    className="search-input"
+                                    placeholder="Search conversations..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="thread-list">
+                            {filteredThreads.length === 0 ? (
+                                <div className="empty-state">
+                                    <p className="text-subtle">No conversations found.</p>
+                                </div>
+                            ) : (
+                                filteredThreads.map(thread => (
+                                    <motion.div
+                                        key={thread.threadId}
+                                        layoutId={thread.threadId}
+                                        onClick={() => handleSelectThread(thread)}
+                                        className={`thread-item ${selectedThread?.threadId === thread.threadId ? 'active' : ''} ${thread.hasUnread ? 'unread' : ''}`}
+                                    >
+                                        {/* Avatar */}
+                                        {thread.otherPartyImage ? (
+                                            <img
+                                                src={thread.otherPartyImage.startsWith('http') ? thread.otherPartyImage : `${API_BASE_URL.replace('/api', '')}${thread.otherPartyImage}`}
+                                                alt={thread.otherPartyName}
+                                                className="thread-avatar"
+                                            />
+                                        ) : (
+                                            <div className="thread-avatar-placeholder">
+                                                {thread.otherPartyName?.charAt(0) || 'U'}
+                                            </div>
+                                        )}
+
+                                        {/* Content */}
+                                        <div className="thread-content">
+                                            <div className="thread-header">
+                                                <span className="thread-name">{thread.subject}</span>
+                                                <span className="thread-time">
+                                                    {new Date(thread.lastMessageAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                                                </span>
+                                            </div>
+                                            <div className="thread-company">
+                                                {thread.otherPartyName}
+                                            </div>
+                                            {thread.lastMessagePreview && (
+                                                <div className="thread-preview">
+                                                    {thread.lastMessagePreview}
+                                                </div>
+                                            )}
+                                            {thread.hasUnread && <div className="unread-dot" />}
+                                        </div>
+                                    </motion.div>
+                                ))
+                            )}
                         </div>
                     </div>
 
-                    <div className="thread-list">
-                        {filteredThreads.length === 0 ? (
-                            <div className="empty-state">
-                                <p className="text-subtle">No conversations found.</p>
-                            </div>
-                        ) : (
-                            filteredThreads.map(thread => (
-                                <motion.div
-                                    key={thread.threadId}
-                                    layoutId={thread.threadId}
-                                    onClick={() => handleSelectThread(thread)}
-                                    className={`thread-item ${selectedThread?.threadId === thread.threadId ? 'active' : ''} ${thread.hasUnread ? 'unread' : ''}`}
-                                >
-                                    {/* Avatar */}
-                                    {thread.otherPartyImage ? (
-                                        <img
-                                            src={thread.otherPartyImage.startsWith('http') ? thread.otherPartyImage : `${API_BASE_URL.replace('/api', '')}${thread.otherPartyImage}`}
-                                            alt={thread.otherPartyName}
-                                            className="thread-avatar"
-                                        />
-                                    ) : (
-                                        <div className="thread-avatar-placeholder">
-                                            {thread.otherPartyName?.charAt(0) || 'U'}
-                                        </div>
-                                    )}
-
-                                    {/* Content */}
-                                    <div className="thread-content">
-                                        <div className="thread-header">
-                                            <span className="thread-name">{thread.subject}</span>
-                                            <span className="thread-time">
-                                                {new Date(thread.lastMessageAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                                            </span>
-                                        </div>
-                                        <div className="thread-company">
-                                            {thread.otherPartyName}
-                                        </div>
-                                        {thread.lastMessagePreview && (
-                                            <div className="thread-preview">
-                                                {thread.lastMessagePreview}
-                                            </div>
-                                        )}
-                                        {thread.hasUnread && <div className="unread-dot" />}
+                    {/* RIGHT PANEL: MESSAGE VIEW */}
+                    <div className="inbox-main glass-panel">
+                        {selectedThread ? (
+                            <>
+                                {/* Header */}
+                                <div className="chat-header">
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                        <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600 }}>
+                                            {selectedThread.subject}
+                                        </h3>
+                                        <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                                            with {selectedThread.otherPartyName}
+                                        </span>
                                     </div>
+                                    <div style={{ display: 'flex', gap: '8px' }}>
+                                        <button className="btn-ghost" title="Call">
+                                            <Phone size={18} />
+                                        </button>
+                                        <button className="btn-ghost" title="Profile">
+                                            <User size={18} />
+                                        </button>
+                                        <button className="btn-ghost" title="Action">
+                                            <MoreVertical size={18} />
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Messages */}
+                                <div className="chat-messages-area">
+                                    {loadingMessages ? (
+                                        <div style={{ display: 'flex', justifyContent: 'center', margin: 'auto' }}>
+                                            <div className="loading-spinner" />
+                                        </div>
+                                    ) : (
+                                        messages.map((msg, index) => (
+                                            <motion.div
+                                                key={msg.messageId || index}
+                                                initial={{ opacity: 0, scale: 0.98 }}
+                                                animate={{ opacity: 1, scale: 1 }}
+                                                className={msg.senderRole === "System" ? "system-message" : `message-wrapper ${msg.isMine ? 'mine' : 'theirs'}`}
+                                            >
+                                                {msg.senderRole === "System" ? (
+                                                    <span>{msg.content}</span>
+                                                ) : (
+                                                    <div className="message-content-group">
+                                                        <div className={`message-bubble ${msg.isMine ? 'mine' : 'theirs'}`}>
+                                                            {msg.content}
+                                                        </div>
+                                                        <span className="message-time">
+                                                            {new Date(msg.sentAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                        </span>
+                                                    </div>
+                                                )}
+                                            </motion.div>
+                                        ))
+                                    )}
+                                    <div ref={messagesEndRef} />
+                                </div>
+
+                                {/* Input Area (Copilot Style) */}
+                                <div className="chat-input-area">
+                                    <div className="input-row">
+                                        <button className="btn-ghost icon-btn">
+                                            <Briefcase size={20} />
+                                        </button>
+                                        <form onSubmit={handleSendMessage} className="chat-input-wrapper">
+                                            <input
+                                                type="text"
+                                                className="chat-input"
+                                                placeholder="Type a message..."
+                                                value={newMessage}
+                                                onChange={(e) => setNewMessage(e.target.value)}
+                                            />
+                                            <button
+                                                type="submit"
+                                                className="send-btn"
+                                                disabled={!newMessage.trim()}
+                                            >
+                                                <Send size={18} />
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </>
+                        ) : (
+                            <div className="empty-state">
+                                <motion.div
+                                    initial={{ scale: 0.8, opacity: 0 }}
+                                    animate={{ scale: 1, opacity: 1 }}
+                                    className="empty-state-icon"
+                                >
+                                    <MessageSquare size={40} />
                                 </motion.div>
-                            ))
+                                <h2 style={{ marginBottom: '0.5rem', fontWeight: 600 }}>Welcome to your Inbox</h2>
+                                <p>Select a conversation from the left to view details and respond to candidates.</p>
+                            </div>
                         )}
                     </div>
                 </div>
-
-                {/* RIGHT PANEL: MESSAGE VIEW */}
-                <div className="inbox-main glass-panel">
-                    {selectedThread ? (
-                        <>
-                            {/* Header */}
-                            <div className="chat-header">
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                    <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600 }}>
-                                        {selectedThread.subject}
-                                    </h3>
-                                    <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-                                        with {selectedThread.otherPartyName}
-                                    </span>
-                                </div>
-                                <div style={{ display: 'flex', gap: '8px' }}>
-                                    <button className="btn-ghost" title="Call">
-                                        <Phone size={18} />
-                                    </button>
-                                    <button className="btn-ghost" title="Profile">
-                                        <User size={18} />
-                                    </button>
-                                    <button className="btn-ghost" title="Action">
-                                        <MoreVertical size={18} />
-                                    </button>
-                                </div>
-                            </div>
-
-                            {/* Messages */}
-                            <div className="chat-messages-area">
-                                {loadingMessages ? (
-                                    <div style={{ display: 'flex', justifyContent: 'center', margin: 'auto' }}>
-                                        <div className="loading-spinner" />
-                                    </div>
-                                ) : (
-                                    messages.map((msg, index) => (
-                                        <motion.div
-                                            key={msg.messageId || index}
-                                            initial={{ opacity: 0, scale: 0.98 }}
-                                            animate={{ opacity: 1, scale: 1 }}
-                                            className={msg.senderRole === "System" ? "system-message" : `message-wrapper ${msg.isMine ? 'mine' : 'theirs'}`}
-                                        >
-                                            {msg.senderRole === "System" ? (
-                                                <span>{msg.content}</span>
-                                            ) : (
-                                                <div className="message-content-group">
-                                                    <div className={`message-bubble ${msg.isMine ? 'mine' : 'theirs'}`}>
-                                                        {msg.content}
-                                                    </div>
-                                                    <span className="message-time">
-                                                        {new Date(msg.sentAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                    </span>
-                                                </div>
-                                            )}
-                                        </motion.div>
-                                    ))
-                                )}
-                                <div ref={messagesEndRef} />
-                            </div>
-
-                            {/* Input Area (Copilot Style) */}
-                            <div className="chat-input-area">
-                                <div className="input-row">
-                                    <button className="btn-ghost icon-btn">
-                                        <Briefcase size={20} />
-                                    </button>
-                                    <form onSubmit={handleSendMessage} className="chat-input-wrapper">
-                                        <input
-                                            type="text"
-                                            className="chat-input"
-                                            placeholder="Type a message..."
-                                            value={newMessage}
-                                            onChange={(e) => setNewMessage(e.target.value)}
-                                        />
-                                        <button
-                                            type="submit"
-                                            className="send-btn"
-                                            disabled={!newMessage.trim()}
-                                        >
-                                            <Send size={18} />
-                                        </button>
-                                    </form>
-                                </div>
-                            </div>
-                        </>
-                    ) : (
-                        <div className="empty-state">
-                            <motion.div
-                                initial={{ scale: 0.8, opacity: 0 }}
-                                animate={{ scale: 1, opacity: 1 }}
-                                className="empty-state-icon"
-                            >
-                                <MessageSquare size={40} />
-                            </motion.div>
-                            <h2 style={{ marginBottom: '0.5rem', fontWeight: 600 }}>Welcome to your Inbox</h2>
-                            <p>Select a conversation from the left to view details and respond to candidates.</p>
-                        </div>
-                    )}
-                </div>
-            </div>
+            </PlanGate>
         </motion.div>
     );
 };
 
 export default Inbox;
+

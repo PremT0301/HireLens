@@ -7,6 +7,8 @@ import Skeleton, { SkeletonList } from '../../components/ui/Skeleton';
 import { NoJobsState } from '../../components/ui/EmptyState';
 import ConfirmationModal from '../../components/ui/ConfirmationModal';
 import { useToast } from '../../context/ToastContext';
+import PlanGate from '../../components/ui/PlanGate';
+
 
 const Jobs = () => {
     const navigate = useNavigate();
@@ -285,10 +287,13 @@ const Jobs = () => {
                             </button>
 
                             {!application || application.status === 'Rejected' ? (
-                                <button onClick={() => handleAnalyze(job)} className="btn-primary">
-                                    {resumeData ? 'Check Readiness' : 'Analyze Fit'}
-                                </button>
+                                <PlanGate requiredPlan="PRO" featureName="AI Readiness Check">
+                                    <button onClick={() => handleAnalyze(job)} className="btn-primary">
+                                        {resumeData ? 'Check Readiness' : 'Analyze Fit'}
+                                    </button>
+                                </PlanGate>
                             ) : null}
+
 
                             {application && application.status === 'Interview Scheduled' && (
                                 <button

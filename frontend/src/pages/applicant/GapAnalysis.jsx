@@ -4,6 +4,8 @@ import { ArrowRight, BookOpen, User, CheckCircle, XCircle, ChevronLeft, AlertCir
 import { motion, AnimatePresence } from 'framer-motion';
 import JobMatcher from '../../components/applicant/JobMatcher';
 import ThreeDTiltCard from '../../components/ui/ThreeDTiltCard';
+import PlanGate from '../../components/ui/PlanGate';
+
 
 const GapAnalysis = () => {
     const location = useLocation();
@@ -254,44 +256,47 @@ const GapAnalysis = () => {
                     </div>
 
                     {/* Recommendations */}
-                    <ThreeDTiltCard>
-                        <div className="glass-panel" style={{ padding: '2.5rem' }}>
-                            <h3 style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '1.25rem', fontWeight: 600 }}>
-                                <BookOpen size={24} color="var(--primary)" /> Smart Recommendations
-                            </h3>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                {recommendations.map((rec, i) => (
-                                    <div key={i} style={{
-                                        display: 'flex',
-                                        gap: '1.25rem',
-                                        padding: '1.25rem',
-                                        background: 'var(--bg-secondary)',
-                                        borderRadius: '12px',
-                                        border: '1px solid var(--border-color)',
-                                        alignItems: 'flex-start'
-                                    }}>
-                                        <div style={{
-                                            fontWeight: 'bold',
-                                            color: 'var(--primary)',
-                                            minWidth: '40px',
-                                            height: '40px',
-                                            borderRadius: '10px',
-                                            background: 'var(--primary-light)',
+                    <PlanGate requiredPlan="ELITE_PLUS" featureName="AI Recommendations">
+                        <ThreeDTiltCard>
+                            <div className="glass-panel" style={{ padding: '2.5rem' }}>
+                                <h3 style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '1.25rem', fontWeight: 600 }}>
+                                    <BookOpen size={24} color="var(--primary)" /> Smart Recommendations
+                                </h3>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                    {recommendations.map((rec, i) => (
+                                        <div key={i} style={{
                                             display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            marginTop: '-2px'
+                                            gap: '1.25rem',
+                                            padding: '1.25rem',
+                                            background: 'var(--bg-secondary)',
+                                            borderRadius: '12px',
+                                            border: '1px solid var(--border-color)',
+                                            alignItems: 'flex-start'
                                         }}>
-                                            {getRecommendationIcon(rec)}
+                                            <div style={{
+                                                fontWeight: 'bold',
+                                                color: 'var(--primary)',
+                                                minWidth: '40px',
+                                                height: '40px',
+                                                borderRadius: '10px',
+                                                background: 'var(--primary-light)',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                marginTop: '-2px'
+                                            }}>
+                                                {getRecommendationIcon(rec)}
+                                            </div>
+                                            <div style={{ flex: 1 }}>
+                                                <p style={{ margin: 0, color: 'var(--text-primary)', lineHeight: 1.6, fontSize: '1rem' }}>{rec}</p>
+                                            </div>
                                         </div>
-                                        <div style={{ flex: 1 }}>
-                                            <p style={{ margin: 0, color: 'var(--text-primary)', lineHeight: 1.6, fontSize: '1rem' }}>{rec}</p>
-                                        </div>
-                                    </div>
-                                ))}
+                                    ))}
+                                </div>
                             </div>
-                        </div>
-                    </ThreeDTiltCard>
+                        </ThreeDTiltCard>
+                    </PlanGate>
+
 
                     <div style={{ marginTop: '3rem', textAlign: 'center' }}>
                         <button

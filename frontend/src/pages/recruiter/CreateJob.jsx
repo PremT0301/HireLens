@@ -3,12 +3,21 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Briefcase, MapPin, IndianRupee, FileText, CheckCircle, Plus, X } from 'lucide-react';
 import { useToast } from '../../context/ToastContext';
 import JobService from '../../api/jobService';
+import AuthService from '../../api/authService';
+import PlanGate from '../../components/ui/PlanGate';
+import { ShieldAlert } from 'lucide-react';
+
 
 const CreateJob = () => {
     const { addToast } = useToast();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const navigate = useNavigate();
     const { jobId } = useParams();
+    const user = AuthService.getCurrentUser();
+    const userPlan = user?.plan || 'FREE';
+    const [activeJobCount, setActiveJobCount] = useState(0);
+    const [isPlanRestricted, setIsPlanRestricted] = useState(false);
+
     const isEditMode = !!jobId;
 
     const [formData, setFormData] = useState({
@@ -43,6 +52,25 @@ const CreateJob = () => {
 
     const [newSkill, setNewSkill] = useState({ skillName: '', category: 'Technical', proficiencyLevel: 'Intermediate', weight: 0 });
     const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        const checkLimits = async () => {
+            if (!isEditMode && userPlan === 'FREE') {
+                try {
+                    const postedJobs = await JobService.getPostedJobs();
+                    const activeJobs = postedJobs.filter(j => j.status === 'Open' || j.Status === 'Open');
+                    setActiveJobCount(activeJobs.length);
+                    if (activeJobs.length >= 3) {
+                        setIsPlanRestricted(true);
+                    }
+                } catch (error) {
+                    console.error("Failed to check job limits", error);
+                }
+            }
+        };
+        checkLimits();
+    }, [isEditMode, userPlan]);
+
 
     useEffect(() => {
         if (isEditMode) {
@@ -187,7 +215,29 @@ const CreateJob = () => {
         }
     };
 
+    if (isPlanRestricted) {
+        return (
+            <div className="container" style={{ paddingTop: '100px', paddingBottom: '4rem', display: 'flex', justifyContent: 'center' }}>
+                <div className="glass-panel" style={{ padding: '3rem', maxWidth: '600px', textAlign: 'center', borderTop: '4px solid var(--warning)' }}>
+                    <div style={{ marginBottom: '1.5rem', color: 'var(--warning)', display: 'flex', justifyContent: 'center' }}>
+                        <ShieldAlert size={64} />
+                    </div>
+                    <h2 style={{ fontSize: '2rem', marginBottom: '1rem', color: 'var(--text-primary)' }}>Job Limit Reached</h2>
+                    <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem', fontSize: '1.1rem', lineHeight: '1.6' }}>
+                        Recruiters on the <strong>FREE</strong> plan are limited to <strong>3 active job postings</strong> at a time.
+                        You currently have {activeJobCount} active jobs.
+                    </p>
+                    <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+                        <button className="btn-ghost" onClick={() => navigate('/recruiter/jobs')}>Manage Jobs</button>
+                        <button className="btn-primary" onClick={() => navigate('/pricing')}>Upgrade Plan</button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     return (
+
         <div className="container page-transition" style={{ maxWidth: '900px', margin: '0 auto', paddingBottom: '4rem', paddingTop: '2rem' }}>
 
 

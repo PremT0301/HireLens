@@ -1,6 +1,7 @@
 using SmartHireAI.Backend.Services;
 using SmartHireAI.Backend.Data;
 using SmartHireAI.Backend.Hubs;
+using SmartHireAI.Backend.Middleware;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -13,6 +14,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddHttpContextAccessor();
 
 // Register Database Context
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
@@ -26,7 +28,10 @@ builder.Services.AddScoped<IResumeParserService, ResumeParserService>();
 builder.Services.AddHttpClient<IAIService, AIService>();
 builder.Services.AddScoped<IAdminAnalyticsService, AdminAnalyticsService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
+builder.Services.AddScoped<IUserPlanService, UserPlanService>();
+builder.Services.AddScoped<IUsageTrackingService, UsageTrackingService>();
 builder.Services.AddMemoryCache();
+
 builder.Services.AddSignalR();
 
 // Configure JWT Authentication
@@ -82,12 +87,15 @@ using (var scope = app.Services.CreateScope())
     await DbSeeder.Seed(scope.ServiceProvider);
 }
 
+
+
 app.UseCors("AllowViteApp");
 
 
 app.UseStaticFiles();
 
 app.UseAuthentication();
+app.UseRoleValidation();
 app.UseAuthorization();
 
 app.MapControllers();

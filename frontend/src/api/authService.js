@@ -49,9 +49,11 @@ const AuthService = {
                 "user",
                 JSON.stringify({
                     email: decoded.sub,
-                    role: resolvedRole
+                    role: resolvedRole,
+                    plan: decoded.PricingPlan || "FREE"
                 })
             );
+
 
             // Notify app about auth change
             window.dispatchEvent(new Event("storage"));
@@ -148,6 +150,40 @@ const AuthService = {
     // ======================
     isAuthenticated: () => {
         return Boolean(sessionStorage.getItem("token"));
+    },
+
+    // ======================
+    // UPGRADE PLAN
+    // ======================
+    upgradePlan: async (plan) => {
+        try {
+            const response = await api.post("/subscriptions/upgrade", { plan });
+
+            // If server returns updated plan, sync local storage
+            if (response.data && response.data.plan) {
+                AuthService.updateLocalPlan(response.data.plan);
+            }
+
+            return response.data;
+        } catch (error) {
+            console.error("Upgrade failed", error);
+            throw error;
+        }
+    },
+
+    // ======================
+    // SYNC LOCAL STATE
+    // ======================
+    updateLocalPlan: (newPlan) => {
+        const userStr = sessionStorage.getItem("user");
+        if (userStr) {
+            const user = JSON.parse(userStr);
+            user.plan = newPlan;
+            sessionStorage.setItem("user", JSON.stringify(user));
+
+            // Notify app about state change
+            window.dispatchEvent(new Event("storage"));
+        }
     }
 };
 

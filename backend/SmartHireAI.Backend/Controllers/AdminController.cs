@@ -8,7 +8,7 @@ namespace SmartHireAI.Backend.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Roles = "Admin")]
+[Authorize(Roles = "ADMIN")]
 public class AdminController : ControllerBase
 {
     private readonly IAdminService _adminService;
