@@ -1,10 +1,10 @@
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using SmartHireAI.Backend.Data;
 using SmartHireAI.Backend.Models;
 using SmartHireAI.Backend.Services;
-using SmartHireAI.Backend.Data;
-using Microsoft.EntityFrameworkCore;
 using SmartHireAI.Backend.Filters;
+using Microsoft.AspNetCore.Mvc;
 
 
 namespace SmartHireAI.Backend.Controllers;
@@ -17,6 +17,7 @@ public class ResumesController : ControllerBase
     private readonly IAIService _aiService;
     private readonly ApplicationDbContext _context;
     private readonly IUsageTrackingService _usageService;
+    private readonly IAnalysisService _analysisService;
     private readonly ILogger<ResumesController> _logger;
 
     public ResumesController(
@@ -24,12 +25,14 @@ public class ResumesController : ControllerBase
         IAIService aiService,
         ApplicationDbContext context,
         IUsageTrackingService usageService,
+        IAnalysisService analysisService,
         ILogger<ResumesController> logger)
     {
         _parserService = parserService;
         _aiService = aiService;
         _context = context;
         _usageService = usageService;
+        _analysisService = analysisService;
         _logger = logger;
     }
 
@@ -82,135 +85,21 @@ public class ResumesController : ControllerBase
                 }
             }
 
-            // 1. Save File to Disk
-            var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "resumes");
-            if (!Directory.Exists(uploadsFolder))
-            {
-                Directory.CreateDirectory(uploadsFolder);
-            }
+            // 1. Process via Unified Analysis Service
+            var result = await _analysisService.AnalyzeResumeAsync(userId, file);
 
-            var resumeId = Guid.NewGuid();
-            var fileExtension = Path.GetExtension(file.FileName);
-            var filePath = Path.Combine(uploadsFolder, resumeId + fileExtension);
-
-            using (var stream = new FileStream(filePath, FileMode.Create))
-            {
-                await file.CopyToAsync(stream);
-            }
-
-            // 2. Parse Text from PDF/DOCX
-            var text = await _parserService.ParseResumeAsync(file);
-
-            if (string.IsNullOrWhiteSpace(text) || text.Length < 50)
-            {
-                // Clean up file if parsing fails (optional, but good practice)
-                if (System.IO.File.Exists(filePath)) System.IO.File.Delete(filePath);
-                return BadRequest("Could not extract sufficient text from the resume. Please ensure it's a valid PDF containing text.");
-            }
-
-            // 3. Send to AI Microservice
-            var analysisResult = await _aiService.AnalyzeResumeAsync(text);
-
-            if (analysisResult == null)
+            if (result == null)
             {
                 return StatusCode(503, "AI Service is currently unavailable.");
             }
 
-            _logger.LogInformation($"AI Result: Role={analysisResult.Classification?.PredictedRole}, " +
-                                   $"SkillsCount={analysisResult.NerResults?.Skills?.Count ?? 0}, " +
-                                   $"DesignationsCount={analysisResult.NerResults?.Designations?.Count ?? 0}, " +
-                                   $"AtsScore={analysisResult.AtsScore}");
-
-            // 4. Save to Database
-            _logger.LogInformation($"Saving resume for ApplicantId: {applicant.ApplicantId}");
-
-            var resume = new Resume
-            {
-                ResumeId = resumeId, // Use the pre-generated ID
-                ApplicantId = applicant.ApplicantId,
-                ParsedAt = DateTime.UtcNow,
-                ResumeText = text,
-                ResumeHealthScore = analysisResult.AtsScore,
-                Entities = new List<ResumeEntity>()
-            };
-
-            // Map extracted entities
-            if (analysisResult.NerResults?.Skills != null)
-            {
-                foreach (var skill in analysisResult.NerResults.Skills.Where(s => !string.IsNullOrWhiteSpace(s)))
-                {
-                    resume.Entities.Add(new ResumeEntity
-                    {
-                        EntityType = "SKILL",
-                        EntityValue = skill,
-                        Confidence = 1.0f
-                    });
-                }
-            }
-
-            if (analysisResult.NerResults?.Designations != null)
-            {
-                foreach (var role in analysisResult.NerResults.Designations.Where(r => !string.IsNullOrWhiteSpace(r)))
-                {
-                    resume.Entities.Add(new ResumeEntity
-                    {
-                        EntityType = "DESIGNATION",
-                        EntityValue = role,
-                        Confidence = 1.0f
-                    });
-                }
-            }
-
-            // Add Predicted Role as an entity too
-            if (analysisResult.Classification != null && !string.IsNullOrWhiteSpace(analysisResult.Classification.PredictedRole))
-            {
-                resume.Entities.Add(new ResumeEntity
-                {
-                    EntityType = "PREDICTED_ROLE",
-                    EntityValue = analysisResult.Classification.PredictedRole,
-                    Confidence = analysisResult.Classification.Confidence
-                });
-            }
-
-            _context.Resumes.Add(resume);
-            var changes = await _context.SaveChangesAsync();
-            _logger.LogInformation($"Resume saved. Changes in DB: {changes}. ResumeId: {resume.ResumeId}");
-
-            // 5. Update Scores for Existing Applications
-            try
-            {
-                var activeApplications = await _context.JobApplications
-                    .Include(a => a.JobDescription)
-                    .Where(a => a.ApplicantId == applicant.ApplicantId && a.Status != "Rejected")
-                    .ToListAsync();
-
-                foreach (var app in activeApplications)
-                {
-                    if (!string.IsNullOrWhiteSpace(app.JobDescription?.Description))
-                    {
-                        var matchResult = await _aiService.MatchJobAsync(text, app.JobDescription.Description);
-                        if (matchResult != null)
-                        {
-                            app.AtsScore = matchResult.MatchSummary.MatchPercentage;
-                            _logger.LogInformation($"Updated score for AppId: {app.ApplicationId} to {app.AtsScore}");
-                        }
-                    }
-                }
-                await _context.SaveChangesAsync();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to auto-update application scores");
-                // Don't fail the request, just log it
-            }
-
-            // Increment Match/Analysis Usage
+            // 2. Increment Usage
             await _usageService.IncrementUsageAsync(userId, "Matches");
 
             return Ok(new
             {
-                resumeId = resume.ResumeId,
-                analysis = analysisResult
+                message = "Resume uploaded and analyzed successfully.",
+                analysis = result
             });
 
         }

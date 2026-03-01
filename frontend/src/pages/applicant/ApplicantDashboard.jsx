@@ -114,7 +114,7 @@ const ApplicantDashboard = () => {
                             </h1>
                         </div>
                         <div style={{ textAlign: 'right', display: 'flex', gap: '1rem' }}>
-                            <button onClick={open} className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 24px' }}>
+                            <button onClick={open} className="btn-premium" style={{ padding: '12px 24px' }}>
                                 <UploadCloud size={18} /> Update Intelligence
                             </button>
                             <Link to="/applicant/jobs" className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 24px' }}>
@@ -179,7 +179,7 @@ const ApplicantDashboard = () => {
                                         <div style={{ marginBottom: '1.5rem', color: 'var(--text-secondary)' }}>
                                             No matches yet. Upload your resume to start matching your skills with jobs.
                                         </div>
-                                        <button onClick={open} className="btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                                        <button onClick={open} className="btn-premium" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
                                             <UploadCloud size={18} /> Upload Resume Now
                                         </button>
                                     </div>
@@ -352,8 +352,8 @@ const ApplicantDashboard = () => {
                                 </p>
                             </div>
 
-                            <button onClick={open} className="btn-secondary" style={{ width: '100%', marginTop: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                                <UploadCloud size={16} /> Refresh Resume Data
+                            <button onClick={open} className="btn-premium" style={{ width: '100%', marginTop: '1.5rem', justifyContent: 'center' }}>
+                                <UploadCloud size={16} /> Refresh Intelligence
                             </button>
 
                             <div className="upload-overlay" style={{
@@ -454,11 +454,11 @@ const ApplicantDashboard = () => {
             </div>
 
             <style>{`
-                .btn-ai-action {
+                 .btn-premium {
                     display: flex;
                     align-items: center;
                     gap: 8px;
-                    background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(59, 130, 246, 0.1));
+                    background: rgba(139, 92, 246, 0.08);
                     border: 1px solid rgba(139, 92, 246, 0.3);
                     color: white;
                     padding: 10px 20px;
@@ -466,32 +466,26 @@ const ApplicantDashboard = () => {
                     font-weight: 600;
                     cursor: pointer;
                     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-                    backdrop-filter: blur(10px);
-                    position: relative;
-                    overflow: hidden;
+                    backdrop-filter: blur(12px);
+                    box-shadow: 0 4px 15px rgba(139, 92, 246, 0.1);
+                    color: var(--text-primary);
                 }
-                .btn-ai-action:hover {
-                    background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(59, 130, 246, 0.2));
-                    border-color: rgba(139, 92, 246, 0.5);
+                .btn-premium:hover {
+                    background: rgba(139, 92, 246, 0.15);
+                    border-color: var(--primary);
                     transform: translateY(-2px);
-                    box-shadow: 0 8px 20px rgba(139, 92, 246, 0.15);
+                    box-shadow: 0 10px 25px -5px rgba(139, 92, 246, 0.2);
+                    color: white;
                 }
-                .btn-ai-action:active {
+                .btn-premium:active {
                     transform: translateY(0);
                 }
-                .btn-ai-action::after {
-                    content: '';
-                    position: absolute;
-                    top: -50%;
-                    left: -50%;
-                    width: 200%;
-                    height: 200%;
-                    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
-                    opacity: 0;
-                    transition: opacity 0.3s;
+                
+                .btn-premium i, .btn-premium svg {
+                    color: var(--primary);
                 }
-                .btn-ai-action:hover::after {
-                    opacity: 1;
+                .btn-premium:hover i, .btn-premium:hover svg {
+                    color: white;
                 }
 
                 .badge-ai {

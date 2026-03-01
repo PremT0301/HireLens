@@ -1,11 +1,17 @@
-using System.Security.Claims;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using SmartHireAI.Backend.Data;
 using SmartHireAI.Backend.Models;
-using System.IO;
+using SmartHireAI.Backend.Services;
+using System.Security.Claims;
 using System.Text.Json;
+using System.IO;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace SmartHireAI.Backend.Controllers;
 
@@ -14,10 +20,14 @@ namespace SmartHireAI.Backend.Controllers;
 public class ProfilesController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
+    private readonly IAnalysisService _analysisService;
+    private readonly ILogger<ProfilesController> _logger;
 
-    public ProfilesController(ApplicationDbContext context)
+    public ProfilesController(ApplicationDbContext context, IAnalysisService analysisService, ILogger<ProfilesController> logger)
     {
         _context = context;
+        _analysisService = analysisService;
+        _logger = logger;
     }
 
     // GET: api/profiles/me (Applicant)
@@ -135,20 +145,17 @@ public class ProfilesController : ControllerBase
         if (!string.IsNullOrEmpty(request.CurrentRole)) applicant.CurrentRole = request.CurrentRole;
         applicant.ExperienceYears = request.ExperienceYears;
 
-        // Resume Upload
+        // Resume Upload (Unified via Analysis Service)
         if (request.Resume != null && request.Resume.Length > 0)
         {
-            var extension = Path.GetExtension(request.Resume.FileName).ToLowerInvariant();
-            if (extension == ".pdf")
+            try
             {
-                var folder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "resumes");
-                if (!Directory.Exists(folder)) Directory.CreateDirectory(folder);
-                var fileName = $"{Guid.NewGuid()}{extension}";
-                using (var stream = new FileStream(Path.Combine(folder, fileName), FileMode.Create))
-                {
-                    await request.Resume.CopyToAsync(stream);
-                }
-                applicant.ResumeUrl = $"/uploads/resumes/{fileName}";
+                await _analysisService.AnalyzeResumeAsync(userId, request.Resume);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to analyze resume during profile update for user {UserId}", userId);
+                // Continue profile update even if analysis fails
             }
         }
 

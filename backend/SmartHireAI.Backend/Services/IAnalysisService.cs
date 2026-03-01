@@ -1,3 +1,4 @@
+#nullable enable
 using Microsoft.AspNetCore.Http;
 using SmartHireAI.Backend.Models;
 using System;
@@ -7,5 +8,5 @@ namespace SmartHireAI.Backend.Services;
 
 public interface IAnalysisService
 {
-    Task AnalyzeResumeAsync(Guid userId, IFormFile resumeFile);
+    Task<AnalyzeResumeOutput?> AnalyzeResumeAsync(Guid userId, IFormFile resumeFile);
 }
