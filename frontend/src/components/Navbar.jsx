@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate, NavLink } from 'react-router-dom';
-import { Sun, Moon, Briefcase, LayoutDashboard, FileText, MessageSquare, Users, PlusCircle, TrendingUp, Menu, X, User, LogOut, Bell, ChevronDown, ExternalLink } from 'lucide-react';
+import { Sun, Moon, Briefcase, LayoutDashboard, FileText, MessageSquare, Users, PlusCircle, TrendingUp, Menu, X, User, LogOut, Bell, ChevronDown, ExternalLink, CreditCard } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import AuthService from '../api/authService';
 import ProfileService from '../api/profileService';
@@ -360,6 +360,9 @@ const Navbar = () => {
                                                 <button onClick={() => { setIsProfileMenuOpen(false); setIsProfileEditorOpen(true); }} className="btn-ghost" style={{ justifyContent: 'flex-start', width: '100%', padding: '12px', borderRadius: '8px', border: 'none' }}>
                                                     <User size={16} /> <span style={{ marginLeft: '8px' }}>My Profile</span>
                                                 </button>
+                                                <Link to="/billing" onClick={() => setIsProfileMenuOpen(false)} className="btn-ghost" style={{ justifyContent: 'flex-start', width: '100%', padding: '12px', borderRadius: '8px', border: 'none' }}>
+                                                    <CreditCard size={16} /> <span style={{ marginLeft: '8px' }}>Manage Plan</span>
+                                                </Link>
                                                 {userPlan !== 'ELITE_PLUS' && (
                                                     <Link to={`/pricing?source=${userRole}`} onClick={() => setIsProfileMenuOpen(false)} className="btn-ghost" style={{ justifyContent: 'flex-start', width: '100%', padding: '12px', borderRadius: '8px', border: 'none', color: 'var(--primary)', fontWeight: '700' }}>
                                                         <TrendingUp size={16} /> <span style={{ marginLeft: '8px' }}>Upgrade Plan</span>

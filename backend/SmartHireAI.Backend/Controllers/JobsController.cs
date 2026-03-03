@@ -203,7 +203,7 @@ public class JobsController : ControllerBase
 
     // POST: api/jobs
     [HttpPost]
-    [Authorize(Roles = "Recruiter")]
+    [Authorize(Roles = "RECRUITER")]
     [PlanRequirement("JobPosting")]
     public async Task<ActionResult<JobDto>> CreateJob(CreateJobDto request)
 
@@ -296,7 +296,7 @@ public class JobsController : ControllerBase
 
     // PUT: api/jobs/5
     [HttpPut("{id}")]
-    [Authorize(Roles = "Recruiter")]
+    [Authorize(Roles = "RECRUITER")]
     public async Task<IActionResult> UpdateJob(Guid id, UpdateJobDto request)
     {
         // Get authenticated recruiter
@@ -376,7 +376,7 @@ public class JobsController : ControllerBase
 
     // DELETE: api/jobs/5
     [HttpDelete("{id}")]
-    [Authorize(Roles = "Recruiter")]
+    [Authorize(Roles = "RECRUITER")]
     public async Task<IActionResult> DeleteJob(Guid id)
     {
         // Get authenticated recruiter

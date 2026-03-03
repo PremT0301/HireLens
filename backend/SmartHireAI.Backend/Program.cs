@@ -1,4 +1,6 @@
 using SmartHireAI.Backend.Services;
+using SmartHireAI.Backend.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using SmartHireAI.Backend.Data;
 using SmartHireAI.Backend.Hubs;
 using SmartHireAI.Backend.Middleware;
@@ -7,6 +9,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -33,6 +36,15 @@ builder.Services.AddScoped<IUserPlanService, UserPlanService>();
 builder.Services.AddScoped<IUsageTrackingService, UsageTrackingService>();
 builder.Services.AddHttpClient();
 builder.Services.AddMemoryCache();
+builder.Services.AddScoped<IAuthorizationHandler, PlanHandler>();
+
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("ProPlan", policy =>
+        policy.Requirements.Add(new PlanRequirement("PRO")));
+    options.AddPolicy("ElitePlan", policy =>
+        policy.Requirements.Add(new PlanRequirement("ELITE_PLUS")));
+});
 
 builder.Services.AddSignalR();
 
@@ -56,7 +68,8 @@ builder.Services.AddAuthentication(options =>
         ValidateIssuer = true,
         ValidateAudience = true,
         ValidIssuer = jwtSettings["Issuer"],
-        ValidAudience = jwtSettings["Audience"]
+        ValidAudience = jwtSettings["Audience"],
+        RoleClaimType = ClaimTypes.Role
     };
 });
 

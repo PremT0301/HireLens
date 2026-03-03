@@ -220,7 +220,7 @@ public class ProfilesController : ControllerBase
 
     // GET: api/profiles/recruiter/me
     [HttpGet("recruiter/me")]
-    [Authorize(Roles = "Recruiter,recruiter")]
+    [Authorize(Roles = "RECRUITER")]
     public async Task<ActionResult<RecruiterProfileDto>> GetRecruiterProfile()
     {
         var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -274,7 +274,7 @@ public class ProfilesController : ControllerBase
 
     // PUT: api/profiles/recruiter/me
     [HttpPut("recruiter/me")]
-    [Authorize(Roles = "Recruiter,recruiter")]
+    [Authorize(Roles = "RECRUITER")]
     public async Task<IActionResult> UpdateRecruiterProfile(UpdateRecruiterProfileDto request)
     {
         var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -342,7 +342,7 @@ public class ProfilesController : ControllerBase
 
     // POST: api/profiles/recruiter/logo
     [HttpPost("recruiter/logo")]
-    [Authorize(Roles = "Recruiter,recruiter")]
+    [Authorize(Roles = "RECRUITER")]
     public async Task<ActionResult<string>> UploadLogo(IFormFile file)
     {
         if (file == null || file.Length == 0)
@@ -376,7 +376,7 @@ public class ProfilesController : ControllerBase
 
     // POST: api/profiles/recruiter/profile-image
     [HttpPost("recruiter/profile-image")]
-    [Authorize(Roles = "Recruiter,recruiter")]
+    [Authorize(Roles = "RECRUITER")]
     public async Task<ActionResult<string>> UploadRecruiterProfileImage(IFormFile file)
     {
         var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;

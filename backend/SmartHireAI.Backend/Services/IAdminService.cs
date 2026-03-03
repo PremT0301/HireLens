@@ -15,4 +15,5 @@ public interface IAdminService
     Task<IEnumerable<AdminJobDto>> GetAllJobsAsync(string? status = null, string? recruiter = null, int page = 1, int pageSize = 10);
     Task<bool> ToggleJobStatusAsync(Guid jobId);
     Task<SystemHealthDto> GetSystemHealthAsync();
+    Task<(IEnumerable<AdminLogDto> Logs, int TotalCount)> GetSystemLogsAsync(string? level, string? source, string? message, int page, int pageSize);
 }

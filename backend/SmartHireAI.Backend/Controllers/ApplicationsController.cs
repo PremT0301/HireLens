@@ -617,7 +617,7 @@ public class ApplicationsController : ControllerBase
 
     // PATCH: api/applications/{id}/status
     [HttpPatch("{id}/status")]
-    [Authorize(Roles = "Recruiter")]
+    [Authorize(Roles = "RECRUITER")]
     public async Task<IActionResult> UpdateStatus(Guid id, [FromBody] StatusDto request)
     {
         var app = await _context.JobApplications
@@ -678,7 +678,7 @@ public class ApplicationsController : ControllerBase
 
     // POST: api/applications/{id}/schedule
     [HttpPost("{id}/schedule")]
-    [Authorize(Roles = "Recruiter")]
+    [Authorize(Roles = "RECRUITER")]
     public async Task<IActionResult> ScheduleInterview(Guid id, [FromBody] InterviewDto request)
     {
         var app = await _context.JobApplications.FindAsync(id);
@@ -973,7 +973,7 @@ public class ApplicationsController : ControllerBase
 
     // POST: api/applications/{id}/hire
     [HttpPost("{id}/hire")]
-    [Authorize(Roles = "Recruiter")]
+    [Authorize(Roles = "RECRUITER")]
     public async Task<IActionResult> HireCandidate(Guid id)
     {
         var app = await _context.JobApplications

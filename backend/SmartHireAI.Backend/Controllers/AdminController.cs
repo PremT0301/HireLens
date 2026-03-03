@@ -97,4 +97,18 @@ public class AdminController : ControllerBase
 
         return Ok(new { message = "Job status updated successfully." });
     }
+
+    [HttpGet("logs")]
+    public async Task<ActionResult<IEnumerable<AdminLogDto>>> GetSystemLogs(
+        [FromQuery] string? level,
+        [FromQuery] string? source,
+        [FromQuery] string? message,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 25)
+    {
+        var (logs, totalCount) = await _adminService.GetSystemLogsAsync(level, source, message, page, pageSize);
+        Response.Headers.Append("X-Total-Count", totalCount.ToString());
+        Response.Headers.Append("Access-Control-Expose-Headers", "X-Total-Count");
+        return Ok(logs);
+    }
 }

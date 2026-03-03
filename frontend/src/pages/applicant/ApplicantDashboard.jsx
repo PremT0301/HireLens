@@ -281,6 +281,33 @@ const ApplicantDashboard = () => {
                                     </AreaChart>
                                 </ResponsiveContainer>
                             </div>
+
+                            {/* Chart Explanation */}
+                            <div style={{
+                                marginTop: '1.5rem',
+                                padding: '1.25rem',
+                                borderRadius: '16px',
+                                background: 'rgba(139, 92, 246, 0.05)',
+                                border: '1px solid rgba(139, 92, 246, 0.1)',
+                            }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+                                    <Sparkles size={18} color="var(--primary)" />
+                                    <span style={{ fontWeight: 700, fontSize: '0.95rem' }}>How your Strength is calculated</span>
+                                </div>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
+                                        <span style={{ color: 'var(--text-secondary)' }}>Baseline Presence</span>
+                                        <span style={{ fontWeight: 600, color: 'var(--primary)' }}>40 pts</span>
+                                    </div>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
+                                        <span style={{ color: 'var(--text-secondary)' }}>Per Job Application</span>
+                                        <span style={{ fontWeight: 600, color: 'var(--success)' }}>+15 pts</span>
+                                    </div>
+                                    <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px solid rgba(255,255,255,0.05)', fontSize: '0.8rem', color: 'var(--text-secondary)', fontStyle: 'italic' }}>
+                                        Max daily score is capped at 100. High consistent activity improves your overall match priority in the AI engine.
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                     </div>

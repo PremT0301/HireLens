@@ -154,6 +154,12 @@ const Signup = () => {
             return;
         }
 
+        // Guard: email OTP must be verified in register mode
+        if (mode === 'register' && !emailVerified) {
+            setError('Please verify your email via OTP before signing up.');
+            return;
+        }
+
         setLoading(true);
         try {
             const data = new FormData();
@@ -189,7 +195,7 @@ const Signup = () => {
                 if (logoFile) data.append('Logo', logoFile);
 
                 if (mode === 'register') {
-                    await AuthService.register(data);
+                    // Data appended above; submission handled below
                 } else {
                     // Recruiter Google Complete?? Not scoped but assumed
                     // For now user only asked applicant flow.
@@ -257,9 +263,9 @@ const Signup = () => {
             }
 
             if (mode === 'register') {
-                const res = await AuthService.register(data);
-                console.log("✅ [Signup] Registration success:", res);
-                setVerificationSent(true);
+                await AuthService.register(data);
+                console.log("✅ [Signup] Registration success:",);
+                navigate('/login');
             } else {
                 // Complete profile
                 // Do NOT set Content-Type manually, axios will handle boundary
@@ -409,282 +415,262 @@ const Signup = () => {
 
             {/* Content Panel */}
             <div className="auth-content-panel">
-                {verificationSent ? (
-                    <div className="auth-card" style={{ maxWidth: '500px', textAlign: 'center', padding: '3rem' }}>
-                        <div style={{ width: 80, height: 80, background: 'var(--primary-light)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem', color: 'var(--primary)' }}>
-                            <Mail size={40} />
-                        </div>
-                        <h2 className="gradient-text" style={{ fontSize: '2rem', marginBottom: '1rem' }}>Check Your Email</h2>
-                        <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem', fontSize: '1.1rem', lineHeight: 1.6 }}>
-                            We've sent a verification link to <strong>{formData.email}</strong>. Please verify your email to unlock full access to HireLens AI.
+                <div className="auth-card" style={{ maxWidth: '800px' }}> {/* Wider for Signup form */}
+                    <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+                        <h2 className="gradient-text" style={{ fontSize: '2.5rem', fontWeight: 700, marginBottom: '0.5rem' }}>
+                            {mode === 'complete' ? "Complete Your Profile" : "Create Account"}
+                        </h2>
+                        <p style={{ color: 'var(--text-secondary)' }}>
+                            {mode === 'complete' ? "Just a few more details to get started" : "Start your journey in seconds"}
                         </p>
-                        <div style={{ padding: '1rem', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', border: '1px solid var(--glass-border)', marginBottom: '2rem' }}>
-                            <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', margin: 0 }}>
-                                Didn't receive the email? Check your spam folder or wait a few minutes.
-                            </p>
-                        </div>
-                        <button onClick={() => navigate('/login')} className="btn-primary" style={{ width: '100%' }}>
-                            Go to Login
-                        </button>
                     </div>
-                ) : (
-                    <div className="auth-card" style={{ maxWidth: '800px' }}> {/* Wider for Signup form */}
-                        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-                            <h2 className="gradient-text" style={{ fontSize: '2.5rem', fontWeight: 700, marginBottom: '0.5rem' }}>
-                                {mode === 'complete' ? "Complete Your Profile" : "Create Account"}
-                            </h2>
-                            <p style={{ color: 'var(--text-secondary)' }}>
-                                {mode === 'complete' ? "Just a few more details to get started" : "Start your journey in seconds"}
-                            </p>
+
+                    {error && (
+                        <div style={{
+                            background: 'rgba(239, 68, 68, 0.1)',
+                            border: '1px solid rgba(239, 68, 68, 0.2)',
+                            color: '#ef4444',
+                            padding: '12px',
+                            borderRadius: '8px',
+                            marginBottom: '1.5rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            fontSize: '0.9rem',
+                            animation: 'fadeInScale 0.3s ease-out'
+                        }}>
+                            <AlertCircle size={16} />
+                            {error}
+                        </div>
+                    )}
+
+                    {mode === 'register' && (
+                        <div style={toggleContainerStyle}>
+                            <button type="button" onClick={() => setRole('applicant')} style={role === 'applicant' ? activeToggleStyle : toggleStyle}>Applicant</button>
+                            <button type="button" onClick={() => setRole('recruiter')} style={role === 'recruiter' ? activeToggleStyle : toggleStyle}>Recruiter</button>
+                        </div>
+                    )}
+
+                    <form onSubmit={handleSignup} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+
+                        <SectionTitle title="Personal Details" icon={<User size={18} />} />
+
+                        <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
+                            <div style={{ width: '100px', height: '100px', borderRadius: '50%', background: 'var(--bg-secondary)', margin: '0 auto', overflow: 'hidden', border: '1px dashed var(--glass-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+                                {profileImagePreview ? <img src={profileImagePreview} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <User size={40} color="var(--text-secondary)" />}
+                                <input type="file" accept="image/*" onChange={(e) => handleFileChange(e, 'profile')} style={{ position: 'absolute', opacity: 0, width: '100%', height: '100%', cursor: 'pointer' }} />
+                            </div>
+                            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '5px' }}>Upload Profile Photo</p>
                         </div>
 
-                        {error && (
-                            <div style={{
-                                background: 'rgba(239, 68, 68, 0.1)',
-                                border: '1px solid rgba(239, 68, 68, 0.2)',
-                                color: '#ef4444',
-                                padding: '12px',
-                                borderRadius: '8px',
-                                marginBottom: '1.5rem',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px',
-                                fontSize: '0.9rem',
-                                animation: 'fadeInScale 0.3s ease-out'
-                            }}>
-                                <AlertCircle size={16} />
-                                {error}
+                        <div className="grid-2">
+                            <Input label="Full Name" name="fullName" value={formData.fullName} onChange={handleInputChange} required />
+                            <div>
+                                <Input label="Email" name="email" value={formData.email} onChange={handleInputChange} required disabled={mode === 'complete' || emailVerified || emailOtpSent} />
+                                {!emailVerified && !emailOtpSent && (
+                                    <button type="button" onClick={() => handleSendOtp('email')} className="btn-ghost" style={{ fontSize: '0.8rem', padding: '4px 8px', marginTop: '4px' }}>Send OTP</button>
+                                )}
+                                {emailOtpSent && !emailVerified && (
+                                    <div style={{ marginTop: '8px', display: 'flex', gap: '8px' }}>
+                                        <input type="text" placeholder="6-digit OTP" value={emailOtp} onChange={(e) => setEmailOtp(e.target.value)} style={{ ...inputStyle, width: '120px' }} />
+                                        <button type="button" onClick={() => handleVerifyOtp('email')} className="btn-primary" style={{ padding: '4px 12px' }}>Verify</button>
+                                        {emailTimer > 0 ? <span style={{ fontSize: '0.8rem', alignSelf: 'center' }}>{emailTimer}s</span> : <button type="button" onClick={() => handleSendOtp('email')} style={{ fontSize: '0.8rem', background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer' }}>Resend</button>}
+                                    </div>
+                                )}
+                                {emailVerified && <span style={{ color: '#10b981', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '4px' }}><CheckCircle size={14} /> Verified</span>}
                             </div>
-                        )}
+                        </div>
 
                         {mode === 'register' && (
-                            <div style={toggleContainerStyle}>
-                                <button type="button" onClick={() => setRole('applicant')} style={role === 'applicant' ? activeToggleStyle : toggleStyle}>Applicant</button>
-                                <button type="button" onClick={() => setRole('recruiter')} style={role === 'recruiter' ? activeToggleStyle : toggleStyle}>Recruiter</button>
+                            <div className="grid-2">
+                                <Input type="password" label="Password" name="password" value={formData.password} onChange={handleInputChange} required />
+                                <Input type="password" label="Confirm Password" name="confirmPassword" value={formData.confirmPassword} onChange={handleInputChange} required />
                             </div>
                         )}
 
-                        <form onSubmit={handleSignup} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                        <div className="grid-2">
+                            <Input label="Mobile Number" name="mobileNumber" value={formData.mobileNumber} onChange={handleInputChange} required />
+                            <Input label="Current Location" name="location" value={formData.location} onChange={handleInputChange} required />
+                        </div>
 
-                            <SectionTitle title="Personal Details" icon={<User size={18} />} />
-
-                            <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
-                                <div style={{ width: '100px', height: '100px', borderRadius: '50%', background: 'var(--bg-secondary)', margin: '0 auto', overflow: 'hidden', border: '1px dashed var(--glass-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
-                                    {profileImagePreview ? <img src={profileImagePreview} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <User size={40} color="var(--text-secondary)" />}
-                                    <input type="file" accept="image/*" onChange={(e) => handleFileChange(e, 'profile')} style={{ position: 'absolute', opacity: 0, width: '100%', height: '100%', cursor: 'pointer' }} />
-                                </div>
-                                <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '5px' }}>Upload Profile Photo</p>
-                            </div>
-
-                            <div className="grid-2">
-                                <Input label="Full Name" name="fullName" value={formData.fullName} onChange={handleInputChange} required />
-                                <div>
-                                    <Input label="Email" name="email" value={formData.email} onChange={handleInputChange} required disabled={mode === 'complete' || emailVerified || emailOtpSent} />
-                                    {!emailVerified && !emailOtpSent && (
-                                        <button type="button" onClick={() => handleSendOtp('email')} className="btn-ghost" style={{ fontSize: '0.8rem', padding: '4px 8px', marginTop: '4px' }}>Send OTP</button>
-                                    )}
-                                    {emailOtpSent && !emailVerified && (
-                                        <div style={{ marginTop: '8px', display: 'flex', gap: '8px' }}>
-                                            <input type="text" placeholder="6-digit OTP" value={emailOtp} onChange={(e) => setEmailOtp(e.target.value)} style={{ ...inputStyle, width: '120px' }} />
-                                            <button type="button" onClick={() => handleVerifyOtp('email')} className="btn-primary" style={{ padding: '4px 12px' }}>Verify</button>
-                                            {emailTimer > 0 ? <span style={{ fontSize: '0.8rem', alignSelf: 'center' }}>{emailTimer}s</span> : <button type="button" onClick={() => handleSendOtp('email')} style={{ fontSize: '0.8rem', background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer' }}>Resend</button>}
-                                        </div>
-                                    )}
-                                    {emailVerified && <span style={{ color: '#10b981', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '4px' }}><CheckCircle size={14} /> Verified</span>}
-                                </div>
-                            </div>
-
-                            {mode === 'register' && (
+                        {role === 'applicant' && (
+                            <>
                                 <div className="grid-2">
-                                    <Input type="password" label="Password" name="password" value={formData.password} onChange={handleInputChange} required />
-                                    <Input type="password" label="Confirm Password" name="confirmPassword" value={formData.confirmPassword} onChange={handleInputChange} required />
-                                </div>
-                            )}
-
-                            <div className="grid-2">
-                                <Input label="Mobile Number" name="mobileNumber" value={formData.mobileNumber} onChange={handleInputChange} required />
-                                <Input label="Current Location" name="location" value={formData.location} onChange={handleInputChange} required />
-                            </div>
-
-                            {role === 'applicant' && (
-                                <>
-                                    <div className="grid-2">
-                                        <Input type="date" label="Date of Birth" name="dateOfBirth" value={formData.dateOfBirth} onChange={handleInputChange} required />
-                                        <div>
-                                            <label style={labelStyle}>Gender</label>
-                                            <select name="gender" value={formData.gender} onChange={handleInputChange} style={inputStyle} required>
-                                                <option value="">Select</option>
-                                                <option value="Male">Male</option>
-                                                <option value="Female">Female</option>
-                                                <option value="Other">Other</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <Input label="Address" name="address" value={formData.address} onChange={handleInputChange} />
-
-                                    <SectionTitle title="Professional Info" icon={<Briefcase size={18} />} />
-
-                                    <div className="grid-2">
-                                        <Input label="Current Role" name="currentRole" value={formData.currentRole} onChange={handleInputChange} placeholder="e.g. Software Engineer" />
-                                        <Input type="number" label="Experience (Years)" name="experienceYears" value={formData.experienceYears} onChange={handleInputChange} />
-                                    </div>
-
-                                    <div className="grid-2">
-                                        <Input label="Preferred Role" name="preferredRole" value={formData.preferredRole} onChange={handleInputChange} placeholder="e.g. Full Stack Developer" required />
-                                        <div>
-                                            <label style={labelStyle}>Preferred Location</label>
-                                            <select name="preferredWorkLocation" value={formData.preferredWorkLocation} onChange={handleInputChange} style={inputStyle} required>
-                                                <option value="">Select</option>
-                                                <option value="Onsite">Onsite</option>
-                                                <option value="Remote">Remote</option>
-                                                <option value="Hybrid">Hybrid</option>
-                                            </select>
-                                        </div>
-                                    </div>
-
-                                    <Input label="LinkedIn URL" name="linkedinUrl" value={formData.linkedinUrl} onChange={handleInputChange} placeholder="https://linkedin.com/in/..." />
-
+                                    <Input type="date" label="Date of Birth" name="dateOfBirth" value={formData.dateOfBirth} onChange={handleInputChange} required />
                                     <div>
-                                        <label style={labelStyle}>Skills (Comma separated)</label>
-                                        <input type="text" name="skills" value={formData.skills} onChange={handleInputChange} style={inputStyle} placeholder="React, Node.js, C#, AWS" required />
+                                        <label style={labelStyle}>Gender</label>
+                                        <select name="gender" value={formData.gender} onChange={handleInputChange} style={inputStyle} required>
+                                            <option value="">Select</option>
+                                            <option value="Male">Male</option>
+                                            <option value="Female">Female</option>
+                                            <option value="Other">Other</option>
+                                        </select>
                                     </div>
+                                </div>
+                                <Input label="Address" name="address" value={formData.address} onChange={handleInputChange} />
 
-                                    <div style={{ marginTop: '1rem', padding: '1rem', border: '1px dashed var(--glass-border)', borderRadius: '8px', background: 'rgba(255,255,255,0.02)' }}>
-                                        <label style={{ ...labelStyle, marginBottom: 0, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                            <Upload size={20} />
-                                            <span>{resumeFile ? resumeFile.name : "Upload Resume (PDF Required)"}</span>
-                                            <input type="file" accept="application/pdf" onChange={(e) => handleFileChange(e, 'resume')} style={{ display: 'none' }} />
-                                        </label>
+                                <SectionTitle title="Professional Info" icon={<Briefcase size={18} />} />
+
+                                <div className="grid-2">
+                                    <Input label="Current Role" name="currentRole" value={formData.currentRole} onChange={handleInputChange} placeholder="e.g. Software Engineer" />
+                                    <Input type="number" label="Experience (Years)" name="experienceYears" value={formData.experienceYears} onChange={handleInputChange} />
+                                </div>
+
+                                <div className="grid-2">
+                                    <Input label="Preferred Role" name="preferredRole" value={formData.preferredRole} onChange={handleInputChange} placeholder="e.g. Full Stack Developer" required />
+                                    <div>
+                                        <label style={labelStyle}>Preferred Location</label>
+                                        <select name="preferredWorkLocation" value={formData.preferredWorkLocation} onChange={handleInputChange} style={inputStyle} required>
+                                            <option value="">Select</option>
+                                            <option value="Onsite">Onsite</option>
+                                            <option value="Remote">Remote</option>
+                                            <option value="Hybrid">Hybrid</option>
+                                        </select>
                                     </div>
+                                </div>
 
-                                    <SectionTitle title="Education" icon={<GraduationCap size={18} />} />
-                                    {educationList.map((ed, i) => (
-                                        <div key={i} style={cardStyle}>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-                                                <h4 style={{ margin: 0, fontSize: '0.9rem', color: 'var(--primary)' }}>Education #{i + 1}</h4>
-                                                <button type="button" onClick={() => removeEducation(i)} style={{ background: 'none', border: 'none', color: 'var(--error)', cursor: 'pointer' }}><Trash2 size={16} /></button>
-                                            </div>
+                                <Input label="LinkedIn URL" name="linkedinUrl" value={formData.linkedinUrl} onChange={handleInputChange} placeholder="https://linkedin.com/in/..." />
+
+                                <div>
+                                    <label style={labelStyle}>Skills (Comma separated)</label>
+                                    <input type="text" name="skills" value={formData.skills} onChange={handleInputChange} style={inputStyle} placeholder="React, Node.js, C#, AWS" required />
+                                </div>
+
+                                <div style={{ marginTop: '1rem', padding: '1rem', border: '1px dashed var(--glass-border)', borderRadius: '8px', background: 'rgba(255,255,255,0.02)' }}>
+                                    <label style={{ ...labelStyle, marginBottom: 0, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                        <Upload size={20} />
+                                        <span>{resumeFile ? resumeFile.name : "Upload Resume (PDF Required)"}</span>
+                                        <input type="file" accept="application/pdf" onChange={(e) => handleFileChange(e, 'resume')} style={{ display: 'none' }} />
+                                    </label>
+                                </div>
+
+                                <SectionTitle title="Education" icon={<GraduationCap size={18} />} />
+                                {educationList.map((ed, i) => (
+                                    <div key={i} style={cardStyle}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
+                                            <h4 style={{ margin: 0, fontSize: '0.9rem', color: 'var(--primary)' }}>Education #{i + 1}</h4>
+                                            <button type="button" onClick={() => removeEducation(i)} style={{ background: 'none', border: 'none', color: 'var(--error)', cursor: 'pointer' }}><Trash2 size={16} /></button>
+                                        </div>
+                                        <div className="grid-2">
+                                            <Input label="College" value={ed.collegeName} onChange={(e) => updateEducation(i, 'collegeName', e.target.value)} required />
+                                            <Input label="Degree" value={ed.degree} onChange={(e) => updateEducation(i, 'degree', e.target.value)} placeholder="B.Tech" required />
+                                        </div>
+                                        <div className="grid-2">
+                                            <Input label="Specialization" value={ed.specialization} onChange={(e) => updateEducation(i, 'specialization', e.target.value)} placeholder="CS" />
                                             <div className="grid-2">
-                                                <Input label="College" value={ed.collegeName} onChange={(e) => updateEducation(i, 'collegeName', e.target.value)} required />
-                                                <Input label="Degree" value={ed.degree} onChange={(e) => updateEducation(i, 'degree', e.target.value)} placeholder="B.Tech" required />
+                                                <Input label="Year" type="number" value={ed.completionYear} onChange={(e) => updateEducation(i, 'completionYear', e.target.value)} required />
+                                                <Input label="Grade/CGPA" value={ed.grade} onChange={(e) => updateEducation(i, 'grade', e.target.value)} required />
                                             </div>
-                                            <div className="grid-2">
-                                                <Input label="Specialization" value={ed.specialization} onChange={(e) => updateEducation(i, 'specialization', e.target.value)} placeholder="CS" />
-                                                <div className="grid-2">
-                                                    <Input label="Year" type="number" value={ed.completionYear} onChange={(e) => updateEducation(i, 'completionYear', e.target.value)} required />
-                                                    <Input label="Grade/CGPA" value={ed.grade} onChange={(e) => updateEducation(i, 'grade', e.target.value)} required />
+                                        </div>
+                                    </div>
+                                ))}
+                                <button type="button" onClick={addEducation} className="btn-ghost" style={{ width: '100%', marginTop: '0.5rem' }}><Plus size={16} /> Add Education</button>
+
+                                <SectionTitle title="Work Experience (Optional)" icon={<Building size={18} />} />
+                                {workExpList.map((exp, i) => (
+                                    <div key={i} style={{
+                                        background: 'var(--bg-primary)',
+                                        padding: '1.25rem',
+                                        borderRadius: '12px',
+                                        marginBottom: '1rem',
+                                        border: '1px solid var(--border-color)',
+                                        boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+                                    }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'var(--primary-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)' }}>
+                                                    <Briefcase size={16} />
                                                 </div>
+                                                <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: 600 }}>Experience #{i + 1}</h4>
                                             </div>
+                                            <button type="button" onClick={() => removeWork(i)} className="btn-ghost" style={{ padding: '8px', color: 'var(--error)' }}><Trash2 size={16} /></button>
                                         </div>
-                                    ))}
-                                    <button type="button" onClick={addEducation} className="btn-ghost" style={{ width: '100%', marginTop: '0.5rem' }}><Plus size={16} /> Add Education</button>
 
-                                    <SectionTitle title="Work Experience (Optional)" icon={<Building size={18} />} />
-                                    {workExpList.map((exp, i) => (
-                                        <div key={i} style={{
-                                            background: 'var(--bg-primary)',
-                                            padding: '1.25rem',
-                                            borderRadius: '12px',
-                                            marginBottom: '1rem',
-                                            border: '1px solid var(--border-color)',
-                                            boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
-                                        }}>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                                    <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'var(--primary-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)' }}>
-                                                        <Briefcase size={16} />
-                                                    </div>
-                                                    <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: 600 }}>Experience #{i + 1}</h4>
-                                                </div>
-                                                <button type="button" onClick={() => removeWork(i)} className="btn-ghost" style={{ padding: '8px', color: 'var(--error)' }}><Trash2 size={16} /></button>
-                                            </div>
-
-                                            <div className="grid-2">
-                                                <Input label="Company Name" value={exp.companyName} onChange={(e) => updateWork(i, 'companyName', e.target.value)} placeholder="e.g. Google" required />
-                                                <Input label="Job Title" value={exp.role} onChange={(e) => updateWork(i, 'role', e.target.value)} placeholder="e.g. Senior Product Designer" required />
-                                            </div>
-
-                                            <div style={{ marginTop: '1rem' }}>
-                                                <Input label="Duration" value={exp.duration} onChange={(e) => updateWork(i, 'duration', e.target.value)} placeholder="e.g. Jan 2022 - Present" required />
-                                            </div>
-
-                                            <div style={{ marginTop: '1rem' }}>
-                                                <label style={labelStyle}>Description (Key Achievements)</label>
-                                                <textarea
-                                                    placeholder="• Led the design system team...&#10;• Increased conversion by 20%..."
-                                                    value={exp.description}
-                                                    onChange={(e) => updateWork(i, 'description', e.target.value)}
-                                                    style={{
-                                                        ...inputStyle,
-                                                        minHeight: '100px',
-                                                        resize: 'vertical',
-                                                        fontFamily: 'inherit',
-                                                        lineHeight: '1.5'
-                                                    }}
-                                                />
-                                            </div>
+                                        <div className="grid-2">
+                                            <Input label="Company Name" value={exp.companyName} onChange={(e) => updateWork(i, 'companyName', e.target.value)} placeholder="e.g. Google" required />
+                                            <Input label="Job Title" value={exp.role} onChange={(e) => updateWork(i, 'role', e.target.value)} placeholder="e.g. Senior Product Designer" required />
                                         </div>
-                                    ))}
-                                    <button type="button" onClick={addWork} className="btn-ghost" style={{ width: '100%', marginTop: '0.5rem' }}><Plus size={16} /> Add Experience</button>
 
-                                </>
-                            )}
+                                        <div style={{ marginTop: '1rem' }}>
+                                            <Input label="Duration" value={exp.duration} onChange={(e) => updateWork(i, 'duration', e.target.value)} placeholder="e.g. Jan 2022 - Present" required />
+                                        </div>
 
-                            {role === 'recruiter' && (
-                                <>
-                                    <Input label="Company Name" name="companyName" value={formData.companyName} onChange={handleInputChange} required />
-                                    <Input label="Company Website" name="companyWebsite" value={formData.companyWebsite} onChange={handleInputChange} placeholder="https://example.com" />
-
-                                    <div className="grid-2">
-                                        <Input label="Industry" name="industry" value={formData.industry} onChange={handleInputChange} placeholder="e.g. Technology" />
-                                        <div>
-                                            <label style={labelStyle}>Company Size</label>
-                                            <select name="companySize" value={formData.companySize} onChange={handleInputChange} style={inputStyle}>
-                                                <option value="">Select Size</option>
-                                                <option value="1-10">1-10 Employees</option>
-                                                <option value="11-50">11-50 Employees</option>
-                                                <option value="51-200">51-200 Employees</option>
-                                                <option value="201-500">201-500 Employees</option>
-                                                <option value="500+">500+ Employees</option>
-                                            </select>
+                                        <div style={{ marginTop: '1rem' }}>
+                                            <label style={labelStyle}>Description (Key Achievements)</label>
+                                            <textarea
+                                                placeholder="• Led the design system team...&#10;• Increased conversion by 20%..."
+                                                value={exp.description}
+                                                onChange={(e) => updateWork(i, 'description', e.target.value)}
+                                                style={{
+                                                    ...inputStyle,
+                                                    minHeight: '100px',
+                                                    resize: 'vertical',
+                                                    fontFamily: 'inherit',
+                                                    lineHeight: '1.5'
+                                                }}
+                                            />
                                         </div>
                                     </div>
+                                ))}
+                                <button type="button" onClick={addWork} className="btn-ghost" style={{ width: '100%', marginTop: '0.5rem' }}><Plus size={16} /> Add Experience</button>
 
-                                    <div className="grid-2">
-                                        <Input label="Designation" name="designation" value={formData.designation} onChange={handleInputChange} required />
-                                        <div>
-                                            <label style={labelStyle}>Recruiter Type</label>
-                                            <select name="recruiterType" value={formData.recruiterType} onChange={handleInputChange} style={inputStyle} required>
-                                                <option value="">Select Type</option>
-                                                <option value="In-house HR">In-house HR</option>
-                                                <option value="Staffing Agency">Staffing Agency</option>
-                                                <option value="Headhunter">Headhunter</option>
-                                                <option value="Freelance">Freelance</option>
-                                            </select>
-                                        </div>
+                            </>
+                        )}
+
+                        {role === 'recruiter' && (
+                            <>
+                                <Input label="Company Name" name="companyName" value={formData.companyName} onChange={handleInputChange} required />
+                                <Input label="Company Website" name="companyWebsite" value={formData.companyWebsite} onChange={handleInputChange} placeholder="https://example.com" />
+
+                                <div className="grid-2">
+                                    <Input label="Industry" name="industry" value={formData.industry} onChange={handleInputChange} placeholder="e.g. Technology" />
+                                    <div>
+                                        <label style={labelStyle}>Company Size</label>
+                                        <select name="companySize" value={formData.companySize} onChange={handleInputChange} style={inputStyle}>
+                                            <option value="">Select Size</option>
+                                            <option value="1-10">1-10 Employees</option>
+                                            <option value="11-50">11-50 Employees</option>
+                                            <option value="51-200">51-200 Employees</option>
+                                            <option value="201-500">201-500 Employees</option>
+                                            <option value="500+">500+ Employees</option>
+                                        </select>
                                     </div>
+                                </div>
 
-                                    <div style={{ marginTop: '1rem', padding: '1rem', border: '1px dashed var(--glass-border)', borderRadius: '8px', background: 'rgba(255,255,255,0.02)' }}>
-                                        <label style={{ ...labelStyle, marginBottom: 0, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                            <Upload size={20} />
-                                            <span>{logoFile ? logoFile.name : "Upload Company Logo"}</span>
-                                            <input type="file" accept="image/*" onChange={(e) => handleFileChange(e, 'logo')} style={{ display: 'none' }} />
-                                        </label>
+                                <div className="grid-2">
+                                    <Input label="Designation" name="designation" value={formData.designation} onChange={handleInputChange} required />
+                                    <div>
+                                        <label style={labelStyle}>Recruiter Type</label>
+                                        <select name="recruiterType" value={formData.recruiterType} onChange={handleInputChange} style={inputStyle} required>
+                                            <option value="">Select Type</option>
+                                            <option value="In-house HR">In-house HR</option>
+                                            <option value="Staffing Agency">Staffing Agency</option>
+                                            <option value="Headhunter">Headhunter</option>
+                                            <option value="Freelance">Freelance</option>
+                                        </select>
                                     </div>
-                                </>
-                            )}
+                                </div>
 
-                            <button type="submit" className="btn-primary" style={{ marginTop: '2rem' }} disabled={loading || !emailVerified}>
-                                {loading ? 'Processing...' : (mode === 'complete' ? 'Complete Profile' : 'Sign Up')}
-                            </button>
+                                <div style={{ marginTop: '1rem', padding: '1rem', border: '1px dashed var(--glass-border)', borderRadius: '8px', background: 'rgba(255,255,255,0.02)' }}>
+                                    <label style={{ ...labelStyle, marginBottom: 0, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                        <Upload size={20} />
+                                        <span>{logoFile ? logoFile.name : "Upload Company Logo"}</span>
+                                        <input type="file" accept="image/*" onChange={(e) => handleFileChange(e, 'logo')} style={{ display: 'none' }} />
+                                    </label>
+                                </div>
+                            </>
+                        )}
 
-                        </form>
+                        <button type="submit" className="btn-primary" style={{ marginTop: '2rem' }} disabled={loading || !emailVerified}>
+                            {loading ? 'Processing...' : (mode === 'complete' ? 'Complete Profile' : 'Sign Up')}
+                        </button>
 
-                        <p style={{ textAlign: 'center', marginTop: '2rem', color: 'var(--text-secondary)', fontSize: '0.95rem' }}>
-                            Already have an account? <Link to="/login" style={{ color: 'var(--primary)', textDecoration: 'none', fontWeight: 600 }}>Log in</Link>
-                        </p>
-                    </div>
-                )}
+                    </form>
+
+                    <p style={{ textAlign: 'center', marginTop: '2rem', color: 'var(--text-secondary)', fontSize: '0.95rem' }}>
+                        Already have an account? <Link to="/login" style={{ color: 'var(--primary)', textDecoration: 'none', fontWeight: 600 }}>Log in</Link>
+                    </p>
+                </div>
                 {loading && <HireLensLoader text="Processing..." />}
                 <style>{`
                     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }

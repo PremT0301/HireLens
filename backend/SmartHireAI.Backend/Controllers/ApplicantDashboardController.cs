@@ -3,6 +3,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SmartHireAI.Backend.Data;
 using SmartHireAI.Backend.Models;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Security.Claims;
 using System.Text.Json;
 
@@ -95,12 +98,30 @@ public class DashboardController : ControllerBase
         if (user.ResumeUploadedAt != null)
             summary.ActivityTimeline.Add(new ActivityTimelineDto { Event = "Resume uploaded", Date = user.ResumeUploadedAt.Value, Icon = "upload" });
         
-        // Weekly Progress
-        var days = new[] { "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" };
-        var random = new Random();
-        foreach (var day in days)
+        // Weekly Progress (Calculated from job applications activity)
+        var last7Days = Enumerable.Range(0, 7)
+            .Select(offset => DateTime.UtcNow.Date.AddDays(-offset))
+            .Reverse()
+            .ToList();
+
+        var applicationsActivity = await _context.JobApplications
+            .Where(a => a.ApplicantId == user.ApplicantProfile!.ApplicantId && a.AppliedAt >= last7Days.First())
+            .GroupBy(a => a.AppliedAt.Date)
+            .Select(g => new { Day = g.Key, Count = g.Count() })
+            .ToListAsync();
+
+        foreach (var date in last7Days)
         {
-            summary.WeeklyProgress.Add(new WeeklyProgressDto { Day = day, Strength = random.Next(40, 90) });
+            var activity = applicationsActivity.FirstOrDefault(a => a.Day == date);
+            // Scaling strength: each application adds 25 points, baseline is 40 (for simulated profile "existence")
+            int strength = 40 + (activity?.Count ?? 0) * 15;
+            if (strength > 100) strength = 100;
+
+            summary.WeeklyProgress.Add(new WeeklyProgressDto 
+            { 
+                Day = date.ToString("ddd"), 
+                Strength = strength 
+            });
         }
 
         return Ok(summary);

@@ -235,6 +235,40 @@ public class AdminService : IAdminService
         return health;
     }
 
+    public async Task<(IEnumerable<AdminLogDto> Logs, int TotalCount)> GetSystemLogsAsync(string? level, string? source, string? message, int page, int pageSize)
+    {
+        var query = _context.SystemLogs
+            .Include(l => l.User)
+            .AsQueryable();
+
+        if (!string.IsNullOrEmpty(level))
+            query = query.Where(l => l.Level == level);
+        
+        if (!string.IsNullOrEmpty(source))
+            query = query.Where(l => l.Source == source);
+            
+        if (!string.IsNullOrEmpty(message))
+            query = query.Where(l => l.Message.Contains(message));
+
+        var totalCount = await query.CountAsync();
+        var logs = await query
+            .OrderByDescending(l => l.Timestamp)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(l => new AdminLogDto
+            {
+                LogId = l.LogId,
+                Timestamp = l.Timestamp,
+                Level = l.Level,
+                Source = l.Source,
+                Message = l.Message,
+                UserEmail = l.User != null ? l.User.Email : null
+            })
+            .ToListAsync();
+
+        return (logs, totalCount);
+    }
+
     private async Task LogActionAsync(string source, string message, Guid? targetUserId = null)
     {
         var log = new SystemLog
