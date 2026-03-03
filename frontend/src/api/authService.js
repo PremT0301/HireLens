@@ -43,14 +43,14 @@ const AuthService = {
                 decoded[ROLE_CLAIM] ||
                 "applicant";
 
-            // Persist user info
             sessionStorage.setItem("userRole", resolvedRole.toLowerCase());
             sessionStorage.setItem(
                 "user",
                 JSON.stringify({
-                    email: decoded.sub,
+                    email: decoded.sub || decoded.email,
+                    fullName: decoded.FullName || decoded.fullName,
                     role: resolvedRole,
-                    plan: decoded.PricingPlan || "FREE"
+                    plan: decoded.subscriptionPlan || decoded.PricingPlan || "FREE"
                 })
             );
 
@@ -157,7 +157,7 @@ const AuthService = {
     // ======================
     upgradePlan: async (plan) => {
         try {
-            const response = await api.post("/subscriptions/upgrade", { plan });
+            const response = await api.post("/subscription/upgrade", { plan });
 
             // If server returns updated plan, sync local storage
             if (response.data && response.data.plan) {
@@ -167,6 +167,21 @@ const AuthService = {
             return response.data;
         } catch (error) {
             console.error("Upgrade failed", error);
+            throw error;
+        }
+    },
+
+    downgradePlan: async (plan) => {
+        try {
+            const response = await api.post("/subscription/downgrade", { plan });
+
+            if (response.data && response.data.plan) {
+                AuthService.updateLocalPlan(response.data.plan);
+            }
+
+            return response.data;
+        } catch (error) {
+            console.error("Downgrade failed", error);
             throw error;
         }
     },

@@ -76,6 +76,8 @@ public class AuthService : IAuthService
             Location = request.Location,
             Role = Enum.Parse<UserRole>(request.Role.ToUpper()),
             ProfileImage = profileImageUrl,
+            SubscriptionPlan = "FREE",
+            PricingPlan = "FREE",
             UpdatedAt = DateTime.UtcNow,
             IsEmailVerified = true,
             IsActive = true // Active immediately since verified
@@ -243,6 +245,7 @@ public class AuthService : IAuthService
             FullName = user.FullName ?? string.Empty,
             Role = user.Role.ToString(),
             PricingPlan = user.PricingPlan,
+            SubscriptionPlan = user.SubscriptionPlan,
             UserId = user.UserId,
             Message = "Registration successful!",
             RequiresVerification = false
@@ -398,6 +401,7 @@ public class AuthService : IAuthService
             FullName = user.FullName ?? string.Empty,
             Role = user.Role.ToString(),
             PricingPlan = user.PricingPlan,
+            SubscriptionPlan = user.SubscriptionPlan,
             UserId = user.UserId
         };
 
@@ -414,7 +418,8 @@ public class AuthService : IAuthService
             new Claim(ClaimTypes.Email, user.Email),
             new Claim(ClaimTypes.Role, user.Role.ToString()),
             new Claim("FullName", user.FullName ?? ""),
-            new Claim("PricingPlan", user.PricingPlan)
+            new Claim("PricingPlan", user.PricingPlan),
+            new Claim("subscriptionPlan", user.SubscriptionPlan)
         };
 
 

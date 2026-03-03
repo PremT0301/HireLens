@@ -81,6 +81,13 @@ namespace SmartHireAI.Backend.Data
         [Column("pricing_plan")]
         public string PricingPlan { get; set; } = "FREE"; // FREE, PRO, ELITE_PLUS
 
+        [MaxLength(20)]
+        [Column("subscription_plan")]
+        public string SubscriptionPlan { get; set; } = "FREE"; // FREE, PRO, ELITE_PLUS
+
+        [Column("subscription_expiry")]
+        public DateTime? SubscriptionExpiry { get; set; }
+
         [MaxLength(500)]
         [Column("resume_path")]
         public string? ResumePath { get; set; }

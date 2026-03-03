@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { ToastProvider, useToast } from './context/ToastContext';
+import { AuthProvider } from './context/AuthContext';
 import { AnimatePresence } from 'framer-motion';
 import Navbar from './components/Navbar';
 import Landing from './pages/Landing';
@@ -41,6 +42,7 @@ import Blog from './pages/Blog';
 import BlogDetail from './pages/BlogDetail';
 import ReleaseNotes from './pages/ReleaseNotes';
 import Enterprise from './pages/Enterprise';
+import ManageSubscription from './pages/ManageSubscription';
 
 // AnimatedRoutes component to use useLocation hook inside Router
 const AnimatedRoutes = () => {
@@ -60,6 +62,12 @@ const AnimatedRoutes = () => {
           <Route path="/release-notes" element={<ReleaseNotes />} />
           <Route path="/enterprise" element={<Enterprise />} />
         </Route>
+
+        <Route path="/manage-subscription" element={
+          <ProtectedRoute>
+            <ManageSubscription />
+          </ProtectedRoute>
+        } />
 
         {/* Applicant Routes - PROTECTED */}
         <Route path="/applicant" element={
@@ -198,9 +206,11 @@ const AppContent = () => {
 function App() {
   return (
     <Router>
-      <ToastProvider>
-        <AppContent />
-      </ToastProvider>
+      <AuthProvider>
+        <ToastProvider>
+          <AppContent />
+        </ToastProvider>
+      </AuthProvider>
     </Router>
   );
 }

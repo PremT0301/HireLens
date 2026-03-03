@@ -4,6 +4,8 @@ import { Sun, Moon, Briefcase, LayoutDashboard, FileText, MessageSquare, Users, 
 import { motion, AnimatePresence } from 'framer-motion';
 import AuthService from '../api/authService';
 import ProfileService from '../api/profileService';
+import { useAuth } from '../context/AuthContext';
+import ProfileDropdown from './profile/ProfileDropdown';
 
 import ProfileEditor from './profile/ProfileEditor';
 
@@ -12,7 +14,8 @@ const Navbar = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [userRole, setUserRole] = useState((sessionStorage.getItem('userRole') || '').toUpperCase());
     const [userProfile, setUserProfile] = useState(null);
-    const [userPlan, setUserPlan] = useState('FREE');
+    const { user, logout } = useAuth();
+    const userPlan = user?.plan || 'FREE';
 
 
     // Scroll & Visibility State
@@ -67,16 +70,12 @@ const Navbar = () => {
         }
     }, []);
 
-    // Auth check
+    // Auth check & Profile Refresh
     useEffect(() => {
-        const checkAuth = async () => {
-            const role = (sessionStorage.getItem('userRole') || '').toUpperCase();
-            setUserRole(role);
+        const role = (sessionStorage.getItem('userRole') || '').toUpperCase();
+        setUserRole(role);
 
-            const user = AuthService.getCurrentUser();
-            setUserPlan(user?.plan || 'FREE');
-
-
+        const fetchProfile = async () => {
             if (role) {
                 try {
                     let profileData = null;
@@ -93,22 +92,15 @@ const Navbar = () => {
                 }
             }
         };
-        window.addEventListener('storage', checkAuth);
-        checkAuth();
-        return () => window.removeEventListener('storage', checkAuth);
-    }, [location]);
+
+        fetchProfile();
+    }, [location, user]); // Refresh when location or user (plan) changes
 
     const toggleTheme = () => {
         setIsDark(!isDark);
         const newTheme = !isDark ? 'dark' : 'light';
         document.documentElement.setAttribute('data-theme', newTheme);
         localStorage.setItem('theme', newTheme);
-    };
-
-    const handleLogout = () => {
-        setIsProfileMenuOpen(false);
-        setUserProfile(null);
-        AuthService.logout();
     };
 
     const isLandingPage = location.pathname === '/';
@@ -133,8 +125,6 @@ const Navbar = () => {
     const getProfileImageUrl = (path) => {
         if (!path) return null;
         if (path.startsWith('http')) return path;
-        // API_BASE_URL is "http://localhost:5033/api"
-        // We need "http://localhost:5033"
         const baseUrl = "http://localhost:5033";
         return `${baseUrl}${path}`;
     };
@@ -159,14 +149,10 @@ const Navbar = () => {
 
     const getUserImage = () => {
         if (!userProfile) return null;
-        // Prioritize Personal Profile Image (camelCase or PascalCase)
         const profileImg = userProfile.profileImage || userProfile.ProfileImage;
         if (profileImg) return profileImg;
-
-        // Fallback to Company Logo for Recruiter
         const companyLogo = userProfile.companyLogo || userProfile.CompanyLogo;
         if (companyLogo) return companyLogo;
-
         return null;
     };
 
@@ -311,71 +297,14 @@ const Navbar = () => {
                                 )}
 
                                 {/* Profile Dropdown */}
-                                <div style={{ position: 'relative' }}>
-                                    <button
-                                        onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
-                                        style={{
-                                            display: 'flex', alignItems: 'center', gap: '10px', background: 'transparent',
-                                            border: 'none', padding: '4px 6px', borderRadius: '30px', cursor: 'pointer',
-                                            transition: 'all 0.2s',
-                                            boxShadow: isProfileMenuOpen ? '0 0 0 2px var(--primary-light)' : 'none'
-                                        }}
-                                    >
-                                        {userImage ? (
-                                            <img src={getProfileImageUrl(userImage)} alt="Profile" style={{ width: '34px', height: '34px', borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--border-color)' }} />
-                                        ) : (
-                                            <div style={{ width: '34px', height: '34px', borderRadius: '50%', background: 'linear-gradient(135deg, var(--primary), var(--secondary))', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '0.85rem', fontWeight: '700' }}>
-                                                {userProfile ? userProfile.fullName?.charAt(0) : userRole[0].toUpperCase()}
-                                            </div>
-                                        )}
-
-                                        {userPlan !== 'FREE' && (
-                                            <span style={{
-                                                fontSize: '0.65rem',
-                                                fontWeight: '800',
-                                                padding: '2px 6px',
-                                                borderRadius: '6px',
-                                                background: userPlan === 'ELITE_PLUS' ? 'linear-gradient(45deg, #f59e0b, #ef4444)' : 'linear-gradient(45deg, #8b5cf6, #3b82f6)',
-                                                color: 'white',
-                                                textTransform: 'uppercase',
-                                                boxShadow: '0 2px 5px rgba(0,0,0,0.2)'
-                                            }}>
-                                                {userPlan.replace('_', '+')}
-                                            </span>
-                                        )}
-
-                                        <ChevronDown size={14} color="var(--text-secondary)" />
-
-                                    </button>
-
-                                    <AnimatePresence>
-                                        {isProfileMenuOpen && (
-                                            <motion.div
-                                                initial={{ opacity: 0, y: 10 }}
-                                                animate={{ opacity: 1, y: 0 }}
-                                                exit={{ opacity: 0, y: 10 }}
-                                                className="glass-panel"
-                                                style={{ position: 'absolute', top: '120%', right: 0, width: '220px', padding: '10px', display: 'flex', flexDirection: 'column', gap: '4px', zIndex: 1100, boxShadow: '0 10px 30px rgba(0,0,0,0.1)' }}
-                                            >
-                                                <button onClick={() => { setIsProfileMenuOpen(false); setIsProfileEditorOpen(true); }} className="btn-ghost" style={{ justifyContent: 'flex-start', width: '100%', padding: '12px', borderRadius: '8px', border: 'none' }}>
-                                                    <User size={16} /> <span style={{ marginLeft: '8px' }}>My Profile</span>
-                                                </button>
-                                                <Link to="/billing" onClick={() => setIsProfileMenuOpen(false)} className="btn-ghost" style={{ justifyContent: 'flex-start', width: '100%', padding: '12px', borderRadius: '8px', border: 'none' }}>
-                                                    <CreditCard size={16} /> <span style={{ marginLeft: '8px' }}>Manage Plan</span>
-                                                </Link>
-                                                {userPlan !== 'ELITE_PLUS' && (
-                                                    <Link to={`/pricing?source=${userRole}`} onClick={() => setIsProfileMenuOpen(false)} className="btn-ghost" style={{ justifyContent: 'flex-start', width: '100%', padding: '12px', borderRadius: '8px', border: 'none', color: 'var(--primary)', fontWeight: '700' }}>
-                                                        <TrendingUp size={16} /> <span style={{ marginLeft: '8px' }}>Upgrade Plan</span>
-                                                    </Link>
-                                                )}
-                                                <div style={{ height: '1px', background: 'var(--border-color)', margin: '6px 0' }}></div>
-                                                <button onClick={handleLogout} className="btn-ghost" style={{ justifyContent: 'flex-start', width: '100%', color: 'var(--error)', padding: '12px', borderRadius: '8px', border: 'none' }}>
-                                                    <LogOut size={16} /> <span style={{ marginLeft: '8px' }}>Log Out</span>
-                                                </button>
-                                            </motion.div>
-                                        )}
-                                    </AnimatePresence>
-                                </div>
+                                <ProfileDropdown
+                                    isOpen={isProfileMenuOpen}
+                                    onToggle={setIsProfileMenuOpen}
+                                    userProfile={userProfile}
+                                    userImage={userImage}
+                                    getProfileImageUrl={getProfileImageUrl}
+                                    refreshProfile={refreshProfile}
+                                />
                             </div>
                         )}
 

@@ -4,6 +4,7 @@ import { Check, ArrowRight, Star, X, Info, LayoutDashboard, TrendingUp } from 'l
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { applicantPlans, recruiterPlans, comparisonData } from '../data/pricingData';
 import AuthService from '../api/authService';
+import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 
 const Pricing = () => {
@@ -14,7 +15,7 @@ const Pricing = () => {
 
     const [isAnnual, setIsAnnual] = useState(false);
     const [userType, setUserType] = useState(source === 'recruiter' ? 'recruiter' : 'applicant');
-    const [currentUser, setCurrentUser] = useState(AuthService.getCurrentUser());
+    const { user: currentUser, updatePlan } = useAuth();
     const [isUpgrading, setIsUpgrading] = useState(null);
 
     const userPlan = currentUser?.plan || 'FREE';
@@ -51,8 +52,8 @@ const Pricing = () => {
             await AuthService.upgradePlan(targetPlan);
             addToast(`Successfully upgraded to ${planName}!`, "success");
 
-            // Re-fetch user to update UI
-            setCurrentUser(AuthService.getCurrentUser());
+            // Update AuthContext
+            updatePlan(targetPlan);
         } catch (error) {
             addToast(error.response?.data?.message || "Upgrade failed. Please try again.", "error");
         } finally {
