@@ -69,6 +69,13 @@ graph TD
     - **Backend Performance**: Data is aggregated via `IMemoryCache` (30s TTL) to prevent database bottlenecks during heavy usage.
 6.  **Auditability**: Every administrative action is logged in `SystemLogs` for transparency and security.
 
+### 5. The Subscription & Monetization Flow
+1.  **Plan Exploration**: User visits the `ManageSubscription` page to view tiered pricing (Free, Pro, Enterprise).
+2.  **Upgrade/Switch**: User selects a plan; the frontend triggers a request to `SubscriptionController`.
+3.  **Validation**: Backend validates the request and updates the user's `SubscriptionPlan` and `SubscriptionExpiry`.
+4.  **Enforcement**: Future requests to restricted endpoints (e.g., job posting) are validated via `PlanRequirementAttribute` which checks the user's active plan and current usage.
+5.  **Analytics**: Admins monitor revenue trends and plan distributions via the `AdminAnalyticsController`.
+
 ## 🧠 AI Intelligence Flow
 
 The "Brain" of the operation works as follows:
@@ -90,6 +97,7 @@ The "Brain" of the operation works as follows:
 | `ResumesController` | Uploading and parsing resume files. |
 | `AnalysisController` | Bridge between .NET and Python AI Service. |
 | `InboxController` | Management of in-app notifications and SignalR hubs. |
+| `SubscriptionController` | Management of user plans, pricing, and automated billing logic. |
 | `AdminController` | System oversight, User/Job moderation, and Health Checks. |
 | `AdminAnalyticsController` | Cached data aggregation for executive dashboards. |
 

@@ -14,6 +14,7 @@ This document serves as the **complete manual** for the project, covering its ar
     - [Applicant Portal Features](#2-applicant-portal)
     - [Recruiter Portal Features](#3-recruiter-portal)
     - [Admin Suite Features](#4-admin-suite)
+    - [Monetization & Subscriptions](#5-monetization--subscriptions)
 4. [Machine Learning Pipeline](#-machine-learning-pipeline)
 5. [Data Strategy & Datasets](#-data-strategy--datasets)
 6. [Technical Stack](#-technical-stack)
@@ -119,6 +120,12 @@ This section details every feature available in the application.
 *   **📋 Job Moderation**: Global oversight of job postings with recruiter tracking and status toggles.
 *   **📜 Audit Stream (System Logs)**: Searchable "Terminal-style" audit trail of all platform events.
 
+### 5. Monetization & Subscriptions (New)
+*   **💳 Tiered Pricing Plans**: Implementation of "FREE", "PRO", and "ENTERPRISE" models.
+*   **📊 Usage Tracking**: Real-time monitoring of job postings and resume analysis based on plan limits.
+*   **📈 Subscription Dashboard**: Dedicated billing view for managing plans and viewing usage stats.
+*   **🛡️ Plan Enforcement**: Automatic restrictions on features based on the user's active subscription tier.
+
 ---
 
 ## 🧠 Machine Learning Pipeline
@@ -170,6 +177,7 @@ The "Brain" of HireLens AI is a custom-built Python service.
 | **SignalR Hub** | **Real-time broadcast of system events.** |
 | **Entity Framework 10** | Advanced ORM for MySQL management. |
 | **JWT** | Secure, stateless authentication. |
+| **PlanRequirement** | Custom attribute layer for feature-access enforcement. |
 | **IMemoryCache** | Efficiency layer for dashboard analytics. |
 
 ### AI Microservice (Intelligence)
