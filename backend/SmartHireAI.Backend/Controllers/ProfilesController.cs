@@ -73,7 +73,10 @@ public class ProfilesController : ControllerBase
             PreferredRole = applicant.PreferredRole,
             PreferredWorkLocation = applicant.PreferredWorkLocation,
             Gender = applicant.Gender,
-            DateOfBirth = applicant.DateOfBirth
+            DateOfBirth = applicant.DateOfBirth,
+            ExpectedSalary = applicant.ExpectedSalary,
+            Availability = applicant.Availability,
+            SubscriptionPlan = applicant.User.SubscriptionPlan
         };
     }
 
@@ -141,6 +144,8 @@ public class ProfilesController : ControllerBase
         applicant.LinkedInUrl = request.LinkedInUrl;
         applicant.PreferredRole = request.PreferredRole;
         applicant.PreferredWorkLocation = request.PreferredWorkLocation;
+        applicant.ExpectedSalary = request.ExpectedSalary;
+        applicant.Availability = request.Availability;
 
         if (!string.IsNullOrEmpty(request.CurrentRole)) applicant.CurrentRole = request.CurrentRole;
         applicant.ExperienceYears = request.ExperienceYears;
@@ -268,7 +273,10 @@ public class ProfilesController : ControllerBase
             Industry = recruiter.Industry,
             CompanySize = recruiter.CompanySize,
             RecruiterType = recruiter.RecruiterType,
-            ProfileImage = recruiter.User.ProfileImage
+            ProfileImage = recruiter.User.ProfileImage,
+            HiringFocus = recruiter.HiringFocus,
+            CompanyDescription = recruiter.CompanyDescription,
+            SubscriptionPlan = recruiter.User.SubscriptionPlan
         };
     }
 
@@ -307,6 +315,8 @@ public class ProfilesController : ControllerBase
                 Industry = request.Industry,
                 CompanySize = request.CompanySize,
                 RecruiterType = request.RecruiterType,
+                HiringFocus = request.HiringFocus,
+                CompanyDescription = request.CompanyDescription,
 
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
@@ -326,6 +336,8 @@ public class ProfilesController : ControllerBase
             if (!string.IsNullOrEmpty(request.Industry)) recruiter.Industry = request.Industry;
             if (!string.IsNullOrEmpty(request.CompanySize)) recruiter.CompanySize = request.CompanySize;
             if (!string.IsNullOrEmpty(request.RecruiterType)) recruiter.RecruiterType = request.RecruiterType;
+            recruiter.HiringFocus = request.HiringFocus;
+            recruiter.CompanyDescription = request.CompanyDescription;
 
             recruiter.UpdatedAt = DateTime.UtcNow;
         }
@@ -378,6 +390,50 @@ public class ProfilesController : ControllerBase
     [HttpPost("recruiter/profile-image")]
     [Authorize(Roles = "RECRUITER")]
     public async Task<ActionResult<string>> UploadRecruiterProfileImage(IFormFile file)
+    {
+        var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
+        {
+            return Unauthorized();
+        }
+
+        if (file == null || file.Length == 0)
+            return BadRequest("No file uploaded.");
+
+        var validExtensions = new[] { ".jpg", ".jpeg", ".png" };
+        var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+        if (!validExtensions.Contains(extension))
+            return BadRequest("Invalid image format. Only JPG, PNG are allowed.");
+
+        var folder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "profiles");
+        if (!Directory.Exists(folder)) Directory.CreateDirectory(folder);
+
+        var fileName = $"{Guid.NewGuid()}{extension}";
+        var filePath = Path.Combine(folder, fileName);
+
+        using (var stream = new FileStream(filePath, FileMode.Create))
+        {
+            await file.CopyToAsync(stream);
+        }
+
+        var fileUrl = $"/uploads/profiles/{fileName}";
+
+        // Update User Profile Image in DB
+        var user = await _context.Users.FindAsync(userId);
+        if (user != null)
+        {
+            user.ProfileImage = fileUrl;
+            user.UpdatedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+        }
+
+        return Ok(new { url = fileUrl });
+    }
+
+    // POST: api/profiles/upload-photo (Unified)
+    [HttpPost("upload-photo")]
+    [Authorize]
+    public async Task<ActionResult<string>> UploadProfilePhoto(IFormFile file)
     {
         var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))

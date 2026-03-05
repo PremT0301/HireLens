@@ -182,6 +182,13 @@ namespace SmartHireAI.Backend.Data
         [Column("preferred_location")]
         public string? PreferredWorkLocation { get; set; } // Onsite, Remote, Hybrid
 
+        [Column("expected_salary")]
+        public int? ExpectedSalary { get; set; }
+
+        [MaxLength(50)]
+        [Column("availability")]
+        public string? Availability { get; set; } // Immediate, 1 Month, etc.
+
         [Column("date_of_birth")]
         public DateTime? DateOfBirth { get; set; }
 
@@ -309,6 +316,13 @@ namespace SmartHireAI.Backend.Data
         [MaxLength(50)]
         [Column("recruiter_type")]
         public string? RecruiterType { get; set; }
+
+        [MaxLength(255)]
+        [Column("hiring_focus")]
+        public string? HiringFocus { get; set; }
+
+        [Column("company_description")]
+        public string? CompanyDescription { get; set; }
 
         [Column("created_at")]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

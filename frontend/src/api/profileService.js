@@ -101,6 +101,23 @@ const ProfileService = {
             console.error("Error uploading profile image", error);
             throw error;
         }
+    },
+
+    // Unified upload profile image
+    uploadProfileImage: async (file) => {
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+            const response = await axios.post('/profiles/upload-photo', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            });
+            return response.data;
+        } catch (error) {
+            console.error("Error uploading profile image", error);
+            throw error;
+        }
     }
 };
 

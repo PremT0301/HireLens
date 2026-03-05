@@ -8,6 +8,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { createPortal } from 'react-dom';
 import { jwtDecode } from 'jwt-decode';
+import ConfirmModal from '../../components/ui/ConfirmModal';
 
 const InterviewCopilot = () => {
     // ... existing state ...
@@ -456,65 +457,17 @@ const InterviewCopilot = () => {
 
 
             {/* DELETE MODAL */}
-            {deleteModal.show && createPortal(
-                <AnimatePresence>
-                    <div style={{
-                        position: 'fixed', inset: 0, zIndex: 9999,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)'
-                    }}>
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.95 }}
-                            className="glass-panel"
-                            style={{ width: '400px', padding: '24px', position: 'relative', border: '1px solid var(--glass-border)', boxShadow: '0 10px 25px rgba(0,0,0,0.2)' }}
-                        >
-                            <button
-                                onClick={() => setDeleteModal({ show: false, sessionId: null })}
-                                style={{ position: 'absolute', top: '16px', right: '16px', background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}
-                            >
-                                <X size={20} />
-                            </button>
-
-                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: '16px' }}>
-                                <div style={{
-                                    width: '48px', height: '48px', borderRadius: '50%',
-                                    background: 'rgba(239, 68, 68, 0.1)', color: 'var(--error)',
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center'
-                                }}>
-                                    <AlertTriangle size={24} />
-                                </div>
-
-                                <div>
-                                    <h3 style={{ fontSize: '1.25rem', fontWeight: '600', marginBottom: '8px' }}>Delete Session?</h3>
-                                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem' }}>
-                                        Are you sure you want to delete this interview session? This action cannot be undone.
-                                    </p>
-                                </div>
-
-                                <div style={{ display: 'flex', gap: '12px', width: '100%', marginTop: '8px' }}>
-                                    <button
-                                        onClick={() => setDeleteModal({ show: false, sessionId: null })}
-                                        className="btn-ghost"
-                                        style={{ flex: 1, justifyContent: 'center' }}
-                                    >
-                                        Cancel
-                                    </button>
-                                    <button
-                                        onClick={confirmDeleteSession}
-                                        className="btn-primary"
-                                        style={{ flex: 1, justifyContent: 'center', background: 'var(--error)', borderColor: 'var(--error)' }}
-                                    >
-                                        Delete
-                                    </button>
-                                </div>
-                            </div>
-                        </motion.div>
-                    </div>
-                </AnimatePresence>,
-                document.body
-            )}
+            <ConfirmModal
+                isOpen={deleteModal.show}
+                onClose={() => setDeleteModal({ show: false, sessionId: null })}
+                onConfirm={confirmDeleteSession}
+                type="danger"
+                title="Delete Session?"
+                message="Are you sure you want to delete this interview session? This action cannot be undone."
+                confirmText="Delete"
+                cancelText="Cancel"
+                loading={isLoading}
+            />
 
         </div>
     );

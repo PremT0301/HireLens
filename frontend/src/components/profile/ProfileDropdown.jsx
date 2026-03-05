@@ -89,7 +89,7 @@ const ProfileDropdown = ({ isOpen, onToggle, userProfile, userImage, getProfileI
                             <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', opacity: 0.7 }}>{user.email}</div>
                         </div>
 
-                        <button onClick={() => { onToggle(false); navigate(role === 'RECRUITER' ? '/recruiter/dashboard' : '/applicant/dashboard'); }} className="btn-ghost" style={{ justifyContent: 'flex-start', width: '100%', padding: '12px', borderRadius: '10px', border: 'none', transition: 'all 0.2s' }}>
+                        <button onClick={() => { onToggle(false); navigate('/profile'); }} className="btn-ghost" style={{ justifyContent: 'flex-start', width: '100%', padding: '12px', borderRadius: '10px', border: 'none', transition: 'all 0.2s' }}>
                             <User size={18} /> <span style={{ marginLeft: '12px', fontWeight: '500' }}>My Profile</span>
                         </button>
 

@@ -5,7 +5,7 @@ import JobService from '../../api/jobService';
 import ApplicationService from '../../api/applicationService';
 import Skeleton, { SkeletonList } from '../../components/ui/Skeleton';
 import { NoJobsState } from '../../components/ui/EmptyState';
-import ConfirmationModal from '../../components/ui/ConfirmationModal';
+import ConfirmModal from '../../components/ui/ConfirmModal';
 import { useToast } from '../../context/ToastContext';
 import PlanGate from '../../components/ui/PlanGate';
 
@@ -24,7 +24,7 @@ const Jobs = () => {
         isOpen: false,
         title: '',
         message: '',
-        type: 'default',
+        type: 'info',
         onConfirm: () => { },
         confirmText: 'Confirm',
         cancelText: 'Cancel'
@@ -93,7 +93,7 @@ const Jobs = () => {
             isOpen: true,
             title: 'Withdraw Application?',
             message: `Are you sure you want to withdraw your application for ${job.title}? This action cannot be undone.`,
-            type: 'destructive',
+            type: 'danger',
             confirmText: 'Withdraw',
             cancelText: 'Keep Application',
             onConfirm: () => handleWithdraw(job)
@@ -345,10 +345,13 @@ const Jobs = () => {
                 </div>
             )}
 
-            <ConfirmationModal
+            <ConfirmModal
                 isOpen={modalConfig.isOpen}
                 onClose={() => setModalConfig({ ...modalConfig, isOpen: false })}
-                onConfirm={modalConfig.onConfirm}
+                onConfirm={() => {
+                    modalConfig.onConfirm();
+                    setModalConfig({ ...modalConfig, isOpen: false });
+                }}
                 title={modalConfig.title}
                 message={modalConfig.message}
                 type={modalConfig.type}

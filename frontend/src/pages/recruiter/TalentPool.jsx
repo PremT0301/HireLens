@@ -3,6 +3,7 @@ import { Search, Filter, MoreHorizontal, Eye, Mail, Phone, Briefcase, Calendar, 
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';
 import Modal from '../../components/ui/Modal';
+import ConfirmModal from '../../components/ui/ConfirmModal';
 import { SkeletonTable } from '../../components/ui/Skeleton';
 import { NoCandidatesState, NoSearchResultsState } from '../../components/ui/EmptyState';
 
@@ -88,9 +89,12 @@ const TalentPool = () => {
 
 
 
+    const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
+    const [isHireModalOpen, setIsHireModalOpen] = useState(false);
+
     const handleReject = (candidate) => {
         setSelectedCandidate(candidate);
-        setModalView('reject-confirmation');
+        setIsRejectModalOpen(true);
         setOpenMenuId(null);
     };
 
@@ -98,6 +102,7 @@ const TalentPool = () => {
         if (!selectedCandidate) return;
 
         try {
+            setLoading(true);
             await ApplicationService.updateStatus(selectedCandidate.id, "Rejected");
             addToast('Candidate status updated to Rejected', 'info');
 
@@ -106,29 +111,42 @@ const TalentPool = () => {
                 c.id === selectedCandidate.id ? { ...c, status: 'Rejected' } : c
             ));
 
-            handleCloseModal();
+            setIsRejectModalOpen(false);
+            setSelectedCandidate(null);
         } catch (error) {
             console.error("Failed to reject candidate", error);
             addToast('Failed to update status', 'error');
+        } finally {
+            setLoading(false);
         }
     };
 
-    const handleHire = async (candidate) => {
-        if (!window.confirm(`Are you sure you want to HIRE ${candidate.name}? This will mark them as hired for this role.`)) return;
+    const handleHire = (candidate) => {
+        setSelectedCandidate(candidate);
+        setIsHireModalOpen(true);
+        setOpenMenuId(null);
+    };
+
+    const confirmHire = async () => {
+        if (!selectedCandidate) return;
 
         try {
-            await ApplicationService.hireCandidate(candidate.id);
-            addToast(`Successfully hired ${candidate.name}!`, 'success');
+            setLoading(true);
+            await ApplicationService.hireCandidate(selectedCandidate.id);
+            addToast(`Successfully hired ${selectedCandidate.name}!`, 'success');
 
             // Update local state
             setCandidates(prev => prev.map(c =>
-                c.id === candidate.id ? { ...c, status: 'Hired' } : c
+                c.id === selectedCandidate.id ? { ...c, status: 'Hired' } : c
             ));
 
-            setOpenMenuId(null);
+            setIsHireModalOpen(false);
+            setSelectedCandidate(null);
         } catch (error) {
             console.error("Failed to hire candidate", error);
             addToast('Failed to hire candidate. They may be hired elsewhere.', 'error');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -677,113 +695,45 @@ const TalentPool = () => {
                 )}
             </AnimatePresence>
 
-            {/* Action Modal */}
+            {/* Rejection Modal */}
+            <ConfirmModal
+                isOpen={isRejectModalOpen}
+                onClose={() => setIsRejectModalOpen(false)}
+                onConfirm={confirmReject}
+                type="danger"
+                title="Reject Candidate?"
+                message={`You are about to reject ${selectedCandidate?.name}. This action cannot be undone.`}
+                confirmText="Reject Candidate"
+                cancelText="Cancel"
+                loading={loading}
+            />
+
+            {/* Hiring Modal */}
+            <ConfirmModal
+                isOpen={isHireModalOpen}
+                onClose={() => setIsHireModalOpen(false)}
+                onConfirm={confirmHire}
+                type="success"
+                title="Hire Candidate?"
+                message={`Are you sure you want to HIRE ${selectedCandidate?.name}? This will mark them as hired for this role.`}
+                confirmText="Confirm Hire"
+                cancelText="Cancel"
+                loading={loading}
+            />
+
+            {/* Action Modal (Profile only now) */}
             <Modal
-                isOpen={!!selectedCandidate}
+                isOpen={!!selectedCandidate && !isRejectModalOpen && !isHireModalOpen}
                 onClose={handleCloseModal}
-                size={modalView === 'reject-confirmation' ? 'sm' : 'md'}
-                hideHeader={modalView === 'reject-confirmation'}
-                title={
-                    modalView === 'profile' ? "Candidate Profile" :
-                        modalView === 'reject-confirmation' ? "Confirm Action" :
-                            "Candidate Action"
-                }
+                size="md"
+                title="Candidate Profile"
             >
                 {selectedCandidate && (
                     <div>
-                        {modalView === 'reject-confirmation' && (
-                            <div style={{ textAlign: 'center', padding: '1.5rem 0.5rem' }}>
-                                <motion.div
-                                    initial={{ scale: 0, rotate: -180 }}
-                                    animate={{ scale: 1, rotate: 0 }}
-                                    transition={{ type: "spring", stiffness: 260, damping: 20 }}
-                                    style={{
-                                        width: '88px',
-                                        height: '88px',
-                                        background: 'linear-gradient(135deg, #ff9a9e 0%, #fecfef 99%, #fecfef 100%)',
-                                        borderRadius: '50%',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        margin: '0 auto 1.5rem auto',
-                                        boxShadow: '0 10px 25px -5px rgba(239, 68, 68, 0.3)',
-                                        border: '4px solid white'
-                                    }}
-                                >
-                                    <div style={{
-                                        width: '100%',
-                                        height: '100%',
-                                        borderRadius: '50%',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        background: 'rgba(255,255,255,0.2)',
-                                        backdropFilter: 'blur(4px)'
-                                    }}>
-                                        <XCircle size={42} color="#dc2626" strokeWidth={2} />
-                                    </div>
-                                </motion.div>
-
-                                <h3 style={{ fontSize: '1.75rem', fontWeight: 800, marginBottom: '0.75rem', background: 'linear-gradient(to right, #ef4444, #b91c1c)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                                    Reject Candidate?
-                                </h3>
-
-                                <p style={{ color: 'var(--text-secondary)', marginBottom: '2.5rem', lineHeight: '1.6', fontSize: '1.05rem' }}>
-                                    You are about to reject <span style={{ color: 'var(--text-primary)', fontWeight: 700 }}>{selectedCandidate.name}</span>.
-                                    <br />
-                                    <span style={{ fontSize: '0.9rem', opacity: 0.8 }}>This action cannot be undone.</span>
-                                </p>
-
-                                <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
-                                    <button
-                                        onClick={handleCloseModal}
-                                        className="btn-ghost"
-                                        style={{
-                                            border: 'none',
-                                            background: 'var(--bg-secondary)',
-                                            width: '130px',
-                                            height: '48px',
-                                            borderRadius: '12px',
-                                            fontWeight: 600,
-                                            color: 'var(--text-secondary)'
-                                        }}
-                                    >
-                                        Cancel
-                                    </button>
-                                    <button
-                                        onClick={confirmReject}
-                                        style={{
-                                            background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-                                            color: 'white',
-                                            border: 'none',
-                                            padding: '0 24px',
-                                            height: '48px',
-                                            borderRadius: '12px',
-                                            fontWeight: 600,
-                                            cursor: 'pointer',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            gap: '8px',
-                                            minWidth: '160px',
-                                            boxShadow: '0 8px 16px -4px rgba(239, 68, 68, 0.4)',
-                                            transition: 'all 0.2s',
-                                        }}
-                                        className="hover-lift"
-                                    >
-                                        <XCircle size={20} /> Conform Reject
-                                    </button>
-                                </div>
-                            </div>
-                        )}
                         {modalView === 'profile' && (
                             /* Profile view moved to dedicated page */
                             null
                         )}
-
-
-
-
                     </div>
                 )}
             </Modal>

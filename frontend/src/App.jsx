@@ -42,7 +42,8 @@ import Blog from './pages/Blog';
 import BlogDetail from './pages/BlogDetail';
 import ReleaseNotes from './pages/ReleaseNotes';
 import Enterprise from './pages/Enterprise';
-import ManageSubscription from './pages/ManageSubscription';
+import ManageSubscription from './pages/manage-subscription/ManageSubscription';
+import ProfilePage from './pages/profile/ProfilePage';
 
 // AnimatedRoutes component to use useLocation hook inside Router
 const AnimatedRoutes = () => {
@@ -66,6 +67,12 @@ const AnimatedRoutes = () => {
         <Route path="/manage-subscription" element={
           <ProtectedRoute>
             <ManageSubscription />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/profile" element={
+          <ProtectedRoute>
+            <ProfilePage />
           </ProtectedRoute>
         } />
 
