@@ -31,12 +31,6 @@ const Pricing = () => {
         'Enterprise Recruiter': 'ELITE_PLUS'
     };
 
-    useEffect(() => {
-        // Refresh user data on mount to ensure plan is up to date
-        const user = AuthService.getCurrentUser();
-        setCurrentUser(user);
-    }, []);
-
     const handleUpgrade = async (planName) => {
         const targetPlan = planMapping[planName];
 
