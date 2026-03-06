@@ -1,9 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Shield, Server, BarChart3, Lock, Users, ArrowRight, Zap, Database, Globe, Cpu } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { ScheduleDemoModal, ContactSalesModal } from '../components/enterprise/EnterpriseModals';
 
 const Enterprise = () => {
+    const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
+    const [isSalesModalOpen, setIsSalesModalOpen] = useState(false);
+
     return (
         <div className="page-transition aurora-bg" style={{ minHeight: '100vh', paddingTop: '120px', paddingBottom: '100px' }}>
             <div className="container">
@@ -22,8 +25,20 @@ const Enterprise = () => {
                             Scalable, secure, and compliant AI intelligence for the world's most demanding hiring environments.
                         </p>
                         <div style={{ display: 'flex', justifyContent: 'center', gap: '1.5rem' }}>
-                            <button className="btn-primary" style={{ padding: '16px 40px', fontSize: '1.1rem' }}>Schedule a Demo <ArrowRight size={22} /></button>
-                            <button className="btn-nav-outline" style={{ padding: '16px 40px', fontSize: '1.1rem' }}>Contact Sales</button>
+                            <button
+                                className="btn-primary"
+                                style={{ padding: '16px 40px', fontSize: '1.1rem' }}
+                                onClick={() => setIsDemoModalOpen(true)}
+                            >
+                                Schedule a Demo <ArrowRight size={22} />
+                            </button>
+                            <button
+                                className="btn-nav-outline"
+                                style={{ padding: '16px 40px', fontSize: '1.1rem' }}
+                                onClick={() => setIsSalesModalOpen(true)}
+                            >
+                                Contact Sales
+                            </button>
                         </div>
                     </motion.div>
                 </section>
@@ -135,12 +150,20 @@ const Enterprise = () => {
                             <p style={{ fontSize: '1.2rem', opacity: 0.9, marginBottom: '3rem', maxWidth: '700px', margin: '0 auto 3rem' }}>
                                 Join leading global companies that have revolutionized their recruitment infrastructure with HireLens AI.
                             </p>
-                            <button className="btn-primary" style={{ background: 'white', color: 'var(--primary)', padding: '18px 48px', fontSize: '1.2rem', fontWeight: 800 }}>
+                            <button
+                                className="btn-primary"
+                                style={{ background: 'white', color: 'var(--primary)', padding: '18px 48px', fontSize: '1.2rem', fontWeight: 800 }}
+                                onClick={() => setIsDemoModalOpen(true)}
+                            >
                                 Schedule Strategy Call
                             </button>
                         </div>
                     </div>
                 </motion.section>
+
+                {/* Modals */}
+                <ScheduleDemoModal isOpen={isDemoModalOpen} onClose={() => setIsDemoModalOpen(false)} />
+                <ContactSalesModal isOpen={isSalesModalOpen} onClose={() => setIsSalesModalOpen(false)} />
             </div>
         </div>
     );

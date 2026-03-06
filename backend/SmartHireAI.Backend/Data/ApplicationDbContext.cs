@@ -30,11 +30,21 @@ namespace SmartHireAI.Backend.Data
         public DbSet<AuditLog> AuditLogs { get; set; }
         public DbSet<OtpVerification> OtpVerifications { get; set; }
         public DbSet<ResumeAnalysis> ResumeAnalysis { get; set; }
+        public DbSet<EnterpriseLead> EnterpriseLeads { get; set; }
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+
+            // Configure LeadType and LeadStatus enums to string
+            modelBuilder.Entity<EnterpriseLead>()
+                .Property(l => l.LeadType)
+                .HasConversion<string>();
+
+            modelBuilder.Entity<EnterpriseLead>()
+                .Property(l => l.Status)
+                .HasConversion<string>();
 
             // Configure relationships and indexes here if needed, 
             // but Data Annotations in Entities.cs cover most of it.

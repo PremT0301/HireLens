@@ -8,7 +8,13 @@ import {
     Shield,
     Star,
     Play,
-    CheckCircle
+    CheckCircle,
+    FileText,
+    MessageSquare,
+    Zap,
+    Search,
+    TrendingUp,
+    Radar
 } from "lucide-react";
 import { motion, useScroll, useTransform, useSpring } from "framer-motion";
 import ThreeDTiltCard from "../components/ui/ThreeDTiltCard";
@@ -397,6 +403,77 @@ const Landing = () => {
                 </Section>
             </section>
 
+            {/* ================= PRODUCTS SECTION (NEW) ================= */}
+            <section id="products" style={{ position: "relative", padding: "60px 0", background: "var(--bg-primary)" }}>
+                <div className="container">
+                    <div style={{ textAlign: "center", marginBottom: "4rem" }}>
+                        <motion.h2
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            style={{ fontSize: "3rem", fontWeight: 800, marginBottom: "1rem", letterSpacing: "-0.03em" }}
+                        >
+                            HireLens AI <span className="gradient-text">Products</span>
+                        </motion.h2>
+                        <motion.p
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            transition={{ delay: 0.1 }}
+                            className="text-subtle"
+                            style={{ fontSize: "1.2rem", maxWidth: "700px", margin: "0 auto" }}
+                        >
+                            Powerful AI modules designed to transform the recruitment lifecycle.
+                        </motion.p>
+                    </div>
+
+                    <motion.div
+                        initial="hidden"
+                        whileInView="show"
+                        viewport={{ once: true, margin: "-100px" }}
+                        variants={{
+                            hidden: { opacity: 0 },
+                            show: {
+                                opacity: 1,
+                                transition: {
+                                    staggerChildren: 0.2
+                                }
+                            }
+                        }}
+                        style={{
+                            display: "grid",
+                            gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+                            gap: "2.5rem"
+                        }}
+                    >
+                        <ProductCard
+                            icon={<FileText size={32} />}
+                            title="AI Resume Analysis"
+                            desc="Automatically parse resumes using NLP and extract skills, experience, and education with high accuracy."
+                            features={["NLP Resume Parsing", "Skill Extraction", "Role Classification", "ATS Optimization"]}
+                            btnText="Learn More"
+                            color="#2563EB"
+                        />
+                        <ProductCard
+                            icon={<MessageSquare size={32} />}
+                            title="Interview Copilot"
+                            desc="AI-powered interview preparation assistant that helps candidates practice real interview scenarios."
+                            features={["AI Generated Interview Questions", "Real-time Feedback", "Behavioral Question Analysis", "Confidence Scoring"]}
+                            btnText="Try Copilot"
+                            color="#0EA5E9"
+                        />
+                        <ProductCard
+                            icon={<TrendingUp size={32} />}
+                            title="Skill Gap Engine"
+                            desc="Identify missing skills between job descriptions and candidate profiles with explainable AI insights."
+                            features={["Resume vs Job Description Matching", "Skill Gap Detection", "Match Percentage", "Career Improvement Insights"]}
+                            btnText="View Insights"
+                            color="#16A34A"
+                        />
+                    </motion.div>
+                </div>
+            </section>
+
             <section style={{ background: "var(--bg-secondary)", padding: "4rem 0 3rem" }}>
                 <div className="container">
                     <motion.h2
@@ -571,6 +648,62 @@ const Landing = () => {
                 </div>
             </section>
         </div>
+    );
+};
+
+/* ======================================================
+   PRODUCT CARD COMPONENT
+====================================================== */
+const ProductCard = ({ icon, title, desc, features, btnText, color }) => {
+    return (
+        <motion.div
+            variants={{
+                hidden: { opacity: 0, y: 30 },
+                show: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } }
+            }}
+            whileHover={{ y: -10 }}
+            className="glass-panel"
+            style={{
+                padding: "2.5rem",
+                display: "flex",
+                flexDirection: "column",
+                height: "100%",
+                background: "var(--bg-secondary)",
+                border: "1px solid var(--border-color)",
+                boxShadow: "var(--shadow-md)"
+            }}
+        >
+            <div style={{
+                width: "64px",
+                height: "64px",
+                borderRadius: "16px",
+                background: `${color}15`,
+                color: color,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                marginBottom: "1.5rem",
+                boxShadow: `0 8px 16px ${color}10`
+            }}>
+                {icon}
+            </div>
+
+            <h3 style={{ fontSize: "1.5rem", fontWeight: 800, marginBottom: "1rem", color: "var(--text-primary)" }}>{title}</h3>
+            <p className="text-subtle" style={{ fontSize: "1.05rem", lineHeight: 1.6, marginBottom: "1.5rem", flex: 1 }}>{desc}</p>
+
+            <ul style={{ listStyle: "none", padding: 0, margin: "0 0 2rem 0", display: "flex", flexDirection: "column", gap: "10px" }}>
+                {features.map((feature, idx) => (
+                    <li key={idx} style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "0.95rem", color: "var(--text-secondary)" }}>
+                        <CheckCircle size={16} style={{ color: "var(--success)" }} />
+                        {feature}
+                    </li>
+                ))}
+            </ul>
+
+            <Link to="/signup" className="btn-primary" style={{ width: "100%", background: color, border: "none" }}>
+                {btnText} <ArrowRight size={18} />
+            </Link>
+        </motion.div>
     );
 };
 

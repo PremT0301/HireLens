@@ -23,8 +23,7 @@ const Navbar = () => {
     const [isVisible, setIsVisible] = useState(true);
     const [lastScrollY, setLastScrollY] = useState(0);
 
-    // Product Dropdown State
-    const [isProductOpen, setIsProductOpen] = useState(false);
+    // Product Dropdown State (NOT NEEDED ANYMORE)
     const [isAnnouncementVisible, setIsAnnouncementVisible] = useState(true);
 
     // Profile States
@@ -158,11 +157,20 @@ const Navbar = () => {
 
     const userImage = getUserImage();
 
-    const productLinks = [
-        { label: 'AI Resume Analysis', desc: 'Enterprise parsing intelligence', path: '#' },
-        { label: 'Interview Copilot', desc: 'Real-time AI voice coaching', path: '#' },
-        { label: 'Skill Gap Engine', desc: 'Predictive career mapping', path: '#' },
-    ];
+    const handleProductClick = (e) => {
+        e.preventDefault();
+        if (location.pathname !== '/') {
+            navigate('/#products');
+            // The scroll is handled by useEffect in Landing.jsx or logic here
+            // But usually, a hash link works if handled correctly.
+            // Let's ensure it scrolls.
+        } else {
+            const element = document.getElementById('products');
+            if (element) {
+                element.scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+    };
 
     return (
         <>
@@ -222,36 +230,13 @@ const Navbar = () => {
                         {/* Enterprise Links (Public Pages) */}
                         {!userRole && (
                             <div className="desktop-menu" style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
-                                <div
-                                    style={{ position: 'relative' }}
-                                    onMouseEnter={() => setIsProductOpen(true)}
-                                    onMouseLeave={() => setIsProductOpen(false)}
+                                <button
+                                    onClick={handleProductClick}
+                                    className="nav-item-enterprise"
+                                    style={{ background: 'none', border: 'none', cursor: 'pointer' }}
                                 >
-                                    <button className="nav-item-enterprise" style={{ background: 'none', border: 'none', cursor: 'pointer', gap: '6px' }}>
-                                        Product <ChevronDown size={14} />
-                                    </button>
-
-                                    <AnimatePresence>
-                                        {isProductOpen && (
-                                            <motion.div
-                                                initial={{ opacity: 0, y: 10 }}
-                                                animate={{ opacity: 1, y: 0 }}
-                                                exit={{ opacity: 0, y: 10 }}
-                                                className="glass-panel"
-                                                style={{ position: 'absolute', top: '100%', left: 0, width: '300px', padding: '1.25rem', marginTop: '0.75rem', boxShadow: '0 10px 40px rgba(0,0,0,0.1)' }}
-                                            >
-                                                {productLinks.map((link, idx) => (
-                                                    <Link key={idx} to={link.path} className="btn-ghost" style={{ width: '100%', justifyContent: 'flex-start', padding: '14px', textAlign: 'left', marginBottom: '6px', borderRadius: '12px', border: 'none' }}>
-                                                        <div>
-                                                            <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.95rem', marginBottom: '2px' }}>{link.label}</div>
-                                                            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', opacity: 0.8 }}>{link.desc}</div>
-                                                        </div>
-                                                    </Link>
-                                                ))}
-                                            </motion.div>
-                                        )}
-                                    </AnimatePresence>
-                                </div>
+                                    Product
+                                </button>
                                 <NavLink to="/enterprise" className="nav-item-enterprise">Enterprise</NavLink>
                                 <NavLink to="/blog" className="nav-item-enterprise">Blogs</NavLink>
                                 <NavLink to="/pricing" className="nav-item-enterprise">Pricing</NavLink>
