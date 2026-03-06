@@ -22,6 +22,7 @@ import HireLensLoader from '../../components/ui/HireLensLoader';
 import Skeleton, { SkeletonTable } from '../../components/ui/Skeleton';
 import NewsSection from '../../components/NewsSection';
 import { NoApplicationsState } from '../../components/ui/EmptyState';
+import SkillMatrix from '../../components/dashboard/SkillMatrix';
 
 const ApplicantDashboard = () => {
     const navigate = useNavigate();
@@ -172,7 +173,11 @@ const ApplicantDashboard = () => {
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.25rem' }}>
                                 {data?.recommendedJobs?.length > 0 ? (
                                     data.recommendedJobs.map((job, idx) => (
-                                        <JobMatchCard key={idx} job={job} />
+                                        <JobMatchCard
+                                            key={idx}
+                                            job={job}
+                                            isApplied={applications.some(app => app.jobId === job.jobId)}
+                                        />
                                     ))
                                 ) : (
                                     <div style={{ gridColumn: 'span 2', textAlign: 'center', padding: '3rem 2rem' }}>
@@ -399,43 +404,12 @@ const ApplicantDashboard = () => {
                             </div>
                         </div>
 
-                        {/* SKILL GAP INSIGHTS */}
-                        <div className="glass-panel" style={{ padding: '1.5rem' }}>
-                            <h4 style={{ margin: '0 0 1rem', fontSize: '1.1rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                <Brain size={18} color="var(--secondary)" /> Skill Matrix
-                            </h4>
-
-                            <div style={{ marginBottom: '1.5rem' }}>
-                                <label style={{ display: 'block', fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: '8px', letterSpacing: '0.5px' }}>Detected Core Skills</label>
-                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                                    {data?.skillGapInsights?.detectedSkills?.length > 0 ? (
-                                        data.skillGapInsights.detectedSkills.slice(0, 6).map(skill => (
-                                            <span key={skill} className="skill-chip">{skill}</span>
-                                        ))
-                                    ) : (
-                                        <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>None detected yet.</span>
-                                    )}
-                                    {data?.skillGapInsights?.detectedSkills?.length > 6 && <span style={{ fontSize: '0.8rem', color: 'var(--primary)', alignSelf: 'center', paddingLeft: '4px' }}>+{data.skillGapInsights.detectedSkills.length - 6} more</span>}
-                                </div>
-                            </div>
-
-                            <div style={{ marginBottom: '1.5rem' }}>
-                                <label style={{ display: 'block', fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: '8px', letterSpacing: '0.5px' }}>Top Gaps for Current Roles</label>
-                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                                    {data?.skillGapInsights?.missingSkills?.length > 0 ? (
-                                        data.skillGapInsights.missingSkills.map(skill => (
-                                            <span key={skill} className="skill-chip gap">{skill}</span>
-                                        ))
-                                    ) : (
-                                        <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>No gaps identified.</span>
-                                    )}
-                                </div>
-                            </div>
-
-                            <button className="btn-secondary" style={{ width: '100%', padding: '10px', fontSize: '0.9rem' }}>
-                                {data?.skillGapInsights?.improvementCta || 'Learn with AI Copilot'}
-                            </button>
-                        </div>
+                        {/* SKILL MATRIX (REDESIGNED) */}
+                        <SkillMatrix
+                            detectedSkills={data?.skillGapInsights?.detectedSkills}
+                            missingSkills={data?.skillGapInsights?.missingSkills}
+                            improvementCta={data?.skillGapInsights?.improvementCta}
+                        />
 
                         {/* ACTIVITY TIMELINE */}
                         <div className="glass-panel" style={{ padding: '1.5rem' }}>
@@ -585,33 +559,81 @@ const StatCard = ({ label, value, icon, color, trend }) => (
     </ThreeDTiltCard>
 );
 
-const JobMatchCard = ({ job }) => (
-    <div className="job-match-card" style={{
-        padding: '1.25rem',
-        borderRadius: '16px',
-        background: 'rgba(255,255,255,0.03)',
-        border: '1px solid var(--border-color)',
-        transition: 'all 0.3s ease'
-    }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
-            <div>
-                <h4 style={{ margin: '0 0 4px', fontSize: '1.05rem', fontWeight: 700 }}>{job.title}</h4>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-                    <span>{job.companyName}</span>
-                    <span style={{ width: '3px', height: '3px', borderRadius: '50%', background: 'var(--text-secondary)' }}></span>
-                    <span>{job.location}</span>
+const JobMatchCard = ({ job, isApplied }) => {
+    const navigate = useNavigate();
+
+    return (
+        <div className="job-match-card" style={{
+            padding: '1.25rem',
+            borderRadius: '16px',
+            background: 'rgba(255,255,255,0.03)',
+            border: '1px solid var(--border-color)',
+            transition: 'all 0.3s ease',
+            position: 'relative',
+            overflow: 'hidden'
+        }}>
+            {isApplied && (
+                <div style={{
+                    position: 'absolute',
+                    top: '12px',
+                    right: '-35px',
+                    background: 'var(--success)',
+                    color: 'white',
+                    padding: '4px 40px',
+                    fontSize: '0.65rem',
+                    fontWeight: 700,
+                    transform: 'rotate(45deg)',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                    zIndex: 1
+                }}>
+                    APPLIED
+                </div>
+            )}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+                <div style={{ paddingRight: isApplied ? '40px' : '0' }}>
+                    <h4 style={{ margin: '0 0 4px', fontSize: '1.05rem', fontWeight: 700 }}>{job.title}</h4>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                        <span>{job.companyName}</span>
+                        <span style={{ width: '3px', height: '3px', borderRadius: '50%', background: 'var(--text-secondary)' }}></span>
+                        <span>{job.location}</span>
+                    </div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--primary)' }}>{job.matchPercentage}%</div>
+                    <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Match</div>
                 </div>
             </div>
-            <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--primary)' }}>{job.matchPercentage}%</div>
-                <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Match</div>
+            <div style={{ display: 'flex', gap: '8px' }}>
+                <Link to={`/applicant/jobs/${job.jobId}`} className="btn-ghost" style={{ flex: 1, padding: '8px', fontSize: '0.85rem' }}>View Details</Link>
+                {isApplied ? (
+                    <button
+                        disabled
+                        className="btn-nav-primary"
+                        style={{
+                            flex: 0.5,
+                            padding: '8px',
+                            fontSize: '0.85rem',
+                            borderRadius: '8px',
+                            background: 'rgba(16, 185, 129, 0.1)',
+                            border: '1px solid rgba(16, 185, 129, 0.3)',
+                            color: '#10b981',
+                            cursor: 'default'
+                        }}
+                    >
+                        <CheckCircle size={14} style={{ marginRight: '4px' }} /> Applied
+                    </button>
+                ) : (
+                    <button
+                        onClick={() => navigate('/applicant/jobs')}
+                        className="btn-nav-primary"
+                        style={{ flex: 0.5, padding: '8px', fontSize: '0.85rem', borderRadius: '8px' }}
+                    >
+                        Apply
+                    </button>
+                )}
             </div>
         </div>
-        <div style={{ display: 'flex', gap: '8px' }}>
-            <Link to={`/applicant/jobs/${job.jobId}`} className="btn-ghost" style={{ flex: 1, padding: '8px', fontSize: '0.85rem' }}>View Details</Link>
-            <button className="btn-nav-primary" style={{ flex: 0.5, padding: '8px', fontSize: '0.85rem', borderRadius: '8px' }}>Apply</button>
-        </div>
-    </div>
-);
+    );
+};
 
 export default ApplicantDashboard;
