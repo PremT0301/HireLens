@@ -16,7 +16,7 @@ obj/
 
 # Sensitive files
 backend/SmartHireAI.Backend/appsettings.json
-
+MASTER_GUIDE.md
 PROJECT_STATUS.md
 PROJECT_TIMELINE.md
 QUICKSTART.md

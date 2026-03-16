@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Send, Mic, Loader2, Plus, MessageSquare, Trash2, X, AlertTriangle } from 'lucide-react';
+import { Send, Loader2, Plus, MessageSquare, Trash2, X, AlertTriangle } from 'lucide-react';
 import Skeleton from '../../components/ui/Skeleton';
 import { NoSessionsState } from '../../components/ui/EmptyState';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -251,15 +251,16 @@ const InterviewCopilot = () => {
     };
 
     return (
-        <div style={{ height: 'calc(100vh - 180px)', display: 'flex', gap: '20px', marginBottom: '20px' }}>
+        <div style={{ height: 'calc(100vh - 80px)', display: 'flex', gap: '20px', paddingBottom: '20px', boxSizing: 'border-box' }}>
 
             {/* Left Sidebar: Previous Chats */}
-            <div className="glass-panel" style={{ width: '300px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-                <div style={{ padding: '20px', borderBottom: '1px solid var(--glass-border)' }}>
-                    <h2 style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>History</h2>
+            {/* Left Sidebar */}
+            <div className="glass-panel" style={{ width: '300px', display: 'flex', flexDirection: 'column', overflow: 'hidden', alignSelf: 'stretch' }}>
+                <div style={{ padding: '20px 20px 16px', borderBottom: '1px solid var(--glass-border)' }}>
+                    <h2 style={{ fontSize: '1.2rem', fontWeight: 'bold', margin: 0 }}>History</h2>
                 </div>
-                <div style={{ flex: 1, overflowY: 'auto', padding: '15px' }}>
 
+                <div style={{ flex: 1, overflowY: 'auto', padding: '12px' }}>
                     {sessionsLoading ? (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                             {[1, 2, 3].map(i => (
@@ -267,7 +268,9 @@ const InterviewCopilot = () => {
                             ))}
                         </div>
                     ) : sessions.length === 0 ? (
-                        <NoSessionsState onAction={startNewChat} variant="sidebar" />
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', padding: '24px 16px', textAlign: 'center', gap: '12px' }}>
+                            <NoSessionsState onAction={startNewChat} variant="sidebar" />
+                        </div>
                     ) : (
                         sessions.map(session => (
                             <div
@@ -278,7 +281,7 @@ const InterviewCopilot = () => {
                                     padding: '12px',
                                     borderRadius: '8px',
                                     background: currentSessionId === session.id ? 'rgba(79, 70, 229, 0.2)' : 'rgba(255,255,255,0.05)',
-                                    marginBottom: '10px',
+                                    marginBottom: '8px',
                                     cursor: 'pointer',
                                     display: 'flex',
                                     alignItems: 'center',
@@ -287,7 +290,7 @@ const InterviewCopilot = () => {
                                     position: 'relative'
                                 }}
                             >
-                                <MessageSquare size={18} style={{ color: 'var(--primary)', opacity: 0.8 }} />
+                                <MessageSquare size={18} style={{ color: 'var(--primary)', opacity: 0.8, flexShrink: 0 }} />
                                 <div style={{ overflow: 'hidden', flex: 1 }}>
                                     <div style={{ fontWeight: '600', fontSize: '0.9rem', marginBottom: '4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{session.title}</div>
                                     <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
@@ -302,7 +305,8 @@ const InterviewCopilot = () => {
                                         color: 'var(--text-secondary)',
                                         opacity: 0.6,
                                         cursor: 'pointer',
-                                        padding: '4px'
+                                        padding: '4px',
+                                        flexShrink: 0
                                     }}
                                     onMouseEnter={(e) => e.currentTarget.style.color = 'var(--error)'}
                                     onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-secondary)'}
@@ -313,30 +317,30 @@ const InterviewCopilot = () => {
                             </div>
                         ))
                     )}
-
                 </div>
-                <div style={{ padding: '15px', borderTop: '1px solid var(--glass-border)' }}>
+
+                {/* New Interview button — full-width, anchored to bottom */}
+                <div style={{ padding: '16px', borderTop: '1px solid var(--glass-border)', flexShrink: 0 }}>
                     <button
                         onClick={startNewChat}
                         className="btn-primary"
-                        style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                        style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px 0' }}
                     >
                         <Plus size={18} />
-                        <span>New Interview</span>
+                        <span>+ New Interview</span>
                     </button>
                 </div>
             </div>
 
             {/* Main Chat Area */}
-            <div className="glass-panel" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-                <div style={{ padding: '20px', borderBottom: '1px solid var(--glass-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <h2 style={{ fontSize: '1.2rem', fontWeight: '600' }}>
+            <div className="glass-panel" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', alignSelf: 'stretch' }}>
+                <div style={{ padding: '20px 24px 16px', borderBottom: '1px solid var(--glass-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+                    <h2 style={{ fontSize: '1.2rem', fontWeight: '600', margin: 0 }}>
                         {currentSessionId ? 'Current Session' : 'Select or Start a Session'}
                     </h2>
-
                 </div>
 
-                <div style={{ flex: 1, padding: '20px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                <div style={{ flex: 1, padding: '24px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16px', alignItems: 'stretch' }}>
                     {messages.map((msg, index) => (
                         <motion.div
                             initial={{ opacity: 0, y: 10 }}
@@ -345,6 +349,7 @@ const InterviewCopilot = () => {
                             style={{
                                 alignSelf: msg.sender === 'user' ? 'flex-end' : 'flex-start',
                                 maxWidth: '80%',
+                                width: msg.sender === 'ai' ? 'auto' : undefined,
                             }}
                         >
                             <div style={{
@@ -392,6 +397,47 @@ const InterviewCopilot = () => {
                         </motion.div>
                     ))}
 
+                    {/* Feature highlights — only shown on fresh/greeting state */}
+                    {!currentSessionId && messages.length === 1 && !isLoading && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 12 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.15 }}
+                            style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', paddingBottom: '8px' }}
+                        >
+                            <div style={{
+                                background: 'rgba(255,255,255,0.04)',
+                                border: '1px solid var(--glass-border)',
+                                borderRadius: '16px',
+                                padding: '24px 28px',
+                                maxWidth: '560px',
+                                width: '100%',
+                                alignSelf: 'center'
+                            }}>
+                                <div style={{ fontSize: '0.78rem', fontWeight: '600', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: '18px' }}>
+                                    What your Copilot can do
+                                </div>
+                                {[
+                                    { icon: '🎯', text: 'Practice role-specific interview questions' },
+                                    { icon: '🧠', text: 'Get instant AI feedback on your answers' },
+                                    { icon: '📄', text: 'Refine responses based on your resume' },
+                                    { icon: '🔁', text: 'Retry questions to improve your score' },
+                                ].map((item, i) => (
+                                    <div key={i} style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '14px',
+                                        padding: '10px 0',
+                                        borderBottom: i < 3 ? '1px solid var(--glass-border)' : 'none'
+                                    }}>
+                                        <span style={{ fontSize: '1.2rem', lineHeight: 1, flexShrink: 0 }}>{item.icon}</span>
+                                        <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: '1.4' }}>{item.text}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </motion.div>
+                    )}
+
                     {isLoading && (
                         <motion.div
                             initial={{ opacity: 0 }}
@@ -415,22 +461,64 @@ const InterviewCopilot = () => {
                     )}
                 </div>
 
+                {/* Input Bar */}
                 <div style={{
-                    padding: '20px 20px 30px',
+                    padding: '8px 24px 24px',
                     background: 'var(--glass-bg)',
                     borderTop: '1px solid var(--glass-border)',
-                    marginTop: 'auto'
+                    flexShrink: 0
                 }}>
-                    <div style={{ display: 'flex', gap: '10px' }}>
-                        <button className="btn-ghost" style={{ padding: '12px', borderRadius: '50%', border: '1px solid var(--glass-border)' }}>
-                            <Mic size={20} />
-                        </button>
+                    {/* Suggestion chips — only on fresh state */}
+                    {!currentSessionId && messages.length === 1 && !isLoading && (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ delay: 0.2 }}
+                            style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '12px' }}
+                        >
+                            {[
+                                'Help me prepare for a React developer interview',
+                                'Give me a system design question',
+                                "How do I answer 'Tell me about yourself'?",
+                                'Practice a data structures question with me',
+                            ].map((suggestion, i) => (
+                                <button
+                                    key={i}
+                                    onClick={() => setInput(suggestion)}
+                                    style={{
+                                        background: 'rgba(255,255,255,0.05)',
+                                        border: '1px solid var(--glass-border)',
+                                        borderRadius: '20px',
+                                        padding: '6px 14px',
+                                        fontSize: '0.82rem',
+                                        color: 'var(--text-secondary)',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.15s ease',
+                                        whiteSpace: 'nowrap'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.style.background = 'rgba(79,70,229,0.15)';
+                                        e.currentTarget.style.borderColor = 'var(--primary)';
+                                        e.currentTarget.style.color = 'var(--text-primary)';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+                                        e.currentTarget.style.borderColor = 'var(--glass-border)';
+                                        e.currentTarget.style.color = 'var(--text-secondary)';
+                                    }}
+                                >
+                                    {suggestion}
+                                </button>
+                            ))}
+                        </motion.div>
+                    )}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(255,255,255,0.04)', borderRadius: '12px', border: '1px solid var(--glass-border)', padding: '4px 4px 4px 16px' }}>
                         <input
                             type="text"
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && !isLoading && handleSend()}
-                            placeholder="Type or speak your answer..."
+                            placeholder="Type your answer..."
                             disabled={isLoading}
                             style={{
                                 flex: 1,
@@ -439,14 +527,15 @@ const InterviewCopilot = () => {
                                 outline: 'none',
                                 color: 'var(--text-primary)',
                                 fontSize: '1rem',
-                                opacity: isLoading ? 0.7 : 1
+                                opacity: isLoading ? 0.7 : 1,
+                                padding: '8px 0'
                             }}
                         />
                         <button
                             onClick={handleSend}
                             className="btn-primary"
                             disabled={isLoading}
-                            style={{ padding: '10px 15px', display: 'flex', alignItems: 'center', opacity: isLoading ? 0.7 : 1, cursor: isLoading ? 'not-allowed' : 'pointer' }}
+                            style={{ padding: '10px 16px', display: 'flex', alignItems: 'center', borderRadius: '10px', opacity: isLoading ? 0.7 : 1, cursor: isLoading ? 'not-allowed' : 'pointer', flexShrink: 0 }}
                         >
                             <Send size={18} />
                         </button>
