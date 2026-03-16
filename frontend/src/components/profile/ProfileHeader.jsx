@@ -1,10 +1,24 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { Camera } from 'lucide-react';
 
+const BACKEND_URL = 'http://localhost:5033';
+
+const getImageUrl = (path) => {
+    if (!path) return null;
+    if (path.startsWith('data:') || path.startsWith('http')) return path;
+    return `${BACKEND_URL}${path}`;
+};
+
 const ProfileHeader = ({ userData, onPhotoUpload }) => {
     const { user } = useAuth();
-    const [preview, setPreview] = useState(userData?.profileImage || '/default-avatar.png');
+    const [preview, setPreview] = useState(null);
+
+    // Sync preview whenever userData loads or changes (it arrives async)
+    useEffect(() => {
+        const img = userData?.profileImage || userData?.ProfileImage;
+        setPreview(img ? getImageUrl(img) : null);
+    }, [userData]);
 
     const handleFileChange = (e) => {
         const file = e.target.files[0];
@@ -24,12 +38,22 @@ const ProfileHeader = ({ userData, onPhotoUpload }) => {
             <div className="header-content">
                 <div className="profile-photo-wrapper">
                     <div className="avatar-container">
-                        <img
-                            src={preview}
-                            alt="Profile"
-                            className="profile-avatar-large"
-                            onError={(e) => { e.target.src = '/default-avatar.png'; }}
-                        />
+                        {preview ? (
+                            <img
+                                src={preview}
+                                alt="Profile"
+                                className="profile-avatar-large"
+                                onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling && (e.target.nextSibling.style.display = 'flex'); }}
+                            />
+                        ) : (
+                            <div className="profile-avatar-large" style={{
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
+                                color: 'white', fontSize: '2rem', fontWeight: '700', borderRadius: '50%'
+                            }}>
+                                {(userData?.fullName || user?.fullName)?.charAt(0)?.toUpperCase() || '?'}
+                            </div>
+                        )}
                         <label htmlFor="photo-upload" className="photo-upload-trigger">
                             <Camera size={20} />
                             <input

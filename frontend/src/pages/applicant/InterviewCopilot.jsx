@@ -12,9 +12,7 @@ import ConfirmModal from '../../components/ui/ConfirmModal';
 
 const InterviewCopilot = () => {
     // ... existing state ...
-    const [messages, setMessages] = useState([
-        { id: 1, sender: 'ai', text: "Hello! I'm your Interview Copilot. I can help you practice technical questions or refine your answers. What role are you preparing for?" }
-    ]);
+    const [messages, setMessages] = useState([]);
     const [input, setInput] = useState('');
     const [confidence, setConfidence] = useState(0);
     const [isLoading, setIsLoading] = useState(false);
@@ -90,9 +88,7 @@ const InterviewCopilot = () => {
 
     const startNewChat = () => {
         setCurrentSessionId(null);
-        setMessages([
-            { id: Date.now(), sender: 'ai', text: "Hello! I'm your Interview Copilot. I can help you practice technical questions or refine your answers. What role are you preparing for?" }
-        ]);
+        setMessages([]);
     };
 
 
@@ -251,7 +247,7 @@ const InterviewCopilot = () => {
     };
 
     return (
-        <div style={{ height: 'calc(100vh - 80px)', display: 'flex', gap: '20px', paddingBottom: '20px', boxSizing: 'border-box' }}>
+        <div style={{ height: 'calc(100vh - 80px)', display: 'flex', gap: '20px', paddingTop: '24px', paddingBottom: '20px', boxSizing: 'border-box' }}>
 
             {/* Left Sidebar: Previous Chats */}
             {/* Left Sidebar */}
@@ -340,7 +336,92 @@ const InterviewCopilot = () => {
                     </h2>
                 </div>
 
-                <div style={{ flex: 1, padding: '24px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16px', alignItems: 'stretch' }}>
+                <div style={{ flex: 1, padding: '24px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    {/* Empty state — shown only when no messages exist */}
+                    {messages.length === 0 && !isLoading && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 16 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.3 }}
+                            style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '32px' }}
+                        >
+                            {/* Feature highlights card */}
+                            <div style={{
+                                background: 'rgba(255,255,255,0.04)',
+                                border: '1px solid var(--glass-border)',
+                                borderRadius: '16px',
+                                padding: '28px 32px',
+                                width: '100%',
+                                maxWidth: '520px',
+                                margin: '0 auto'
+                            }}>
+                                <div style={{ fontSize: '0.75rem', fontWeight: '700', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: '20px' }}>
+                                    What Your Copilot Can Do
+                                </div>
+                                {[
+                                    { icon: '🎯', text: 'Practice role-specific interview questions' },
+                                    { icon: '🧠', text: 'Get instant AI feedback on your answers' },
+                                    { icon: '📄', text: 'Refine responses based on your resume' },
+                                    { icon: '🔁', text: 'Retry questions to improve your score' },
+                                ].map((item, i) => (
+                                    <div key={i} style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '14px',
+                                        padding: '11px 0',
+                                        borderBottom: i < 3 ? '1px solid var(--glass-border)' : 'none'
+                                    }}>
+                                        <span style={{ fontSize: '1.15rem', lineHeight: 1, flexShrink: 0 }}>{item.icon}</span>
+                                        <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: '1.4' }}>{item.text}</span>
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* Suggestion chips */}
+                            <div style={{ width: '100%', maxWidth: '520px', margin: '0 auto' }}>
+                                <div style={{ fontSize: '0.75rem', fontWeight: '600', color: 'var(--text-secondary)', marginBottom: '10px', letterSpacing: '0.02em' }}>
+                                    Try asking...
+                                </div>
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                                    {[
+                                        'Help me prepare for a React developer interview',
+                                        'Give me a system design question',
+                                        "How do I answer 'Tell me about yourself'?",
+                                        'Practice a data structures question with me',
+                                    ].map((suggestion, i) => (
+                                        <button
+                                            key={i}
+                                            onClick={() => setInput(suggestion)}
+                                            style={{
+                                                background: 'rgba(255,255,255,0.05)',
+                                                border: '1px solid var(--glass-border)',
+                                                borderRadius: '20px',
+                                                padding: '7px 16px',
+                                                fontSize: '0.83rem',
+                                                color: 'var(--text-secondary)',
+                                                cursor: 'pointer',
+                                                transition: 'all 0.15s ease',
+                                            }}
+                                            onMouseEnter={(e) => {
+                                                e.currentTarget.style.background = 'rgba(79,70,229,0.15)';
+                                                e.currentTarget.style.borderColor = 'var(--primary)';
+                                                e.currentTarget.style.color = 'var(--text-primary)';
+                                            }}
+                                            onMouseLeave={(e) => {
+                                                e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+                                                e.currentTarget.style.borderColor = 'var(--glass-border)';
+                                                e.currentTarget.style.color = 'var(--text-secondary)';
+                                            }}
+                                        >
+                                            {suggestion}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        </motion.div>
+                    )}
+
+                    {/* Conversation messages */}
                     {messages.map((msg, index) => (
                         <motion.div
                             initial={{ opacity: 0, y: 10 }}
@@ -349,7 +430,6 @@ const InterviewCopilot = () => {
                             style={{
                                 alignSelf: msg.sender === 'user' ? 'flex-end' : 'flex-start',
                                 maxWidth: '80%',
-                                width: msg.sender === 'ai' ? 'auto' : undefined,
                             }}
                         >
                             <div style={{
@@ -397,47 +477,6 @@ const InterviewCopilot = () => {
                         </motion.div>
                     ))}
 
-                    {/* Feature highlights — only shown on fresh/greeting state */}
-                    {!currentSessionId && messages.length === 1 && !isLoading && (
-                        <motion.div
-                            initial={{ opacity: 0, y: 12 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.15 }}
-                            style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', paddingBottom: '8px' }}
-                        >
-                            <div style={{
-                                background: 'rgba(255,255,255,0.04)',
-                                border: '1px solid var(--glass-border)',
-                                borderRadius: '16px',
-                                padding: '24px 28px',
-                                maxWidth: '560px',
-                                width: '100%',
-                                alignSelf: 'center'
-                            }}>
-                                <div style={{ fontSize: '0.78rem', fontWeight: '600', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: '18px' }}>
-                                    What your Copilot can do
-                                </div>
-                                {[
-                                    { icon: '🎯', text: 'Practice role-specific interview questions' },
-                                    { icon: '🧠', text: 'Get instant AI feedback on your answers' },
-                                    { icon: '📄', text: 'Refine responses based on your resume' },
-                                    { icon: '🔁', text: 'Retry questions to improve your score' },
-                                ].map((item, i) => (
-                                    <div key={i} style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '14px',
-                                        padding: '10px 0',
-                                        borderBottom: i < 3 ? '1px solid var(--glass-border)' : 'none'
-                                    }}>
-                                        <span style={{ fontSize: '1.2rem', lineHeight: 1, flexShrink: 0 }}>{item.icon}</span>
-                                        <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: '1.4' }}>{item.text}</span>
-                                    </div>
-                                ))}
-                            </div>
-                        </motion.div>
-                    )}
-
                     {isLoading && (
                         <motion.div
                             initial={{ opacity: 0 }}
@@ -463,55 +502,11 @@ const InterviewCopilot = () => {
 
                 {/* Input Bar */}
                 <div style={{
-                    padding: '8px 24px 24px',
+                    padding: '16px 24px 24px',
                     background: 'var(--glass-bg)',
                     borderTop: '1px solid var(--glass-border)',
                     flexShrink: 0
                 }}>
-                    {/* Suggestion chips — only on fresh state */}
-                    {!currentSessionId && messages.length === 1 && !isLoading && (
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ delay: 0.2 }}
-                            style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '12px' }}
-                        >
-                            {[
-                                'Help me prepare for a React developer interview',
-                                'Give me a system design question',
-                                "How do I answer 'Tell me about yourself'?",
-                                'Practice a data structures question with me',
-                            ].map((suggestion, i) => (
-                                <button
-                                    key={i}
-                                    onClick={() => setInput(suggestion)}
-                                    style={{
-                                        background: 'rgba(255,255,255,0.05)',
-                                        border: '1px solid var(--glass-border)',
-                                        borderRadius: '20px',
-                                        padding: '6px 14px',
-                                        fontSize: '0.82rem',
-                                        color: 'var(--text-secondary)',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.15s ease',
-                                        whiteSpace: 'nowrap'
-                                    }}
-                                    onMouseEnter={(e) => {
-                                        e.currentTarget.style.background = 'rgba(79,70,229,0.15)';
-                                        e.currentTarget.style.borderColor = 'var(--primary)';
-                                        e.currentTarget.style.color = 'var(--text-primary)';
-                                    }}
-                                    onMouseLeave={(e) => {
-                                        e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
-                                        e.currentTarget.style.borderColor = 'var(--glass-border)';
-                                        e.currentTarget.style.color = 'var(--text-secondary)';
-                                    }}
-                                >
-                                    {suggestion}
-                                </button>
-                            ))}
-                        </motion.div>
-                    )}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(255,255,255,0.04)', borderRadius: '12px', border: '1px solid var(--glass-border)', padding: '4px 4px 4px 16px' }}>
                         <input
                             type="text"
