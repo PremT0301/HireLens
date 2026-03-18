@@ -97,6 +97,7 @@ This section details every feature available in the application.
 *   **Unified Login**: A robust login system supporting three distinct personas.
 *   **Role Selection**: Users can toggle between **Applicant**, **Recruiter**, and **Admin** modes.
 *   **Secure Access**: Role-Based Access Control (RBAC) ensures users only see relevant dashboards.
+*   **Account Recovery**: Secure 3-step "Forgot Password" flow using OTP verification and short-lived reset tokens.
 
 ### 2. Applicant Portal
 *   **🏠 Applicant Home & Dashboard**: Personalised greeting and "At a Glance" stats.
