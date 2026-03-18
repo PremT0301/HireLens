@@ -19,7 +19,6 @@ public class AuthController : ControllerBase
         _logger = logger;
     }
 
-
     [HttpPost("register")]
     public async Task<ActionResult<AuthResponseDto>> Register([FromForm] UserRegisterRequest request)
     {
@@ -47,17 +46,15 @@ public class AuthController : ControllerBase
             _logger.LogError(ex, "Login failed for email: {Email}", request.Email);
 
             if (ex.Message.Contains("Invalid credentials"))
-            {
                 return Unauthorized(new { message = ex.Message });
-            }
+
             if (ex.Message.Contains("not verified") || ex.Message.Contains("verify-email") || ex.Message.Contains("deactivated"))
-            {
                 return StatusCode(403, new { message = ex.Message });
-            }
 
             return BadRequest(new { message = ex.Message });
         }
     }
+
     [HttpPost("send-email-otp")]
     public async Task<IActionResult> SendEmailOtp([FromQuery] string email)
     {
@@ -88,4 +85,72 @@ public class AuthController : ControllerBase
         }
     }
 
+    // ====================================
+    // FORGOT PASSWORD — STEP 1
+    // ====================================
+    [HttpPost("forgot-password")]
+    public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDto request)
+    {
+        try
+        {
+            await _authService.ForgotPasswordAsync(request.Email);
+        }
+        catch (Exception ex)
+        {
+            // Log internally but never expose to client (anti-enumeration)
+            _logger.LogError(ex, "ForgotPassword internal error for {Email}", request.Email);
+        }
+        // Always return 200 to prevent email enumeration
+        return Ok(new { message = "If this email exists, a reset code was sent." });
+    }
+
+    // ====================================
+    // FORGOT PASSWORD — STEP 2 (Verify OTP)
+    // ====================================
+    [HttpPost("verify-reset-otp")]
+    public async Task<IActionResult> VerifyResetOtp([FromBody] VerifyResetOtpDto request)
+    {
+        try
+        {
+            var result = await _authService.VerifyPasswordResetOtpAsync(request.Email, request.Otp);
+            return Ok(result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            // Too many attempts — 429
+            return StatusCode(429, new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    // ====================================
+    // FORGOT PASSWORD — STEP 3 (Reset Password)
+    // ====================================
+    [HttpPost("reset-password")]
+    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDto request)
+    {
+        // Extract Bearer token manually (short-lived reset JWT, not the main auth JWT)
+        var authHeader = Request.Headers["Authorization"].FirstOrDefault();
+        if (string.IsNullOrEmpty(authHeader) || !authHeader.StartsWith("Bearer "))
+            return Unauthorized(new { message = "Reset token is required." });
+
+        var resetToken = authHeader.Substring("Bearer ".Length).Trim();
+
+        try
+        {
+            await _authService.ResetPasswordAsync(resetToken, request.NewPassword, request.ConfirmPassword);
+            return Ok(new { message = "Password updated successfully." });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Unauthorized(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
 }

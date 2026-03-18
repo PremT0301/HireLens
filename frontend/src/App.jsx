@@ -8,6 +8,7 @@ import Landing from './pages/Landing';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import VerifyEmail from './pages/VerifyEmail';
+import ForgotPassword from './pages/ForgotPassword';
 import ApplicantLayout from './components/ApplicantLayout';
 import ApplicantDashboard from './pages/applicant/ApplicantDashboard';
 import Jobs from './pages/applicant/Jobs';
@@ -58,6 +59,7 @@ const AnimatedRoutes = () => {
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/verify-email" element={<VerifyEmail />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/blog" element={<Blog />} />
           <Route path="/blog/:slug" element={<BlogDetail />} />
           <Route path="/release-notes" element={<ReleaseNotes />} />
@@ -143,7 +145,7 @@ const AppContent = () => {
 
   // Hide default navbar for admin pages as AdminLayout has its own
   const isAdminRoute = location.pathname.startsWith('/admin');
-  const hideNavAndFooter = ['/login', '/signup', '/verify-email'];
+  const hideNavAndFooter = ['/login', '/signup', '/verify-email', '/forgot-password'];
   const shouldHide = hideNavAndFooter.includes(location.pathname) || isAdminRoute;
 
   // Notification Polling

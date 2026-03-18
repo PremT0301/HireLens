@@ -212,6 +212,45 @@ const AuthService = {
     verifyEmailOtp: async (email, otp) => {
         const response = await api.post("/auth/verify-email-otp", { identifier: email, otp });
         return response.data;
+    },
+
+    // ======================
+    // FORGOT PASSWORD
+    // ======================
+    forgotPassword: async (email) => {
+        try {
+            const response = await api.post("/auth/forgot-password", { email });
+            return response.data;
+        } catch (error) {
+            const msg = error.response?.data?.message || error.message || "Unable to connect to server";
+            throw { message: msg };
+        }
+    },
+
+    verifyResetOtp: async (email, otp) => {
+        try {
+            const response = await api.post("/auth/verify-reset-otp", { email, otp });
+            return response.data; // { resetToken, message }
+        } catch (error) {
+            const msg = error.response?.data?.message || error.message || "Invalid code";
+            const status = error.response?.status;
+            throw { message: msg, status };
+        }
+    },
+
+    resetPassword: async (resetToken, newPassword, confirmPassword) => {
+        try {
+            // Use the reset token as Bearer, NOT the session auth token
+            const response = await api.post(
+                "/auth/reset-password",
+                { newPassword, confirmPassword },
+                { headers: { Authorization: `Bearer ${resetToken}` } }
+            );
+            return response.data;
+        } catch (error) {
+            const msg = error.response?.data?.message || error.message || "Reset failed";
+            throw { message: msg };
+        }
     }
 };
 

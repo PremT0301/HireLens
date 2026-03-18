@@ -376,6 +376,265 @@ public class AuthService : IAuthService
     public Task<bool> SendMobileOtpAsync(string mobileNumber) => Task.FromResult(false);
     public Task<bool> VerifyMobileOtpAsync(string mobileNumber, string otp) => Task.FromResult(false);
 
+    // =====================================
+    // FORGOT PASSWORD — STEP 1
+    // =====================================
+    public async Task ForgotPasswordAsync(string email)
+    {
+        // Always respond 200 to prevent email enumeration
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
+        if (user == null || !user.IsActive || !user.IsEmailVerified)
+        {
+            await LogSystemEventAsync("Auth", "ForgotPassword requested for unknown/inactive/unverified email.", null, "Info");
+            return;
+        }
+
+        // Generate cryptographically secure 6-digit OTP
+        int otpInt = System.Security.Cryptography.RandomNumberGenerator.GetInt32(100000, 1000000);
+        string otp = otpInt.ToString("D6");
+        string otpHash = HashOtp(otp);
+
+        // Upsert OtpVerification record
+        var existing = await _context.OtpVerifications.FirstOrDefaultAsync(v =>
+            v.Identifier == email && v.Type == OtpType.PasswordReset);
+
+        if (existing != null)
+        {
+            existing.OtpHash = otpHash;
+            existing.Expiry = DateTime.UtcNow.AddMinutes(5);
+            existing.Attempts = 0;
+            existing.IsVerified = false;
+            existing.LockedUntil = null;
+            existing.UpdatedAt = DateTime.UtcNow;
+        }
+        else
+        {
+            _context.OtpVerifications.Add(new OtpVerification
+            {
+                OtpId = Guid.NewGuid(),
+                Identifier = email,
+                Type = OtpType.PasswordReset,
+                OtpHash = otpHash,
+                Expiry = DateTime.UtcNow.AddMinutes(5),
+                Attempts = 0,
+                IsVerified = false,
+                UpdatedAt = DateTime.UtcNow
+            });
+        }
+
+        await _context.SaveChangesAsync();
+
+        // Send branded HTML email
+        string emailBody = $@"
+            <div style='font-family:Inter,Arial,sans-serif;max-width:560px;margin:0 auto;padding:32px;background:#0f172a;border-radius:16px;border:1px solid rgba(255,255,255,0.08);'>
+                <div style='text-align:center;margin-bottom:28px;'>
+                    <h1 style='font-size:1.6rem;font-weight:800;color:#3b82f6;margin:0;'>HireLens<span style='color:#e5e7eb;'>AI</span></h1>
+                </div>
+                <h2 style='color:#e5e7eb;font-size:1.3rem;font-weight:700;margin-bottom:12px;'>Password Reset Request</h2>
+                <p style='color:#94a3b8;line-height:1.6;margin-bottom:24px;'>
+                    We received a request to reset your password. Use the code below to proceed.
+                    This code is valid for <strong style='color:#e5e7eb;'>5 minutes</strong>.
+                </p>
+                <div style='background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.3);border-radius:12px;padding:24px;text-align:center;margin-bottom:24px;'>
+                    <span style='font-size:2.5rem;font-weight:800;letter-spacing:12px;color:#3b82f6;'>{otp}</span>
+                </div>
+                <p style='color:#64748b;font-size:0.85rem;line-height:1.6;'>
+                    If you did not request a password reset, you can safely ignore this email.
+                    Never share this code with anyone.
+                </p>
+                <div style='margin-top:28px;padding-top:20px;border-top:1px solid rgba(255,255,255,0.06);text-align:center;'>
+                    <p style='color:#475569;font-size:0.8rem;margin:0;'>© HireLens AI — AI-Powered Recruitment Platform</p>
+                </div>
+            </div>";
+
+        await _emailService.SendEmailAsync(email, "HireLens AI — Password Reset Code", emailBody);
+        await LogSystemEventAsync("Auth", $"Password reset OTP sent to {email}.", user.UserId, "Info");
+    }
+
+    // =====================================
+    // FORGOT PASSWORD — STEP 2 (Verify OTP)
+    // =====================================
+    public async Task<ResetTokenResponseDto> VerifyPasswordResetOtpAsync(string email, string otp)
+    {
+        var verification = await _context.OtpVerifications.FirstOrDefaultAsync(v =>
+            v.Identifier == email && v.Type == OtpType.PasswordReset && !v.IsVerified);
+
+        if (verification == null)
+            throw new Exception("No active password reset request found for this email.");
+
+        // Lock check
+        if (verification.LockedUntil.HasValue && verification.LockedUntil > DateTime.UtcNow)
+        {
+            var remaining = (int)(verification.LockedUntil.Value - DateTime.UtcNow).TotalMinutes + 1;
+            throw new InvalidOperationException($"Too many failed attempts. Try again in {remaining} minute(s).");
+        }
+
+        // Expiry check
+        if (verification.Expiry < DateTime.UtcNow)
+            throw new Exception("Reset code has expired. Please request a new one.");
+
+        // OTP match check
+        if (!VerifyOtp(otp, verification.OtpHash))
+        {
+            verification.Attempts++;
+            if (verification.Attempts >= 5)
+                verification.LockedUntil = DateTime.UtcNow.AddMinutes(10);
+            await _context.SaveChangesAsync();
+            throw new Exception($"Invalid code. {Math.Max(0, 5 - verification.Attempts)} attempt(s) remaining.");
+        }
+
+        // Success — mark as verified
+        verification.IsVerified = true;
+        await _context.SaveChangesAsync();
+
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
+        if (user == null) throw new Exception("User not found.");
+
+        var resetToken = GeneratePasswordResetToken(user);
+        await LogSystemEventAsync("Auth", $"Password reset OTP verified for {email}.", user.UserId, "Info");
+
+        return new ResetTokenResponseDto
+        {
+            ResetToken = resetToken,
+            Message = "OTP verified. Use the reset token to set your new password."
+        };
+    }
+
+    // =====================================
+    // FORGOT PASSWORD — STEP 3 (Reset)
+    // =====================================
+    public async Task ResetPasswordAsync(string resetToken, string newPassword, string confirmPassword)
+    {
+        // Validate the reset token
+        var jwtSettings = _configuration.GetSection("JwtSettings");
+        var key = Encoding.ASCII.GetBytes(jwtSettings["Secret"]!);
+        var tokenHandler = new JwtSecurityTokenHandler();
+        ClaimsPrincipal principal;
+        try
+        {
+            principal = tokenHandler.ValidateToken(resetToken, new TokenValidationParameters
+            {
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = new SymmetricSecurityKey(key),
+                ValidateIssuer = true,
+                ValidIssuer = jwtSettings["Issuer"],
+                ValidateAudience = true,
+                ValidAudience = jwtSettings["Audience"],
+                ClockSkew = TimeSpan.Zero
+            }, out _);
+        }
+        catch
+        {
+            throw new UnauthorizedAccessException("Invalid or expired reset token.");
+        }
+
+        var purpose = principal.FindFirstValue("purpose");
+        if (purpose != "password_reset")
+            throw new UnauthorizedAccessException("Invalid reset token purpose.");
+
+        var userIdStr = principal.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!Guid.TryParse(userIdStr, out var userId))
+            throw new UnauthorizedAccessException("Invalid token claims.");
+
+        // Password validation
+        if (newPassword != confirmPassword)
+            throw new Exception("Passwords do not match.");
+        if (!IsPasswordStrong(newPassword))
+            throw new Exception("Password must be at least 8 characters and contain at least one uppercase letter and one number.");
+
+        var user = await _context.Users.FindAsync(userId);
+        if (user == null || !user.IsActive)
+            throw new Exception("User not found or account is inactive.");
+
+        // Hash and update password
+        user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
+        user.UpdatedAt = DateTime.UtcNow;
+
+        // Invalidate all PasswordReset OTP records for this user (prevent replay)
+        var otpRecords = await _context.OtpVerifications
+            .Where(v => v.Identifier == user.Email && v.Type == OtpType.PasswordReset)
+            .ToListAsync();
+        _context.OtpVerifications.RemoveRange(otpRecords);
+
+        await _context.SaveChangesAsync();
+
+        // Send confirmation email
+        string confirmBody = $@"
+            <div style='font-family:Inter,Arial,sans-serif;max-width:560px;margin:0 auto;padding:32px;background:#0f172a;border-radius:16px;border:1px solid rgba(255,255,255,0.08);'>
+                <div style='text-align:center;margin-bottom:28px;'>
+                    <h1 style='font-size:1.6rem;font-weight:800;color:#3b82f6;margin:0;'>HireLens<span style='color:#e5e7eb;'>AI</span></h1>
+                </div>
+                <div style='text-align:center;margin-bottom:20px;'>
+                    <div style='display:inline-block;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.3);border-radius:50%;width:64px;height:64px;line-height:64px;font-size:2rem;'>✓</div>
+                </div>
+                <h2 style='color:#e5e7eb;font-size:1.3rem;font-weight:700;text-align:center;margin-bottom:12px;'>Password Updated Successfully</h2>
+                <p style='color:#94a3b8;line-height:1.6;text-align:center;margin-bottom:24px;'>
+                    Your HireLens AI account password has been reset. You can now log in with your new password.
+                </p>
+                <p style='color:#64748b;font-size:0.85rem;line-height:1.6;text-align:center;'>
+                    If you did not make this change, please contact support immediately.
+                </p>
+                <div style='margin-top:28px;padding-top:20px;border-top:1px solid rgba(255,255,255,0.06);text-align:center;'>
+                    <p style='color:#475569;font-size:0.8rem;margin:0;'>© HireLens AI — AI-Powered Recruitment Platform</p>
+                </div>
+            </div>";
+
+        await _emailService.SendEmailAsync(user.Email, "HireLens AI — Password Updated", confirmBody);
+        await LogSystemEventAsync("Auth", $"Password successfully reset for user {user.Email}.", user.UserId, "Info");
+    }
+
+    // =====================================
+    // HELPERS
+    // =====================================
+    private static bool IsPasswordStrong(string password)
+    {
+        if (password.Length < 8) return false;
+        if (!password.Any(char.IsUpper)) return false;
+        if (!password.Any(char.IsDigit)) return false;
+        return true;
+    }
+
+    private string GeneratePasswordResetToken(User user)
+    {
+        var jwtSettings = _configuration.GetSection("JwtSettings");
+        var key = Encoding.ASCII.GetBytes(jwtSettings["Secret"]!);
+
+        var claims = new List<Claim>
+        {
+            new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
+            new Claim(ClaimTypes.Email, user.Email),
+            new Claim("purpose", "password_reset")
+        };
+
+        var tokenDescriptor = new SecurityTokenDescriptor
+        {
+            Subject = new ClaimsIdentity(claims),
+            Expires = DateTime.UtcNow.AddMinutes(15),
+            SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature),
+            Issuer = jwtSettings["Issuer"],
+            Audience = jwtSettings["Audience"]
+        };
+
+        var tokenHandler = new JwtSecurityTokenHandler();
+        var token = tokenHandler.CreateToken(tokenDescriptor);
+        return tokenHandler.WriteToken(token);
+    }
+
+    private async Task LogSystemEventAsync(string source, string message, Guid? userId, string level = "Info")
+    {
+        _context.SystemLogs.Add(new SystemLog
+        {
+            LogId = Guid.NewGuid(),
+            Timestamp = DateTime.UtcNow,
+            Source = source,
+            Level = level,
+            Message = message,
+            UserId = userId
+        });
+        await _context.SaveChangesAsync();
+    }
+
+
     private string HashOtp(string otp)
     {
         using (var sha256 = System.Security.Cryptography.SHA256.Create())

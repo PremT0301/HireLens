@@ -16,7 +16,8 @@ namespace SmartHireAI.Backend.Data
     public enum OtpType
     {
         Email,
-        Mobile
+        Mobile,
+        PasswordReset
     }
 
     [Table("users")]

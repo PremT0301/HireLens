@@ -35,6 +35,11 @@ graph TD
 *   **Backend** validates against `Users` table.
 *   **Result**: A JWT Token is returned and stored in the frontend key-value store.
 *   **Role Routing**: User is redirected to `ApplicantDashboard`, `RecruiterDashboard`, or `AdminDashboard` based on their role.
+*   **Account Recovery**:
+    *   **Step 1**: User enters email → Backend generates 6-digit OTP, hashes it (SHA-256), and sends branded email.
+    *   **Step 2**: User enters OTP → Backend verifies against hash, checks expiry (5m) and attempts (lockout after 5).
+    *   **Step 3**: On success, Backend returns short-lived (15m) reset-specific JWT.
+    *   **Step 4**: User sets new password → Backend validates strength, hashes with BCrypt, and updates `Users` table.
 
 ### 2. The Job Application Flow (Applicant)
 1.  **Profile Setup**: Applicant creates a profile and uploads a resume.
