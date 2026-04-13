@@ -23,11 +23,8 @@ from typing import List, Optional
 # Load environment variables
 load_dotenv()
 
-# Add scripts directory to path
-sys.path.append(str(Path(__file__).parent.parent / "scripts"))
-
-from gap_analysis import perform_gap_analysis
-from common_utils import load_pickle, extract_skills_keywords
+from scripts.gap_analysis import perform_gap_analysis
+from scripts.common_utils import load_pickle, extract_skills_keywords
 
 # Import Pydantic models
 from api.models import (
