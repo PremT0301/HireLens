@@ -110,6 +110,42 @@ public class ResumesController : ControllerBase
         }
     }
 
+    // GET: api/resumes/latest
+    // Returns the latest resume metadata for the authenticated applicant.
+    // Used by the frontend to get a resumeId for Gap Analysis without
+    // going through the full dashboard load.
+    [HttpGet("latest")]
+    [Authorize]
+    public async Task<IActionResult> GetLatestResume()
+    {
+        var userIdString = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
+            return Unauthorized();
+
+        // Resolve applicantId (1:1 with userId in this schema)
+        var applicant = await _context.Applicants
+            .FirstOrDefaultAsync(a => a.ApplicantId == userId);
+
+        if (applicant == null)
+            return Ok(new { hasResume = false, resumeId = (Guid?)null });
+
+        var latest = await _context.Resumes
+            .Where(r => r.ApplicantId == applicant.ApplicantId)
+            .OrderByDescending(r => r.ParsedAt)
+            .Select(r => new { r.ResumeId, r.ParsedAt })
+            .FirstOrDefaultAsync();
+
+        if (latest == null)
+            return Ok(new { hasResume = false, resumeId = (Guid?)null });
+
+        return Ok(new
+        {
+            hasResume = true,
+            resumeId  = latest.ResumeId,
+            parsedAt  = latest.ParsedAt
+        });
+    }
+
     [HttpGet("download/{id}")]
     [Authorize]
     public async Task<IActionResult> DownloadResume(Guid id)

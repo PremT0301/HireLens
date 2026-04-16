@@ -74,7 +74,9 @@ class ClassificationOutput(BaseModel):
     """Output model for role classification"""
     predicted_role: str = Field(..., description="Predicted job role/category")
     confidence: float = Field(..., description="Prediction confidence score", ge=0.0, le=1.0)
-    top_predictions: List[Dict[str, float]] = Field(..., description="Top 3 predictions with scores")
+    # Each entry: {"role": "Data Scientist", "confidence": 0.92}
+    # Typed as Any to allow the mixed-value dict shape
+    top_predictions: List[Dict[str, Any]] = Field(..., description="Top 3 predictions with role and confidence keys")
     
     class Config:
         json_schema_extra = {
@@ -82,9 +84,9 @@ class ClassificationOutput(BaseModel):
                 "predicted_role": "Data Scientist",
                 "confidence": 0.92,
                 "top_predictions": [
-                    {"Data Scientist": 0.92},
-                    {"ML Engineer": 0.05},
-                    {"Software Engineer": 0.02}
+                    {"role": "Data Scientist", "confidence": 0.92},
+                    {"role": "ML Engineer", "confidence": 0.05},
+                    {"role": "Software Engineer", "confidence": 0.02}
                 ]
             }
         }

@@ -3,6 +3,7 @@ import { MapPin, IndianRupee, Building, Calendar } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import JobService from '../../api/jobService';
 import ApplicationService from '../../api/applicationService';
+import ResumeService from '../../api/resumeService';
 import Skeleton, { SkeletonList } from '../../components/ui/Skeleton';
 import { NoJobsState } from '../../components/ui/EmptyState';
 import ConfirmModal from '../../components/ui/ConfirmModal';
@@ -148,17 +149,32 @@ const Jobs = () => {
         }
     };
 
-    const handleAnalyze = (job) => {
+    const handleAnalyze = async (job) => {
         if (!job.description || job.description.trim() === '') {
             addToast("Job Description not provided by the recruiter.", "warning");
             return;
         }
-        navigate('/applicant/gap-analysis', {
-            state: {
-                jobId: job.jobId,
-                jobDescription: job.description
+
+        try {
+            // Fetch the latest resume from DB — single source of truth for resumeId
+            const resumeData = await ResumeService.getLatestResume();
+
+            if (!resumeData.hasResume || !resumeData.resumeId) {
+                addToast("Please upload your resume first to run gap analysis.", "warning");
+                navigate('/applicant/dashboard');
+                return;
             }
-        });
+
+            navigate('/applicant/gap-analysis', {
+                state: {
+                    resumeId:       resumeData.resumeId, // DB-verified, not from localStorage
+                    jobId:          job.jobId,
+                    jobDescription: job.description
+                }
+            });
+        } catch {
+            addToast("Could not retrieve your resume. Please try again.", "error");
+        }
     };
 
     const getStatusConfig = (status) => {

@@ -4,6 +4,8 @@ Serves trained NER and BERT models via REST API
 """
 
 from fastapi import FastAPI, HTTPException, Depends
+from fastapi.responses import StreamingResponse
+import json
 
 from fastapi.middleware.cors import CORSMiddleware
 import spacy
@@ -289,13 +291,24 @@ async def analyze_resume(resume: ResumeInput):
             )
             probs = torch.softmax(outputs.logits, dim=1)
 
-        top_prob, top_idx = torch.max(probs, dim=1)
-        role = label_mapping[top_idx.item()]
+        top_probs, top_indices = torch.topk(probs, k=3, dim=1)
+        role = label_mapping[top_indices[0][0].item()]
+
+        top_predictions = []
+        for i in range(3):
+            pred_idx = top_indices[0][i].item()
+            pred_prob = top_probs[0][i].item()
+            # Shape: {"role": "...", "confidence": 0.92}
+            # This matches the .NET RolePrediction record exactly.
+            top_predictions.append({
+                "role": label_mapping[pred_idx],
+                "confidence": round(float(pred_prob), 4)
+            })
 
         classification = ClassificationOutput(
             predicted_role=role,
-            confidence=round(top_prob.item(), 4),
-            top_predictions=[]
+            confidence=round(float(top_probs[0][0].item()), 4),
+            top_predictions=top_predictions
         )
         
         # Calculate ATS Score
@@ -488,7 +501,114 @@ When providing feedback:
         raise HTTPException(status_code=500, detail=f"Chat failed: {str(e)}")
 
 
-# -------------------- RANKING & TRANSPARENCY --------------------
+# -------------------- STREAMING INTERVIEW CHAT --------------------
+
+@app.post("/interview-chat/stream")
+async def interview_chat_stream(chat_input: ChatInput, session_id: int = None, db: Session = Depends(get_db)):
+    """
+    Server-Sent Events streaming version of /interview-chat.
+    Each chunk: data: {"delta": "...", "done": false}
+    Final chunk: data: {"delta": "", "done": true, "session_title": "..."}
+    """
+    if not openai_client:
+        raise HTTPException(status_code=503, detail="OpenRouter client not initialized")
+
+    # Persist user message immediately (before streaming starts)
+    if session_id:
+        try:
+            user_msg = db_models.ChatMessage(
+                session_id=session_id,
+                sender="user",
+                content=chat_input.message
+            )
+            db.add(user_msg)
+            db.commit()
+        except Exception as e:
+            print(f"Failed to save user message: {e}")
+
+    # Build messages for OpenRouter
+    messages = [
+        {"role": "system", "content": (
+            "You are an expert technical interviewer. Your goal is to help candidates improve their answers.\n"
+            "When providing feedback:\n"
+            "1. Acknowledge what the candidate got right.\n"
+            "2. ONLY provide 'Suggestions for improvement' if the candidate missed key concepts or made mistakes.\n"
+            "3. CRITICAL: DO NOT suggest points the candidate has already mentioned in their answer.\n"
+            "4. If the answer is accurate and complete, simply state that it is excellent and move to the next question."
+        )}
+    ]
+
+    for msg in chat_input.history:
+        role = "user" if msg.role == "user" else "assistant"
+        messages.append({"role": role, "content": msg.content})
+
+    user_content = chat_input.message
+    if chat_input.context:
+        user_content = f"Context:\n{chat_input.context}\n\nUser Question:\n{chat_input.message}"
+    messages.append({"role": "user", "content": user_content})
+
+    async def event_generator():
+        full_text = ""
+        try:
+            stream = openai_client.chat.completions.create(
+                model="meta-llama/llama-3.1-8b-instruct",
+                messages=messages,
+                stream=True,
+            )
+
+            for chunk in stream:
+                delta = chunk.choices[0].delta.content if chunk.choices else None
+                if delta:
+                    full_text += delta
+                    payload = json.dumps({"delta": delta, "done": False})
+                    yield f"data: {payload}\n\n"
+
+            # --- Post-stream: persist AI reply + maybe rename session ---
+            updated_title = None
+            if session_id and full_text:
+                try:
+                    ai_msg = db_models.ChatMessage(
+                        session_id=session_id,
+                        sender="ai",
+                        content=full_text
+                    )
+                    db.add(ai_msg)
+
+                    count = db.query(db_models.ChatMessage).filter(
+                        db_models.ChatMessage.session_id == session_id
+                    ).count()
+
+                    if count <= 2:
+                        updated_title = summarize_session_title(chat_input.message)
+                        session_obj = db.query(db_models.ChatSession).filter(
+                            db_models.ChatSession.id == session_id
+                        ).first()
+                        if session_obj:
+                            session_obj.title = updated_title
+                            db.add(session_obj)
+
+                    db.commit()
+                except Exception as db_err:
+                    print(f"Stream DB persist error: {db_err}")
+
+            # Final done signal
+            done_payload = json.dumps({"delta": "", "done": True, "session_title": updated_title})
+            yield f"data: {done_payload}\n\n"
+
+        except Exception as e:
+            print(f"Streaming error: {e}")
+            error_payload = json.dumps({"delta": "", "done": True, "error": str(e)})
+            yield f"data: {error_payload}\n\n"
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+        }
+    )
+
 
 @app.post("/rankings/calculate", response_model=RankingOutput)
 def calculate_ranking(input_data: RankingInput, db: Session = Depends(get_db)):

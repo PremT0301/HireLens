@@ -5,31 +5,75 @@ import { motion, AnimatePresence } from 'framer-motion';
 import JobMatcher from '../../components/applicant/JobMatcher';
 import ThreeDTiltCard from '../../components/ui/ThreeDTiltCard';
 import PlanGate from '../../components/ui/PlanGate';
+import ResumeService from '../../api/resumeService';
 
 
 const GapAnalysis = () => {
     const location = useLocation();
     const navigate = useNavigate();
-    const { resumeId: stateResumeId, jobDescription, jobId } = location.state || {}; // Extract jobId
+    const { resumeId: stateResumeId, jobDescription, jobId } = location.state || {};
 
-    // Fallback to locally stored result if valid
-    const resumeId = stateResumeId || (() => {
-        try {
-            const saved = localStorage.getItem('resumeResult');
-            return saved ? JSON.parse(saved).resumeId : null;
-        } catch (e) {
-            return null;
-        }
-    })();
+    // resumeId resolution state
+    const [resumeId, setResumeId] = useState(stateResumeId || null);
+    const [resumeCheckStatus, setResumeCheckStatus] = useState(
+        stateResumeId ? 'ready' : 'loading' // if already provided via navigation, skip fetch
+    );
 
     const [analysisResult, setAnalysisResult] = useState(null);
 
-    if (!resumeId) {
+    // ── Fetch resumeId from DB (single source of truth) ───────────────────
+    // Only runs if resumeId was not supplied via router state (e.g. direct URL access)
+    useEffect(() => {
+        if (stateResumeId) return; // Already have it from navigation
+
+        let cancelled = false;
+
+        const fetchLatestResume = async () => {
+            try {
+                const data = await ResumeService.getLatestResume();
+                if (cancelled) return;
+
+                if (data.hasResume && data.resumeId) {
+                    setResumeId(data.resumeId);
+                    setResumeCheckStatus('ready');
+                } else {
+                    setResumeCheckStatus('no_resume');
+                }
+            } catch {
+                if (!cancelled) setResumeCheckStatus('error');
+            }
+        };
+
+        fetchLatestResume();
+        return () => { cancelled = true; };
+    }, [stateResumeId]);
+
+    // ── Guard: Job description is always required ──────────────────────────
+    // (Gap Analysis is always triggered from a specific job context)
+    const jobDescriptionPresent = !!(location.state?.jobDescription || jobDescription);
+
+    // ── Loading state while checking for resume ────────────────────────────
+    if (resumeCheckStatus === 'loading') {
+        return (
+            <div className="container" style={{ minHeight: '60vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+                <div className="glass-panel" style={{ padding: '3rem', maxWidth: '500px', width: '100%', textAlign: 'center' }}>
+                    <div style={{ marginBottom: '1.5rem', color: 'var(--primary)' }}><Loader2 size={48} className="spin" /></div>
+                    <h2 className="title-md" style={{ marginBottom: '0.5rem', fontSize: '1.4rem', fontWeight: 600 }}>Processing Resume...</h2>
+                    <p style={{ color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+                        Verifying your resume. Please wait.
+                    </p>
+                </div>
+            </div>
+        );
+    }
+
+    // ── No resume in DB ────────────────────────────────────────────────────
+    if (resumeCheckStatus === 'no_resume' || (!resumeId && resumeCheckStatus !== 'loading')) {
         return (
             <div className="container" style={{ minHeight: '60vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
                 <div className="glass-panel" style={{ padding: '3rem', maxWidth: '500px', width: '100%', textAlign: 'center' }}>
                     <div style={{ marginBottom: '1rem', color: 'var(--text-secondary)' }}><AlertCircle size={48} /></div>
-                    <h2 className="title-md" style={{ marginBottom: '1rem', fontSize: '1.5rem', fontWeight: 600 }}>No Resume Selected</h2>
+                    <h2 className="title-md" style={{ marginBottom: '1rem', fontSize: '1.5rem', fontWeight: 600 }}>Upload Resume to Start Analysis</h2>
                     <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem', lineHeight: 1.6 }}>
                         Please upload a resume in the dashboard first to enable gap analysis.
                     </p>
@@ -41,7 +85,25 @@ const GapAnalysis = () => {
         );
     }
 
-    if (!location.state?.jobDescription) {
+    // ── AI error ───────────────────────────────────────────────────────────
+    if (resumeCheckStatus === 'error') {
+        return (
+            <div className="container" style={{ minHeight: '60vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+                <div className="glass-panel" style={{ padding: '3rem', maxWidth: '500px', width: '100%', textAlign: 'center' }}>
+                    <div style={{ marginBottom: '1rem', color: 'var(--error)' }}><AlertCircle size={48} /></div>
+                    <h2 className="title-md" style={{ marginBottom: '1rem', fontSize: '1.5rem', fontWeight: 600 }}>Analysis Failed. Please Retry.</h2>
+                    <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem', lineHeight: 1.6 }}>
+                        Could not connect to the analysis service. Please try again.
+                    </p>
+                    <button className="btn-primary" onClick={() => window.location.reload()}>
+                        Retry
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    if (!jobDescriptionPresent) {
         return (
             <div className="container" style={{ minHeight: '60vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
                 <div className="glass-panel" style={{ padding: '3rem', maxWidth: '500px', width: '100%', textAlign: 'center' }}>
