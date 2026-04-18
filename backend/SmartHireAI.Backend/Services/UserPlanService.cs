@@ -25,7 +25,7 @@ public class UserPlanService : IUserPlanService
 
     public bool HasUnlimitedMatches(string plan) => plan != FREE;
 
-    public bool HasAdvancedGapAnalysis(string plan) => plan == PRO || plan == ELITE_PLUS;
+    public bool HasAdvancedGapAnalysis(string plan) => true; // Basic gap analysis is available to all plans; premium recommendations are gated in the frontend via PlanGate
 
     public bool HasPriorityInbox(string plan) => plan == ELITE_PLUS;
 

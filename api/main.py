@@ -276,7 +276,7 @@ async def analyze_resume(resume: ResumeInput):
             designations=designations
         )
 
-        encoding = bert_tokenizer.encode_plus(
+        encoding = bert_tokenizer(
             resume.text,
             max_length=512,
             truncation=True,

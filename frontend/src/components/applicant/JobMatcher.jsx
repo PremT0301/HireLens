@@ -28,7 +28,9 @@ const JobMatcher = ({ resumeId, initialJobDescription = '', onSessionExpired, on
             if (onMatchComplete) onMatchComplete(response.data);
         } catch (err) {
             console.error("Match failed", err);
-            if (err.response && err.response.status === 404) {
+            if (err.response?.status === 403) {
+                setError("Gap Analysis requires a Pro or Elite+ plan. Please upgrade to continue.");
+            } else if (err.response?.status === 404) {
                 if (onSessionExpired) {
                     onSessionExpired();
                     return;

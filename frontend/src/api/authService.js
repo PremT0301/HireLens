@@ -159,9 +159,15 @@ const AuthService = {
         try {
             const response = await api.post("/subscription/upgrade", { plan });
 
-            // If server returns updated plan, sync local storage
-            if (response.data && response.data.plan) {
-                AuthService.updateLocalPlan(response.data.plan);
+            if (response.data) {
+                // Store the fresh JWT if the backend re-issued one (PricingPlan claim is updated)
+                if (response.data.token) {
+                    sessionStorage.setItem("token", response.data.token);
+                }
+                // Sync the plan in the local user object
+                if (response.data.plan) {
+                    AuthService.updateLocalPlan(response.data.plan);
+                }
             }
 
             return response.data;

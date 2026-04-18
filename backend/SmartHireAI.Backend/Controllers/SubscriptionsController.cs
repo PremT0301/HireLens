@@ -1,9 +1,8 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using SmartHireAI.Backend.Data;
-using SmartHireAI.Backend.Models;
+using SmartHireAI.Backend.Services;
 
 namespace SmartHireAI.Backend.Controllers;
 
@@ -13,10 +12,12 @@ namespace SmartHireAI.Backend.Controllers;
 public class SubscriptionsController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
+    private readonly IAuthService _authService;
 
-    public SubscriptionsController(ApplicationDbContext context)
+    public SubscriptionsController(ApplicationDbContext context, IAuthService authService)
     {
         _context = context;
+        _authService = authService;
     }
 
     [HttpPost("upgrade")]
@@ -24,31 +25,28 @@ public class SubscriptionsController : ControllerBase
     {
         var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
-        {
             return Unauthorized();
-        }
 
         var user = await _context.Users.FindAsync(userId);
         if (user == null)
-        {
             return NotFound("User not found.");
-        }
 
-        // Validate plan
         var validPlans = new[] { "FREE", "PRO", "ELITE_PLUS" };
         if (!validPlans.Contains(request.Plan.ToUpper()))
-        {
             return BadRequest("Invalid plan selected.");
-        }
 
         user.PricingPlan = request.Plan.ToUpper();
+        user.SubscriptionPlan = request.Plan.ToUpper(); // keep both in sync
         user.UpdatedAt = DateTime.UtcNow;
-
         await _context.SaveChangesAsync();
+
+        // Re-issue JWT so the PricingPlan claim is immediately fresh (avoids stale claims)
+        var freshToken = await _authService.GenerateTokenForUserAsync(userId);
 
         return Ok(new { 
             message = $"Successfully upgraded to {user.PricingPlan} plan.",
-            plan = user.PricingPlan
+            plan = user.PricingPlan,
+            token = freshToken   // frontend must store this as the new session token
         });
     }
 }

@@ -695,4 +695,15 @@ public class AuthService : IAuthService
         var token = tokenHandler.CreateToken(tokenDescriptor);
         return tokenHandler.WriteToken(token);
     }
+
+    /// <summary>
+    /// Re-generates a JWT for an existing user (e.g. after a plan upgrade).
+    /// Reads the latest user state from the DB so claims (PricingPlan) are fresh.
+    /// </summary>
+    public async Task<string> GenerateTokenForUserAsync(Guid userId)
+    {
+        var user = await _context.Users.FindAsync(userId)
+            ?? throw new Exception("User not found.");
+        return GenerateJwtToken(user);
+    }
 }
